@@ -28,7 +28,8 @@ services:
     environment:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-development-secret}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/timetracker?schema=public}
+      # Force container to talk to the db service, ignoring host .env DATABASE_URL
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/timetracker?schema=public
     command: >-
       sh -c "npx prisma migrate deploy && npm run start"
 

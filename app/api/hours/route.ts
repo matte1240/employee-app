@@ -7,6 +7,11 @@ import prisma from "@/lib/prisma";
 const createHoursSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   hoursWorked: z.number().min(0).max(24),
+  overtimeHours: z.number().min(0).optional(),
+  morningStart: z.string().optional(),
+  morningEnd: z.string().optional(),
+  afternoonStart: z.string().optional(),
+  afternoonEnd: z.string().optional(),
   notes: z.string().max(500).optional(),
 });
 
@@ -21,6 +26,11 @@ type RawEntry = {
   userId: string;
   workDate: Date;
   hoursWorked: Decimal;
+  overtimeHours: Decimal;
+  morningStart: string | null;
+  morningEnd: string | null;
+  afternoonStart: string | null;
+  afternoonEnd: string | null;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -31,6 +41,11 @@ const toPlainEntry = (entry: RawEntry) => ({
   userId: entry.userId,
   workDate: entry.workDate.toISOString(),
   hoursWorked: parseFloat(entry.hoursWorked.toString()),
+  overtimeHours: parseFloat(entry.overtimeHours.toString()),
+  morningStart: entry.morningStart,
+  morningEnd: entry.morningEnd,
+  afternoonStart: entry.afternoonStart,
+  afternoonEnd: entry.afternoonEnd,
   notes: entry.notes,
   createdAt: entry.createdAt.toISOString(),
   updatedAt: entry.updatedAt.toISOString(),
@@ -103,16 +118,70 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const { workDate, hoursWorked, notes } = parsed.data;
+  const { workDate, hoursWorked, overtimeHours, morningStart, morningEnd, afternoonStart, afternoonEnd, notes } = parsed.data;
 
-  const entry = (await prisma.timeEntry.create({
-    data: {
+  // Employees can only enter hours for dates up to today in the current month
+  if (session.user.role === "EMPLOYEE") {
+    const entryDate = new Date(`${workDate}T00:00:00.000Z`);
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const currentMonthStart = new Date(today.getUTCFullYear(), today.getUTCMonth(), 1);
+
+    if (entryDate > today) {
+      return NextResponse.json(
+        { error: "Cannot enter hours for future dates" },
+        { status: 403 }
+      );
+    }
+
+    if (entryDate < currentMonthStart) {
+      return NextResponse.json(
+        { error: "Can only enter hours for the current month" },
+        { status: 403 }
+      );
+    }
+  }
+
+  // Check if entry already exists for this date
+  const existing = await prisma.timeEntry.findFirst({
+    where: {
       userId: session.user.id,
       workDate: new Date(`${workDate}T00:00:00.000Z`),
-      hoursWorked: hoursWorked.toString(),
-      notes,
     },
-  })) as RawEntry;
+  });
 
-  return NextResponse.json(toPlainEntry(entry), { status: 201 });
+  let entry: RawEntry;
+
+  if (existing) {
+    // Update existing entry
+    entry = (await prisma.timeEntry.update({
+      where: { id: existing.id },
+      data: {
+        hoursWorked: hoursWorked.toString(),
+        overtimeHours: (overtimeHours ?? 0).toString(),
+        morningStart,
+        morningEnd,
+        afternoonStart,
+        afternoonEnd,
+        notes,
+      },
+    })) as RawEntry;
+  } else {
+    // Create new entry
+    entry = (await prisma.timeEntry.create({
+      data: {
+        userId: session.user.id,
+        workDate: new Date(`${workDate}T00:00:00.000Z`),
+        hoursWorked: hoursWorked.toString(),
+        overtimeHours: (overtimeHours ?? 0).toString(),
+        morningStart,
+        morningEnd,
+        afternoonStart,
+        afternoonEnd,
+        notes,
+      },
+    })) as RawEntry;
+  }
+
+  return NextResponse.json(toPlainEntry(entry), { status: existing ? 200 : 201 });
 }
