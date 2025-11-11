@@ -1,13 +1,30 @@
 import { redirect } from "next/navigation";
 import LoginForm from "@/components/login-form";
 import { getAuthSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-export default async function Home() {
+// Force dynamic rendering to check database at runtime
+export const dynamic = "force-dynamic";
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: { setup?: string };
+}) {
+  // Check if setup is needed (no users in database)
+  const userCount = await prisma.user.count();
+  
+  if (userCount === 0) {
+    redirect("/setup");
+  }
+
   const session = await getAuthSession();
 
   if (session) {
     redirect("/dashboard");
   }
+
+  const showSetupSuccess = searchParams.setup === "complete";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-white to-blue-100 px-4 py-12">
@@ -24,7 +41,14 @@ export default async function Home() {
             managers informed. Admins can review every submission in real-time.
           </p>
         </div>
-        <LoginForm />
+        <div className="flex flex-col gap-4">
+          {showSetupSuccess && (
+            <div className="rounded-lg bg-green-50 p-4 text-sm text-green-800 border border-green-200">
+              ✓ Setup completed successfully! You can now sign in with your admin account.
+            </div>
+          )}
+          <LoginForm />
+        </div>
       </div>
     </div>
   );

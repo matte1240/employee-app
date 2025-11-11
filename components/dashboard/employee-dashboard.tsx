@@ -14,6 +14,7 @@ import {
   endOfWeek,
 } from "date-fns";
 import { useRouter } from "next/navigation";
+import LogoutButton from "@/components/logout-button";
 
 export type TimeEntryDTO = {
   id: string;
@@ -271,23 +272,26 @@ export default function EmployeeDashboard({
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold text-zinc-900">
-          Welcome, {userName.split(" ")[0] ?? userName}
-        </h1>
-        <p className="text-sm text-zinc-500">
-          Click on any day to log your work hours.
-        </p>
-        <div className="flex gap-4 text-sm font-medium text-zinc-600">
-          <p>
-            Month total: <span className="font-semibold text-blue-600">{totalHours.toFixed(1)}</span> hrs
+      <header className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-semibold text-zinc-900">
+            Welcome, {userName.split(" ")[0] ?? userName}
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Click on any day to log your work hours.
           </p>
-          {totalOvertime > 0 && (
+          <div className="flex gap-4 text-sm font-medium text-zinc-600">
             <p>
-              Overtime: <span className="font-semibold text-orange-600">{totalOvertime.toFixed(1)}</span> hrs
+              Month total: <span className="font-semibold text-blue-600">{totalHours.toFixed(1)}</span> hrs
             </p>
-          )}
+            {totalOvertime > 0 && (
+              <p>
+                Overtime: <span className="font-semibold text-orange-600">{totalOvertime.toFixed(1)}</span> hrs
+              </p>
+            )}
+          </div>
         </div>
+        <LogoutButton />
       </header>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">

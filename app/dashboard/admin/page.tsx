@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import LogoutButton from "@/components/logout-button";
 
 type UserAggregate = {
   id: string;
@@ -79,6 +80,7 @@ export default async function AdminDashboardPage() {
             Review employee activity and invite teammates.
           </p>
         </div>
+        <LogoutButton />
       </div>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
