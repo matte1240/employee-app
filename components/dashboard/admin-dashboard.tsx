@@ -30,13 +30,19 @@ type CreateUserForm = {
 
 export default function AdminDashboard({ users }: AdminDashboardProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"overview" | "create-user" | "user-calendar">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "create-user" | "export-data" | "user-calendar">("overview");
   const [selectedUser, setSelectedUser] = useState<UserAggregate | null>(null);
   const [userEntries, setUserEntries] = useState<TimeEntryDTO[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
   const [isCreating, startCreating] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportMonth, setExportMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+  });
   
   const [form, setForm] = useState<CreateUserForm>({
     name: "",
@@ -188,6 +194,21 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
                 Create User
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab("export-data")}
+              className={`border-b-2 px-1 py-4 text-sm font-semibold transition ${
+                activeTab === "export-data"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export Data
               </div>
             </button>
           </nav>
@@ -471,6 +492,150 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Export Data Tab */}
+        {activeTab === "export-data" && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Export Employee Data</h2>
+              <p className="mt-2 text-sm text-gray-600">
+                Select employees and a month to export their work hours data. Multiple employees will be downloaded as a ZIP file.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              {/* Month selector */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Select Month
+                </label>
+                <input
+                  type="month"
+                  value={exportMonth}
+                  onChange={(e) => setExportMonth(e.target.value)}
+                  className="w-full max-w-xs rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                />
+              </div>
+
+              {/* User selection */}
+              <div>
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Select Employees</h3>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUserIds(new Set(users.filter(u => u.role === "EMPLOYEE").map(u => u.id)))}
+                      className="text-sm font-medium text-blue-600 hover:text-blue-700 transition"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUserIds(new Set())}
+                      className="text-sm font-medium text-gray-600 hover:text-gray-700 transition"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {users.filter(u => u.role === "EMPLOYEE").map((user) => (
+                    <label
+                      key={user.id}
+                      className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer transition hover:bg-blue-50 hover:border-blue-300"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedUserIds.has(user.id)}
+                        onChange={(e) => {
+                          const newSet = new Set(selectedUserIds);
+                          if (e.target.checked) {
+                            newSet.add(user.id);
+                          } else {
+                            newSet.delete(user.id);
+                          }
+                          setSelectedUserIds(newSet);
+                        }}
+                        className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                      />
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-900">{user.name || user.email}</div>
+                        {user.name && (
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                        )}
+                      </div>
+                      {user.totalHours !== null && (
+                        <div className="text-sm font-medium text-gray-600">
+                          {user.totalHours.toFixed(1)}h total
+                        </div>
+                      )}
+                    </label>
+                  ))}
+                </div>
+
+                {selectedUserIds.size > 0 && (
+                  <div className="mt-6 flex items-center justify-between rounded-lg bg-blue-50 p-4 border border-blue-200">
+                    <div className="text-sm font-medium text-blue-900">
+                      {selectedUserIds.size} employee{selectedUserIds.size > 1 ? 's' : ''} selected
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsExporting(true);
+                        setError(null);
+                        try {
+                          const response = await fetch('/api/export-csv', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              userIds: Array.from(selectedUserIds),
+                              month: exportMonth,
+                            }),
+                          });
+
+                          if (!response.ok) {
+                            throw new Error('Export failed');
+                          }
+
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = selectedUserIds.size === 1 
+                            ? `hours_${users.find(u => selectedUserIds.has(u.id))?.name || 'employee'}_${exportMonth}.csv`
+                            : `hours_export_${exportMonth}.zip`;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                        } catch (err) {
+                          setError('Failed to export data. Please try again.');
+                        } finally {
+                          setIsExporting(false);
+                        }
+                      }}
+                      disabled={isExporting}
+                      className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400 flex items-center gap-2"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      {isExporting ? 'Exporting...' : 'Export to CSV'}
+                    </button>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+                    <p className="text-sm font-medium text-red-800">{error}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
