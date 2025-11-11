@@ -31,6 +31,8 @@ export type TimeEntryDTO = {
 type EmployeeDashboardProps = {
   initialEntries: TimeEntryDTO[];
   userName: string;
+  hideHeader?: boolean; // If true, hide the header (for embedded views)
+  targetUserId?: string; // If set, admin is editing this user's calendar
 };
 
 type ModalFormState = {
@@ -68,6 +70,8 @@ const TIME_OPTIONS = generateTimeOptions();
 export default function EmployeeDashboard({
   initialEntries,
   userName,
+  hideHeader = false,
+  targetUserId,
 }: EmployeeDashboardProps) {
   const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
@@ -239,6 +243,7 @@ export default function EmployeeDashboard({
       afternoonStart: modalForm.afternoonStart || undefined,
       afternoonEnd: modalForm.afternoonEnd || undefined,
       notes: modalForm.notes.trim() || undefined,
+      ...(targetUserId && { userId: targetUserId }), // Add userId if admin is editing another user
     };
 
     startSaving(async () => {
@@ -270,29 +275,62 @@ export default function EmployeeDashboard({
     });
   };
 
+  const handleDelete = () => {
+    if (!selectedDate) return;
+    
+    const entry = entries.find(e => format(parseISO(e.workDate), "yyyy-MM-dd") === selectedDate);
+    if (!entry) return;
+
+    if (!confirm("Are you sure you want to delete this entry?")) return;
+
+    setModalError(null);
+
+    startSaving(async () => {
+      try {
+        const response = await fetch(`/api/hours?id=${entry.id}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          setModalError(data?.error ?? "Unable to delete entry.");
+          return;
+        }
+
+        setEntries((current) => current.filter(e => e.id !== entry.id));
+        setIsModalOpen(false);
+        router.refresh();
+      } catch {
+        setModalError("Unexpected error while deleting entry.");
+      }
+    });
+  };
+
   return (
     <div>
-      {/* Header with logo */}
-      <header className="border-b border-gray-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-8">
-            <img
-              src="/logo.svg"
-              alt="Ivicolors"
-              className="h-10 w-auto"
-            />
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                Welcome, {userName.split(" ")[0] ?? userName}
-              </h1>
-              <p className="text-sm text-gray-500">
-                Track your work hours
-              </p>
+      {/* Header with logo - hide in embedded views */}
+      {!hideHeader && (
+        <header className="border-b border-gray-200 bg-white shadow-sm">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-8">
+              <img
+                src="/logo.svg"
+                alt="Ivicolors"
+                className="h-10 w-auto"
+              />
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  Welcome, {userName.split(" ")[0] ?? userName}
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Track your work hours
+                </p>
+              </div>
             </div>
+            <LogoutButton />
           </div>
-          <LogoutButton />
-        </div>
-      </header>
+        </header>
+      )}
 
       <div className="mx-auto max-w-7xl px-6 py-8">
         {/* Stats cards */}
@@ -394,13 +432,14 @@ export default function EmployeeDashboard({
               ))}
             </div>
 
-            <div className="mt-2 grid grid-cols-7 gap-2">
+            <div className="mt-2 grid grid-cols-7 gap-1 sm:gap-2">
               {calendarDays.map((day) => {
                 const key = format(day, "yyyy-MM-dd");
                 const bucket = entriesByDay.get(key);
                 const dayEntry = bucket?.[0];
-                const totalForDay = dayEntry?.hoursWorked ?? 0;
-                const overtimeForDay = dayEntry?.overtimeHours ?? 0;
+                const regularHours = dayEntry?.hoursWorked ?? 0;
+                const overtimeHours = dayEntry?.overtimeHours ?? 0;
+                const totalHours = regularHours + overtimeHours;
                 const hasEntries = Boolean(dayEntry);
                 const highlight = isSameDay(day, new Date());
                 const editable = isDateEditable(day) && isSameMonth(day, currentMonth);
@@ -410,7 +449,7 @@ export default function EmployeeDashboard({
                     key={key}
                     onClick={() => handleDayClick(day)}
                     disabled={!editable}
-                    className={`flex min-h-[100px] flex-col rounded-xl border p-3 text-left transition ${
+                    className={`flex min-h-[80px] sm:min-h-[100px] flex-col rounded-lg sm:rounded-xl border p-2 sm:p-3 text-left transition ${
                       isSameMonth(day, currentMonth)
                         ? editable
                           ? "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md cursor-pointer hover:scale-105"
@@ -418,35 +457,32 @@ export default function EmployeeDashboard({
                         : "border-dashed border-gray-200 bg-gray-50/50 text-gray-300"
                     } ${highlight ? "ring-2 ring-blue-400 shadow-md" : ""}`}
                   >
-                    <div className="flex items-center justify-between text-sm font-semibold">
-                      <span className={highlight ? "text-blue-600" : "text-gray-700"}>{format(day, "d")}</span>
-                      {hasEntries && (
-                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">
-                          {totalForDay.toFixed(1)}h
-                        </span>
-                      )}
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-xs sm:text-sm font-semibold ${highlight ? "text-blue-600" : "text-gray-700"}`}>
+                        {format(day, "d")}
+                      </span>
                     </div>
                     {hasEntries ? (
-                      <div className="mt-2 space-y-1 text-xs">
-                        <div className="flex items-center gap-1 text-gray-700">
-                          <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
-                          <span className="font-medium">{totalForDay.toFixed(1)}h regular</span>
-                        </div>
-                        {overtimeForDay > 0 && (
-                          <div className="flex items-center gap-1 text-orange-600">
-                            <div className="h-1.5 w-1.5 rounded-full bg-orange-500"></div>
-                            <span className="font-medium">{overtimeForDay.toFixed(1)}h OT</span>
+                      <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
+                        <div className="flex flex-col items-center">
+                          <div className="text-2xl sm:text-3xl font-bold text-blue-600 tracking-tight">
+                            {totalHours.toFixed(1)}
                           </div>
-                        )}
+                          <div className="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
+                            hours
+                          </div>
+                        </div>
                         {dayEntry?.notes && (
-                          <div className="mt-1 truncate text-gray-500 italic">
-                            "{dayEntry.notes}"
+                          <div className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2 break-words px-1 text-center">
+                            {dayEntry.notes}
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="mt-auto pt-4 text-center text-xs text-gray-300">
-                        {editable ? "Click to add" : ""}
+                      <div className="flex-1 flex items-center justify-center">
+                        <span className="text-[10px] sm:text-xs text-gray-300">
+                          {editable ? "+" : ""}
+                        </span>
                       </div>
                     )}
                   </button>
@@ -601,6 +637,17 @@ export default function EmployeeDashboard({
 
               {/* Modal Footer */}
               <div className="flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 rounded-b-2xl">
+                {/* Show delete button only if entry exists */}
+                {selectedDate && entries.find(e => format(parseISO(e.workDate), "yyyy-MM-dd") === selectedDate) && (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isSaving}
+                    className="rounded-lg border-2 border-red-300 bg-white px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSaving ? "Deleting..." : "Delete"}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

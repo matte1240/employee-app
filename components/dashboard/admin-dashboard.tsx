@@ -1,0 +1,525 @@
+"use client";
+
+import { format } from "date-fns";
+import { useState, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import LogoutButton from "@/components/logout-button";
+import EmployeeDashboard, { type TimeEntryDTO } from "./employee-dashboard";
+
+type UserAggregate = {
+  id: string;
+  name: string | null;
+  email: string;
+  role: "EMPLOYEE" | "ADMIN";
+  createdAt: Date;
+  totalHours: number;
+  lastEntry?: string | null;
+};
+
+type AdminDashboardProps = {
+  users: UserAggregate[];
+};
+
+type CreateUserForm = {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  role: "EMPLOYEE" | "ADMIN";
+};
+
+export default function AdminDashboard({ users }: AdminDashboardProps) {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"overview" | "create-user" | "user-calendar">("overview");
+  const [selectedUser, setSelectedUser] = useState<UserAggregate | null>(null);
+  const [userEntries, setUserEntries] = useState<TimeEntryDTO[]>([]);
+  const [isLoadingEntries, setIsLoadingEntries] = useState(false);
+  const [isCreating, startCreating] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  const [form, setForm] = useState<CreateUserForm>({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "EMPLOYEE",
+  });
+
+  // Fetch user entries when a user is selected
+  useEffect(() => {
+    if (selectedUser && activeTab === "user-calendar") {
+      const fetchUserEntries = async () => {
+        setIsLoadingEntries(true);
+        try {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = now.getMonth() + 1;
+          const from = `${year}-${month.toString().padStart(2, '0')}-01`;
+          const lastDay = new Date(year, month, 0).getDate();
+          const to = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
+          
+          const response = await fetch(`/api/hours?userId=${selectedUser.id}&from=${from}&to=${to}`);
+          if (response.ok) {
+            const data = await response.json();
+            setUserEntries(data);
+          }
+        } catch (err) {
+          console.error("Error fetching user entries:", err);
+        } finally {
+          setIsLoadingEntries(false);
+        }
+      };
+      
+      fetchUserEntries();
+    }
+  }, [selectedUser, activeTab]);
+
+  const handleUserClick = (user: UserAggregate) => {
+    setSelectedUser(user);
+    setActiveTab("user-calendar");
+  };
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
+    startCreating(async () => {
+      try {
+        const response = await fetch("/api/users/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            email: form.email,
+            password: form.password,
+            role: form.role,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.error || "Failed to create user");
+          return;
+        }
+
+        setSuccess(`User ${form.email} created successfully!`);
+        setForm({
+          name: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          role: "EMPLOYEE",
+        });
+        
+        // Refresh the page to show the new user
+        router.refresh();
+      } catch (err) {
+        setError("Unexpected error occurred");
+      }
+    });
+  };
+
+  const activeEmployees = users.filter(u => {
+    if (!u.lastEntry) return false;
+    const lastEntry = new Date(u.lastEntry);
+    const now = new Date();
+    return lastEntry.getMonth() === now.getMonth() && lastEntry.getFullYear() === now.getFullYear();
+  }).length;
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      {/* Header with logo and navigation */}
+      <header className="border-b border-gray-200 bg-white shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-8">
+            <img
+              src="/logo.svg"
+              alt="Ivicolors"
+              className="h-10 w-auto"
+            />
+            <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
+          </div>
+          <LogoutButton />
+        </div>
+      </header>
+
+      {/* Navigation tabs */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="mx-auto max-w-7xl px-6">
+          <nav className="flex gap-8">
+            <button
+              onClick={() => setActiveTab("overview")}
+              className={`border-b-2 px-1 py-4 text-sm font-semibold transition ${
+                activeTab === "overview"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Overview
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab("create-user")}
+              className={`border-b-2 px-1 py-4 text-sm font-semibold transition ${
+                activeTab === "create-user"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                Create User
+              </div>
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <>
+            {/* Stats cards */}
+            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Employees</p>
+                    <p className="mt-2 text-3xl font-bold text-blue-600">{users.filter(r => r.role === "EMPLOYEE").length}</p>
+                  </div>
+                  <div className="rounded-full bg-blue-50 p-3">
+                    <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-green-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Hours Logged</p>
+                    <p className="mt-2 text-3xl font-bold text-green-600">
+                      {users.reduce((sum, r) => sum + r.totalHours, 0).toFixed(0)}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-green-50 p-3">
+                    <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-purple-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Active This Month</p>
+                    <p className="mt-2 text-3xl font-bold text-purple-600">{activeEmployees}</p>
+                  </div>
+                  <div className="rounded-full bg-purple-50 p-3">
+                    <svg className="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Team overview table */}
+            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-200 px-6 py-4">
+                <h2 className="text-lg font-semibold text-gray-900">Team Overview</h2>
+                <p className="mt-1 text-sm text-gray-500">Monitor employee activity and work hours</p>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                        Name
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                        Email
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                        Role
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                        Total Hours
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                        Last Activity
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                        Joined
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white">
+                    {users.map((row) => (
+                      <tr 
+                        key={row.id} 
+                        onClick={() => handleUserClick(row)}
+                        className="cursor-pointer transition hover:bg-blue-50"
+                      >
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-semibold text-white">
+                              {(row.name ?? "U")[0].toUpperCase()}
+                            </div>
+                            <div className="ml-3">
+                              <p className="font-semibold text-gray-900">{row.name ?? "Unassigned"}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                          {row.email}
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                            row.role === "ADMIN"
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}>
+                            {row.role}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center">
+                            <span className="text-lg font-bold text-gray-900">{row.totalHours.toFixed(1)}</span>
+                            <span className="ml-1 text-sm text-gray-500">hrs</span>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                          {row.lastEntry ? (
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-2 rounded-full bg-green-400"></div>
+                              {format(new Date(row.lastEntry), "MMM d, yyyy")}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-2 rounded-full bg-gray-300"></div>
+                              <span className="text-gray-400">No activity</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                          {format(row.createdAt, "MMM d, yyyy")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* Create User Tab */}
+        {activeTab === "create-user" && (
+          <div className="mx-auto max-w-2xl">
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-xl">
+                <h2 className="text-lg font-semibold text-white">Create New User</h2>
+                <p className="mt-1 text-sm text-blue-100">Add a new employee or administrator to the system</p>
+              </div>
+
+              <form onSubmit={handleCreateUser} className="p-6 space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    placeholder="John Doe"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    placeholder="john.doe@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Role
+                  </label>
+                  <select
+                    value={form.role}
+                    onChange={(e) => setForm(f => ({ ...f, role: e.target.value as "EMPLOYEE" | "ADMIN" }))}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                  >
+                    <option value="EMPLOYEE">Employee</option>
+                    <option value="ADMIN">Administrator</option>
+                  </select>
+                  <p className="mt-2 text-xs text-gray-500">
+                    {form.role === "ADMIN" 
+                      ? "Administrators can manage users and view all data" 
+                      : "Employees can only log and view their own work hours"}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
+                    required
+                    minLength={8}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    placeholder="Min. 8 characters"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    value={form.confirmPassword}
+                    onChange={(e) => setForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    placeholder="Re-enter password"
+                  />
+                </div>
+
+                {error && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                    <div className="flex items-center gap-2">
+                      <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm font-medium text-red-800">{error}</p>
+                    </div>
+                  </div>
+                )}
+
+                {success && (
+                  <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                    <div className="flex items-center gap-2">
+                      <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm font-medium text-green-800">{success}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm({
+                        name: "",
+                        email: "",
+                        password: "",
+                        confirmPassword: "",
+                        role: "EMPLOYEE",
+                      });
+                      setError(null);
+                      setSuccess(null);
+                    }}
+                    className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreating}
+                    className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
+                  >
+                    {isCreating ? "Creating..." : "Create User"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* User Calendar Tab */}
+        {activeTab === "user-calendar" && selectedUser && (
+          <div>
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setActiveTab("overview")}
+                  className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back to Overview
+                </button>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {selectedUser.name ?? selectedUser.email}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {selectedUser.email} • {selectedUser.role}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {isLoadingEntries ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+                  <p className="mt-4 text-sm text-gray-600">Loading calendar...</p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-gray-200 bg-white p-6">
+                <EmployeeDashboard
+                  initialEntries={userEntries}
+                  userName={selectedUser.name ?? selectedUser.email}
+                  hideHeader={true}
+                  targetUserId={selectedUser.id}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}

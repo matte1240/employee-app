@@ -13,6 +13,7 @@ const createHoursSchema = z.object({
   afternoonStart: z.string().optional(),
   afternoonEnd: z.string().optional(),
   notes: z.string().max(500).optional(),
+  userId: z.string().optional(), // Admin can specify userId
 });
 
 const querySchema = z.object({
@@ -118,7 +119,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const { workDate, hoursWorked, overtimeHours, morningStart, morningEnd, afternoonStart, afternoonEnd, notes } = parsed.data;
+  const { workDate, hoursWorked, overtimeHours, morningStart, morningEnd, afternoonStart, afternoonEnd, notes, userId: requestedUserId } = parsed.data;
+
+  // Determine which userId to use: admin can specify, employee uses their own
+  const targetUserId = session.user.role === "ADMIN" && requestedUserId ? requestedUserId : session.user.id;
 
   // Employees can only enter hours for dates up to today in the current month
   if (session.user.role === "EMPLOYEE") {
@@ -145,7 +149,7 @@ export async function POST(request: Request) {
   // Check if entry already exists for this date
   const existing = await prisma.timeEntry.findFirst({
     where: {
-      userId: session.user.id,
+      userId: targetUserId,
       workDate: new Date(`${workDate}T00:00:00.000Z`),
     },
   });
@@ -170,7 +174,7 @@ export async function POST(request: Request) {
     // Create new entry
     entry = (await prisma.timeEntry.create({
       data: {
-        userId: session.user.id,
+        userId: targetUserId,
         workDate: new Date(`${workDate}T00:00:00.000Z`),
         hoursWorked: hoursWorked.toString(),
         overtimeHours: (overtimeHours ?? 0).toString(),
@@ -184,4 +188,40 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(toPlainEntry(entry), { status: existing ? 200 : 201 });
+}
+
+export async function DELETE(request: Request) {
+  const session = await getAuthSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const url = new URL(request.url);
+  const entryId = url.searchParams.get("id");
+
+  if (!entryId) {
+    return NextResponse.json({ error: "Entry ID required" }, { status: 400 });
+  }
+
+  // Find the entry
+  const entry = await prisma.timeEntry.findUnique({
+    where: { id: entryId },
+  });
+
+  if (!entry) {
+    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+  }
+
+  // Check permissions: employees can only delete their own entries, admins can delete any
+  if (session.user.role === "EMPLOYEE" && entry.userId !== session.user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Delete the entry
+  await prisma.timeEntry.delete({
+    where: { id: entryId },
+  });
+
+  return NextResponse.json({ success: true }, { status: 200 });
 }

@@ -24,7 +24,6 @@ export default function LoginForm() {
         redirect: false,
         email: formState.email,
         password: formState.password,
-        callbackUrl: "/dashboard",
       });
 
       if (result?.error) {
@@ -32,7 +31,8 @@ export default function LoginForm() {
         return;
       }
 
-      router.push(result?.url ?? "/dashboard");
+      // All users go to /dashboard, which handles role-based display
+      router.push("/dashboard");
       router.refresh();
     });
   };

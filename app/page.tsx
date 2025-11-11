@@ -21,6 +21,7 @@ export default async function Home({
   const session = await getAuthSession();
 
   if (session) {
+    // All users go to /dashboard, which handles role-based display
     redirect("/dashboard");
   }
 
