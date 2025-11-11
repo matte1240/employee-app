@@ -65,7 +65,7 @@ export default async function DashboardPage() {
   const plain = entries.map(toDto);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-10">
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <EmployeeDashboard
         initialEntries={plain}
         userName={session.user.name ?? session.user.email}

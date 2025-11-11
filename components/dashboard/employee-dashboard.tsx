@@ -271,248 +271,349 @@ export default function EmployeeDashboard({
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      <header className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold text-zinc-900">
-            Welcome, {userName.split(" ")[0] ?? userName}
-          </h1>
-          <p className="text-sm text-zinc-500">
-            Click on any day to log your work hours.
-          </p>
-          <div className="flex gap-4 text-sm font-medium text-zinc-600">
-            <p>
-              Month total: <span className="font-semibold text-blue-600">{totalHours.toFixed(1)}</span> hrs
-            </p>
-            {totalOvertime > 0 && (
-              <p>
-                Overtime: <span className="font-semibold text-orange-600">{totalOvertime.toFixed(1)}</span> hrs
+    <div>
+      {/* Header with logo */}
+      <header className="border-b border-gray-200 bg-white shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-8">
+            <img
+              src="/logo.svg"
+              alt="Ivicolors"
+              className="h-10 w-auto"
+            />
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">
+                Welcome, {userName.split(" ")[0] ?? userName}
+              </h1>
+              <p className="text-sm text-gray-500">
+                Track your work hours
               </p>
-            )}
+            </div>
           </div>
+          <LogoutButton />
         </div>
-        <LogoutButton />
       </header>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-800">
-              {format(currentMonth, "MMMM yyyy")}
-            </h2>
-            {isFetching && <p className="text-xs text-zinc-500">Refreshing calendar...</p>}
-            {error && <p className="text-xs text-red-500">{error}</p>}
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        {/* Stats cards */}
+        <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Month Total</p>
+                <p className="mt-2 text-3xl font-bold text-blue-600">{totalHours.toFixed(1)}</p>
+                <p className="text-xs text-gray-500">hours worked</p>
+              </div>
+              <div className="rounded-full bg-blue-50 p-3">
+                <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCurrentMonth((month) => addMonths(month, -1))}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 transition hover:border-blue-200 hover:text-blue-600"
-            >
-              &lt;
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentMonth(startOfMonth(new Date()))}
-              className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-600 transition hover:border-blue-200 hover:text-blue-600"
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentMonth((month) => addMonths(month, 1))}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 transition hover:border-blue-200 hover:text-blue-600"
-            >
-              &gt;
-            </button>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-wide text-zinc-400">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-            <div key={day}>{day}</div>
-          ))}
-        </div>
-
-        <div className="mt-2 grid grid-cols-7 gap-2">
-          {calendarDays.map((day) => {
-            const key = format(day, "yyyy-MM-dd");
-            const bucket = entriesByDay.get(key);
-            const dayEntry = bucket?.[0];
-            const totalForDay = dayEntry?.hoursWorked ?? 0;
-            const overtimeForDay = dayEntry?.overtimeHours ?? 0;
-            const hasEntries = Boolean(dayEntry);
-            const highlight = isSameDay(day, new Date());
-            const editable = isDateEditable(day) && isSameMonth(day, currentMonth);
-
-            return (
-              <button
-                key={key}
-                onClick={() => handleDayClick(day)}
-                disabled={!editable}
-                className={`flex min-h-[86px] flex-col rounded-xl border p-2 text-left text-xs transition ${
-                  isSameMonth(day, currentMonth)
-                    ? editable
-                      ? "border-zinc-200 bg-white hover:border-blue-300 hover:shadow-sm cursor-pointer"
-                      : "border-zinc-200 bg-zinc-50 text-zinc-400 cursor-not-allowed"
-                    : "border-dashed border-zinc-200 bg-zinc-50 text-zinc-400"
-                } ${highlight ? "ring-2 ring-blue-200" : ""}`}
-              >
-                <div className="flex items-center justify-between text-[11px] font-medium text-zinc-500">
-                  <span>{format(day, "d")}</span>
-                  {hasEntries && (
-                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600">
-                      {totalForDay.toFixed(1)}h
-                    </span>
-                  )}
+          {totalOvertime > 0 && (
+            <div className="rounded-xl border border-orange-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Overtime</p>
+                  <p className="mt-2 text-3xl font-bold text-orange-600">{totalOvertime.toFixed(1)}</p>
+                  <p className="text-xs text-gray-500">extra hours</p>
                 </div>
-                {hasEntries ? (
-                  <div className="mt-1 space-y-1 text-[11px] text-zinc-600">
-                    <div className="truncate">Regular: {totalForDay.toFixed(1)}h</div>
-                    {overtimeForDay > 0 && (
-                      <div className="truncate text-orange-600">OT: {overtimeForDay.toFixed(1)}h</div>
-                    )}
-                    {dayEntry?.notes && (
-                      <div className="truncate text-zinc-400">{dayEntry.notes}</div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mt-auto text-[10px] text-zinc-300">Click to add</div>
-                )}
-              </button>
-            );
-          })}
+                <div className="rounded-full bg-orange-50 p-3">
+                  <svg className="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-green-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Days Logged</p>
+                <p className="mt-2 text-3xl font-bold text-green-600">{entries.length}</p>
+                <p className="text-xs text-gray-500">this month</p>
+              </div>
+              <div className="rounded-full bg-green-50 p-3">
+                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
+            <p className="text-sm font-medium text-red-800">{error}</p>
+          </div>
+        )}
+
+        {/* Calendar section */}
+        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {format(currentMonth, "MMMM yyyy")}
+                </h2>
+                {isFetching && <p className="text-xs text-gray-500">Refreshing calendar...</p>}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentMonth((month) => addMonths(month, -1))}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
+                >
+                  &#8592;
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentMonth(startOfMonth(new Date()))}
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentMonth((month) => addMonths(month, 1))}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
+                >
+                  &#8594;
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+                <div key={day} className="py-2">{day}</div>
+              ))}
+            </div>
+
+            <div className="mt-2 grid grid-cols-7 gap-2">
+              {calendarDays.map((day) => {
+                const key = format(day, "yyyy-MM-dd");
+                const bucket = entriesByDay.get(key);
+                const dayEntry = bucket?.[0];
+                const totalForDay = dayEntry?.hoursWorked ?? 0;
+                const overtimeForDay = dayEntry?.overtimeHours ?? 0;
+                const hasEntries = Boolean(dayEntry);
+                const highlight = isSameDay(day, new Date());
+                const editable = isDateEditable(day) && isSameMonth(day, currentMonth);
+
+                return (
+                  <button
+                    key={key}
+                    onClick={() => handleDayClick(day)}
+                    disabled={!editable}
+                    className={`flex min-h-[100px] flex-col rounded-xl border p-3 text-left transition ${
+                      isSameMonth(day, currentMonth)
+                        ? editable
+                          ? "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md cursor-pointer hover:scale-105"
+                          : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                        : "border-dashed border-gray-200 bg-gray-50/50 text-gray-300"
+                    } ${highlight ? "ring-2 ring-blue-400 shadow-md" : ""}`}
+                  >
+                    <div className="flex items-center justify-between text-sm font-semibold">
+                      <span className={highlight ? "text-blue-600" : "text-gray-700"}>{format(day, "d")}</span>
+                      {hasEntries && (
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">
+                          {totalForDay.toFixed(1)}h
+                        </span>
+                      )}
+                    </div>
+                    {hasEntries ? (
+                      <div className="mt-2 space-y-1 text-xs">
+                        <div className="flex items-center gap-1 text-gray-700">
+                          <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
+                          <span className="font-medium">{totalForDay.toFixed(1)}h regular</span>
+                        </div>
+                        {overtimeForDay > 0 && (
+                          <div className="flex items-center gap-1 text-orange-600">
+                            <div className="h-1.5 w-1.5 rounded-full bg-orange-500"></div>
+                            <span className="font-medium">{overtimeForDay.toFixed(1)}h OT</span>
+                          </div>
+                        )}
+                        {dayEntry?.notes && (
+                          <div className="mt-1 truncate text-gray-500 italic">
+                            "{dayEntry.notes}"
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="mt-auto pt-4 text-center text-xs text-gray-300">
+                        {editable ? "Click to add" : ""}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setIsModalOpen(false)}>
-          <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <form onSubmit={handleModalSubmit} className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-zinc-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
+          <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <form onSubmit={handleModalSubmit} className="flex flex-col">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl">
+                <h2 className="text-lg font-semibold text-white">
                   {selectedDate && format(parseISO(selectedDate), "EEEE, MMM d, yyyy")}
                 </h2>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="text-zinc-400 hover:text-zinc-600"
+                  className="rounded-lg p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
                 >
-                  ✕
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 
-              <div className="rounded-lg bg-zinc-50 p-4">
-                <h3 className="mb-3 text-sm font-semibold text-zinc-700">Morning</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="flex flex-col gap-1.5 text-xs font-medium text-zinc-600">
-                    Start
-                    <select
-                      value={modalForm.morningStart}
-                      onChange={(e) => setModalForm(f => ({ ...f, morningStart: e.target.value }))}
-                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200 cursor-pointer"
-                    >
-                      {TIME_OPTIONS.map(time => (
-                        <option key={`morning-start-${time}`} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1.5 text-xs font-medium text-zinc-600">
-                    End
-                    <select
-                      value={modalForm.morningEnd}
-                      onChange={(e) => setModalForm(f => ({ ...f, morningEnd: e.target.value }))}
-                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200 cursor-pointer"
-                    >
-                      {TIME_OPTIONS.map(time => (
-                        <option key={`morning-end-${time}`} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </label>
+              {/* Modal Body */}
+              <div className="space-y-5 p-6">
+                {/* Morning shift */}
+                <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 shadow-sm">
+                  <div className="mb-3 flex items-center gap-2">
+                    <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <h3 className="text-sm font-bold text-blue-900">Morning Shift</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="flex flex-col gap-2">
+                      <span className="text-xs font-semibold text-blue-800">Start time</span>
+                      <select
+                        value={modalForm.morningStart}
+                        onChange={(e) => setModalForm(f => ({ ...f, morningStart: e.target.value }))}
+                        className="rounded-lg border border-blue-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                      >
+                        {TIME_OPTIONS.map(time => (
+                          <option key={`morning-start-${time}`} value={time}>{time}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-2">
+                      <span className="text-xs font-semibold text-blue-800">End time</span>
+                      <select
+                        value={modalForm.morningEnd}
+                        onChange={(e) => setModalForm(f => ({ ...f, morningEnd: e.target.value }))}
+                        className="rounded-lg border border-blue-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                      >
+                        {TIME_OPTIONS.map(time => (
+                          <option key={`morning-end-${time}`} value={time}>{time}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <p className="mt-3 flex items-center justify-between text-xs">
+                    <span className="font-medium text-blue-700">Duration:</span>
+                    <span className="font-bold text-blue-900">{calculatedHours.morning.toFixed(2)} hours</span>
+                  </p>
                 </div>
-                <p className="mt-2 text-xs text-zinc-500">
-                  Hours: {calculatedHours.morning.toFixed(2)}
-                </p>
-              </div>
 
-              <div className="rounded-lg bg-zinc-50 p-4">
-                <h3 className="mb-3 text-sm font-semibold text-zinc-700">Afternoon</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="flex flex-col gap-1.5 text-xs font-medium text-zinc-600">
-                    Start
-                    <select
-                      value={modalForm.afternoonStart}
-                      onChange={(e) => setModalForm(f => ({ ...f, afternoonStart: e.target.value }))}
-                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200 cursor-pointer"
-                    >
-                      {TIME_OPTIONS.map(time => (
-                        <option key={`afternoon-start-${time}`} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1.5 text-xs font-medium text-zinc-600">
-                    End
-                    <select
-                      value={modalForm.afternoonEnd}
-                      onChange={(e) => setModalForm(f => ({ ...f, afternoonEnd: e.target.value }))}
-                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200 cursor-pointer"
-                    >
-                      {TIME_OPTIONS.map(time => (
-                        <option key={`afternoon-end-${time}`} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </label>
+                {/* Afternoon shift */}
+                <div className="rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 p-4 shadow-sm">
+                  <div className="mb-3 flex items-center gap-2">
+                    <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    <h3 className="text-sm font-bold text-orange-900">Afternoon Shift</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="flex flex-col gap-2">
+                      <span className="text-xs font-semibold text-orange-800">Start time</span>
+                      <select
+                        value={modalForm.afternoonStart}
+                        onChange={(e) => setModalForm(f => ({ ...f, afternoonStart: e.target.value }))}
+                        className="rounded-lg border border-orange-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200 cursor-pointer"
+                      >
+                        {TIME_OPTIONS.map(time => (
+                          <option key={`afternoon-start-${time}`} value={time}>{time}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-2">
+                      <span className="text-xs font-semibold text-orange-800">End time</span>
+                      <select
+                        value={modalForm.afternoonEnd}
+                        onChange={(e) => setModalForm(f => ({ ...f, afternoonEnd: e.target.value }))}
+                        className="rounded-lg border border-orange-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200 cursor-pointer"
+                      >
+                        {TIME_OPTIONS.map(time => (
+                          <option key={`afternoon-end-${time}`} value={time}>{time}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <p className="mt-3 flex items-center justify-between text-xs">
+                    <span className="font-medium text-orange-700">Duration:</span>
+                    <span className="font-bold text-orange-900">{calculatedHours.afternoon.toFixed(2)} hours</span>
+                  </p>
                 </div>
-                <p className="mt-2 text-xs text-zinc-500">
-                  Hours: {calculatedHours.afternoon.toFixed(2)}
-                </p>
-              </div>
 
-              <div className="rounded-lg border border-zinc-200 bg-blue-50 p-3">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-zinc-700">Total hours:</span>
-                  <span className="font-semibold text-blue-600">{calculatedHours.total.toFixed(2)}</span>
+                {/* Summary */}
+                <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-gray-700">Total hours:</span>
+                      <span className="text-2xl font-bold text-blue-600">{calculatedHours.total.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-t border-blue-100 pt-2">
+                      <span className="font-medium text-gray-600">Regular hours:</span>
+                      <span className="font-bold text-gray-900">{calculatedHours.regular.toFixed(2)}</span>
+                    </div>
+                    {calculatedHours.overtime > 0 && (
+                      <div className="flex justify-between items-center border-t border-orange-100 pt-2">
+                        <span className="font-medium text-orange-700">Overtime:</span>
+                        <span className="font-bold text-orange-600">{calculatedHours.overtime.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="mt-1 flex justify-between text-sm">
-                  <span className="font-medium text-zinc-700">Regular:</span>
-                  <span className="font-semibold text-zinc-900">{calculatedHours.regular.toFixed(2)}</span>
-                </div>
-                {calculatedHours.overtime > 0 && (
-                  <div className="mt-1 flex justify-between text-sm">
-                    <span className="font-medium text-zinc-700">Overtime:</span>
-                    <span className="font-semibold text-orange-600">{calculatedHours.overtime.toFixed(2)}</span>
+
+                {/* Notes */}
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-semibold text-gray-700">Notes (optional)</span>
+                  <textarea
+                    value={modalForm.notes}
+                    onChange={(e) => setModalForm(f => ({ ...f, notes: e.target.value }))}
+                    placeholder="Add any notes about your work..."
+                    rows={3}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                  />
+                </label>
+
+                {modalError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                    <p className="text-sm font-medium text-red-800">{modalError}</p>
                   </div>
                 )}
               </div>
 
-              <label className="flex flex-col gap-1.5 text-xs font-medium text-zinc-600">
-                Notes (optional)
-                <textarea
-                  value={modalForm.notes}
-                  onChange={(e) => setModalForm(f => ({ ...f, notes: e.target.value }))}
-                  placeholder="Add any notes about your work..."
-                  rows={3}
-                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
-                />
-              </label>
-
-              {modalError && <p className="text-xs text-red-500">{modalError}</p>}
-
-              <div className="flex gap-3">
+              {/* Modal Footer */}
+              <div className="flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 rounded-b-2xl">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 hover:border-gray-400"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving || calculatedHours.total === 0}
-                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+                  className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
                 >
-                  {isSaving ? "Saving..." : "Save"}
+                  {isSaving ? "Saving..." : "Save Entry"}
                 </button>
               </div>
             </form>
