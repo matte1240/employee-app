@@ -43,6 +43,8 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
     const now = new Date();
     return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
   });
+  const [usersWithMonthHours, setUsersWithMonthHours] = useState<UserAggregate[]>(users);
+  const [isLoadingMonthHours, setIsLoadingMonthHours] = useState(false);
   
   const [form, setForm] = useState<CreateUserForm>({
     name: "",
@@ -51,6 +53,56 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
     confirmPassword: "",
     role: "EMPLOYEE",
   });
+
+  // Fetch users with hours for selected export month
+  useEffect(() => {
+    if (activeTab === "export-data") {
+      const fetchMonthHours = async () => {
+        setIsLoadingMonthHours(true);
+        try {
+          const [year, month] = exportMonth.split('-');
+          const from = `${year}-${month}-01`;
+          const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+          const to = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+          
+          console.log('Fetching hours for:', { from, to, exportMonth });
+          
+          const response = await fetch(`/api/hours?userId=all&from=${from}&to=${to}`);
+          if (response.ok) {
+            const entries = await response.json();
+            
+            console.log('Received entries:', entries.length);
+            
+            // Calculate hours per user for the selected month
+            const hoursMap = new Map<string, number>();
+            entries.forEach((entry: any) => {
+              const current = hoursMap.get(entry.userId) || 0;
+              const totalHours = entry.hoursWorked + (entry.overtimeHours || 0);
+              hoursMap.set(entry.userId, current + totalHours);
+            });
+            
+            console.log('Hours map:', Object.fromEntries(hoursMap));
+            
+            // Update users with month-specific hours
+            const updatedUsers = users.map(user => ({
+              ...user,
+              totalHours: hoursMap.get(user.id) || 0,
+            }));
+            
+            console.log('Updated users:', updatedUsers);
+            
+            setUsersWithMonthHours(updatedUsers);
+          }
+        } catch (err) {
+          console.error("Error fetching month hours:", err);
+        } finally {
+          setIsLoadingMonthHours(false);
+        }
+      };
+      
+      fetchMonthHours();
+    }
+  }, [exportMonth, activeTab, users]);
 
   // Fetch user entries when a user is selected
   useEffect(() => {
@@ -527,7 +579,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => setSelectedUserIds(new Set(users.filter(u => u.role === "EMPLOYEE").map(u => u.id)))}
+                      onClick={() => setSelectedUserIds(new Set(usersWithMonthHours.filter(u => u.role === "EMPLOYEE").map(u => u.id)))}
                       className="text-sm font-medium text-blue-600 hover:text-blue-700 transition"
                     >
                       Select All
@@ -543,40 +595,49 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   </div>
                 </div>
 
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {users.filter(u => u.role === "EMPLOYEE").map((user) => (
-                    <label
-                      key={user.id}
-                      className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer transition hover:bg-blue-50 hover:border-blue-300"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedUserIds.has(user.id)}
-                        onChange={(e) => {
-                          const newSet = new Set(selectedUserIds);
-                          if (e.target.checked) {
-                            newSet.add(user.id);
-                          } else {
-                            newSet.delete(user.id);
-                          }
-                          setSelectedUserIds(newSet);
-                        }}
-                        className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200 cursor-pointer"
-                      />
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-900">{user.name || user.email}</div>
-                        {user.name && (
-                          <div className="text-sm text-gray-500">{user.email}</div>
-                        )}
-                      </div>
-                      {user.totalHours !== null && (
-                        <div className="text-sm font-medium text-gray-600">
-                          {user.totalHours.toFixed(1)}h total
+                {isLoadingMonthHours ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+                      <p className="mt-4 text-sm text-gray-600">Loading hours...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {usersWithMonthHours.filter(u => u.role === "EMPLOYEE").map((user) => (
+                      <label
+                        key={user.id}
+                        className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer transition hover:bg-blue-50 hover:border-blue-300"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.has(user.id)}
+                          onChange={(e) => {
+                            const newSet = new Set(selectedUserIds);
+                            if (e.target.checked) {
+                              newSet.add(user.id);
+                            } else {
+                              newSet.delete(user.id);
+                            }
+                            setSelectedUserIds(newSet);
+                          }}
+                          className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-900">{user.name || user.email}</div>
+                          {user.name && (
+                            <div className="text-sm text-gray-500">{user.email}</div>
+                          )}
                         </div>
-                      )}
-                    </label>
-                  ))}
-                </div>
+                        {user.totalHours !== null && user.totalHours > 0 && (
+                          <div className="text-sm font-medium text-gray-600">
+                            {user.totalHours.toFixed(1)}h
+                          </div>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                )}
 
                 {selectedUserIds.size > 0 && (
                   <div className="mt-6 flex items-center justify-between rounded-lg bg-blue-50 p-4 border border-blue-200">

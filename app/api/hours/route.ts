@@ -89,8 +89,10 @@ export async function GET(request: Request) {
     }
   }
 
+  // If userId is not set (meaning "all" for admin), still apply date filters
   if (!where.userId) {
     const entries = (await prisma.timeEntry.findMany({
+      where: where.workDate ? { workDate: where.workDate } : undefined,
       orderBy: { workDate: "desc" },
     })) as RawEntry[];
     const payload = entries.map((entry) => toPlainEntry(entry));
