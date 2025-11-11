@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Work Hours Tracker
 
-## Getting Started
+Full stack time tracking portal built with Next.js App Router, Prisma, NextAuth, and PostgreSQL. Employees can log their daily work hours on a calendar while administrators review team-wide activity from a dedicated dashboard.
 
-First, run the development server:
+### Features
+
+- Email and password authentication backed by NextAuth and Prisma.
+- Employee dashboard with interactive calendar, quick entry form, and recent activity list.
+- Admin dashboard summarising total hours, last activity date, and join date for every user.
+- REST API routes for logging hours and managing users, secured by session and role checks.
+- Prisma schema with seed script that provisions sample admin and employee accounts.
+- Docker Compose setup for local development with PostgreSQL.
+
+### Prerequisites
+
+- Node.js 20+
+- npm 10+
+- Docker (optional, for container based workflows)
+
+### Environment Variables
+
+Copy `.env` and update values as needed. At minimum set:
+
+- `DATABASE_URL` (PostgreSQL connection string)
+- `NEXTAUTH_SECRET` (random 32 byte string)
+- `NEXTAUTH_URL` (base URL of the app)
+
+### Local Development
+
+Install dependencies and generate the Prisma client:
+
+```bash
+npm install
+npx prisma generate
+```
+
+Create the database schema and seed sample data:
+
+```bash
+npx prisma migrate dev --name init
+npm run prisma:seed
+```
+
+Launch the Next.js development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sample credentials provided by the seed script:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Admin: `admin@example.com` / `Admin123!`
+- Employee: `employee@example.com` / `Employee123!`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Docker Workflow
 
-## Learn More
+Build and start PostgreSQL plus the Next.js app:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+docker compose up --build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The `web` service runs database migrations before starting the production server on port 3000.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Useful Scripts
 
-## Deploy on Vercel
+- `npm run lint` - lint the project with ESLint.
+- `npm run build` - create an optimised production build.
+- `npm run prisma:generate` - regenerate the Prisma client.
+- `npm run prisma:migrate` - run development migrations.
+- `npm run prisma:deploy` - apply migrations in production environments.
+- `npm run prisma:seed` - seed the database with sample users and entries.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/` - Next.js App Router routes, including employee and admin dashboards.
+- `app/api/` - Route handlers for authentication, hours, and user management.
+- `components/` - Client components for login and dashboard experiences.
+- `prisma/` - Database schema and seed script.
+- `docker-compose.yml` - Local services for the app and PostgreSQL.
