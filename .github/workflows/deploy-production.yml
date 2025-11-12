@@ -1,0 +1,113 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup SSH Keys and Config
+        run: |
+          mkdir -p ~/.ssh
+          
+          # Salva le chiavi
+          echo "${{ secrets.BASTION_SSH_KEY }}" > ~/.ssh/bastion_key
+          echo "${{ secrets.PRODUCTION_SSH_KEY }}" > ~/.ssh/production_key
+          chmod 600 ~/.ssh/bastion_key ~/.ssh/production_key
+          
+          # Configura SSH
+          cat >> ~/.ssh/config <<EOF
+          Host bastion
+            HostName ${{ secrets.BASTION_IP }}
+            User ${{ secrets.BASTION_USER }}
+            Port 22
+            IdentityFile ~/.ssh/bastion_key
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+          
+          Host production
+            HostName ${{ secrets.PRODUCTION_IP }}
+            User ${{ secrets.PRODUCTION_USER }}
+            Port 22
+            IdentityFile ~/.ssh/production_key
+            ProxyJump bastion
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+          EOF
+          
+          # Mostra config per debug (senza dati sensibili)
+          echo "SSH config created"
+          
+      - name: Test SSH Connection
+        run: |
+          echo "Testing connection to production through bastion..."
+          ssh production "echo 'Connection successful!'"
+      
+      - name: Deploy to Production
+        run: |
+          ssh production "DATABASE_URL='${{ secrets.PRODUCTION_DATABASE_URL }}' NEXTAUTH_SECRET='${{ secrets.PRODUCTION_NEXTAUTH_SECRET }}' NEXTAUTH_URL='${{ secrets.PRODUCTION_NEXTAUTH_URL }}' bash -s" << 'ENDSSH'
+            set -e
+            
+            echo "🚀 Starting deployment to PRODUCTION..."
+            echo "Current user: $(whoami)"
+            
+            # Verifica se la directory esiste e ha un repo git
+            if [ ! -d "~/production-webapp/.git" ]; then
+              echo "📁 Git repository not found. Cloning..."
+              rm -rf ~/production-webapp
+              git clone https://github.com/matte1240/employee-app.git ~/production-webapp
+              cd ~/production-webapp
+              git checkout main
+            else
+              cd ~/production-webapp
+            fi
+            
+            echo "Current directory: $(pwd)"
+            
+            echo "📦 Pulling latest code from main branch..."
+            git fetch origin
+            git reset --hard origin/main
+            
+            echo "🔐 Creating .env file..."
+            echo "DATABASE_URL=\"${DATABASE_URL}\"" > .env
+            echo "NEXTAUTH_SECRET=\"${NEXTAUTH_SECRET}\"" >> .env
+            echo "NEXTAUTH_URL=\"${NEXTAUTH_URL}\"" >> .env
+            
+            echo "📥 Installing dependencies..."
+            npm ci
+            
+            echo "🏗️  Building application..."
+            npm run build
+            
+            echo "🗄️  Running database migrations..."
+            npm run prisma:deploy
+            
+            echo "♻️  Managing PM2 process..."
+            if npx pm2 describe app-production > /dev/null 2>&1; then
+              echo "Restarting existing process..."
+              npx pm2 restart app-production --update-env
+            else
+              echo "Starting new process..."
+              npx pm2 start npm --name app-production -- start
+            fi
+            
+            echo "⏳ Waiting for app to start..."
+            sleep 3
+            
+            echo "✅ Deployment completed!"
+            npx pm2 list
+            npx pm2 logs app-production --lines 10 --nostream
+          ENDSSH
+      
+      - name: Verify Deployment
+        run: |
+          ssh production "cd ~/production-webapp && npx pm2 list | grep app-production | grep online || exit 1"
+          echo "✅ Production is running!"
