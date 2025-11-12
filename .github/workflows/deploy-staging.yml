@@ -92,29 +92,23 @@ jobs:
             npm run prisma:deploy
             
             echo "♻️  Managing PM2 process..."
-            # Installa PM2 globalmente se non esiste
-            if ! command -v pm2 &> /dev/null; then
-              echo "Installing PM2 globally..."
-              npm install -g pm2
-            fi
-            
-            if pm2 describe app-staging > /dev/null 2>&1; then
+            if npx pm2 describe app-staging > /dev/null 2>&1; then
               echo "Restarting existing process..."
-              pm2 restart app-staging --update-env
+              npx pm2 restart app-staging --update-env
             else
               echo "Starting new process..."
-              PORT=3000 HOSTNAME=0.0.0.0 pm2 start npm --name app-staging -- start
+              npx pm2 start ecosystem.staging.config.js
             fi
             
             echo "⏳ Waiting for app to start..."
             sleep 3
             
             echo "✅ Deployment completed!"
-            pm2 list
-            pm2 logs app-staging --lines 10 --nostream
+            npx pm2 list
+            npx pm2 logs app-staging --lines 10 --nostream
           ENDSSH
       
       - name: Verify Deployment
         run: |
-          ssh staging "cd ~/development-webapp && pm2 list | grep app-staging | grep online || exit 1"
+          ssh staging "cd ~/development-webapp && npx pm2 list | grep app-staging | grep online || exit 1"
           echo "✅ Staging is running!"
