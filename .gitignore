@@ -43,3 +43,6 @@ next-env.d.ts
 # pm2 logs
 /logs
 .pm2
+
+# database backups
+/backups

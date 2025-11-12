@@ -96,6 +96,13 @@ PM2 configuration is in `ecosystem.config.js`. The app runs on port 3000 by defa
 - `npm run prisma:deploy` - apply migrations in production environments.
 - `npm run prisma:seed` - seed the database with sample users and entries.
 
+**Database Backup:**
+- `npm run backup:db` - create immediate database backup.
+- `npm run restore:db <file>` - restore database from backup.
+- `npm run backup:cleanup` - remove old backups (retention policy).
+
+See [BACKUP_STRATEGY.md](./BACKUP_STRATEGY.md) for complete backup documentation.
+
 **Production:**
 - `npm run build` - create an optimised production build.
 - `npm run pm2:start` - start application with PM2.
@@ -111,5 +118,7 @@ PM2 configuration is in `ecosystem.config.js`. The app runs on port 3000 by defa
 - `app/api/` - Route handlers for authentication, hours, and user management.
 - `components/` - Client components for login and dashboard experiences.
 - `prisma/` - Database schema and seed script.
+- `scripts/` - Backup and maintenance scripts for database management.
+- `backups/` - Database backups directory (gitignored).
 - `ecosystem.config.js` - PM2 configuration for production deployment.
 - `logs/` - PM2 application logs (gitignored).

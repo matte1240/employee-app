@@ -22,6 +22,29 @@ module.exports = {
       out_file: './logs/pm2-out.log',
       log_file: './logs/pm2-combined.log',
       time: true
+    },
+    {
+      name: 'db-backup-cron',
+      script: 'scripts/backup-db.sh',
+      instances: 1,
+      autorestart: false,
+      cron_restart: '0 2 * * *', // Daily at 2:00 AM
+      watch: false,
+      error_file: './logs/backup-error.log',
+      out_file: './logs/backup-out.log',
+      time: true
+    },
+    {
+      name: 'backup-cleanup-cron',
+      script: 'scripts/cleanup-backups.sh',
+      args: '30 7', // Keep backups for 30 days, minimum 7 backups
+      instances: 1,
+      autorestart: false,
+      cron_restart: '0 3 * * 0', // Weekly on Sunday at 3:00 AM
+      watch: false,
+      error_file: './logs/cleanup-error.log',
+      out_file: './logs/cleanup-out.log',
+      time: true
     }
   ]
 };
