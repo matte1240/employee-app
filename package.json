@@ -17,7 +17,10 @@
     "pm2:restart": "pm2 restart employee-tracker",
     "pm2:delete": "pm2 delete employee-tracker",
     "pm2:logs": "pm2 logs employee-tracker",
-    "pm2:monit": "pm2 monit"
+    "pm2:monit": "pm2 monit",
+    "backup:db": "bash scripts/backup-db.sh",
+    "restore:db": "bash scripts/restore-db.sh",
+    "backup:cleanup": "bash scripts/cleanup-backups.sh"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",

@@ -96,7 +96,7 @@ jobs:
               npx pm2 restart app-production --update-env
             else
               echo "Starting new process..."
-              npx pm2 start npm --name app-production -- start
+              PM2_APP_NAME=app-production npm run pm2:start
             fi
             
             echo "⏳ Waiting for app to start..."

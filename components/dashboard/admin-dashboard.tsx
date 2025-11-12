@@ -30,7 +30,8 @@ type CreateUserForm = {
 
 export default function AdminDashboard({ users }: AdminDashboardProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"overview" | "create-user" | "export-data" | "user-calendar">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "create-user" | "export-data" | "user-calendar" | "server-management">("overview");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserAggregate | null>(null);
   const [userEntries, setUserEntries] = useState<TimeEntryDTO[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
@@ -135,6 +136,28 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
     }
   }, [selectedUser, activeTab, refreshTrigger]);
 
+  // Close mobile menu when clicking Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   // Callback to trigger refetch after admin saves
   const handleEntrySaved = () => {
     setRefreshTrigger(prev => prev + 1);
@@ -225,7 +248,35 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
       {/* Navigation tabs */}
       <div className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-7xl px-6">
-          <nav className="flex gap-8">
+          {/* Mobile hamburger button */}
+          <div className="flex items-center justify-between py-4 md:hidden">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {activeTab === "overview" && "Overview"}
+              {activeTab === "create-user" && "Create User"}
+              {activeTab === "export-data" && "Export Data"}
+              {activeTab === "user-calendar" && "User Calendar"}
+              {activeTab === "server-management" && "Server Management"}
+            </h2>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="flex items-center justify-center rounded-lg border border-gray-300 p-2 text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
+              aria-label="Toggle menu"
+              aria-expanded={isMobileMenuOpen}
+            >
+              {isMobileMenuOpen ? (
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {/* Desktop horizontal tabs */}
+          <nav className="hidden md:flex gap-8">
             <button
               onClick={() => setActiveTab("overview")}
               className={`border-b-2 px-1 py-4 text-sm font-semibold transition ${
@@ -271,7 +322,180 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                 Export Data
               </div>
             </button>
+            <button
+              onClick={() => setActiveTab("server-management")}
+              className={`border-b-2 px-1 py-4 text-sm font-semibold transition ${
+                activeTab === "server-management"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                </svg>
+                Server Management
+              </div>
+            </button>
           </nav>
+        </div>
+      </div>
+
+      {/* Mobile slide-out menu overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile slide-out menu */}
+      <div
+        className={`fixed right-0 top-0 z-50 h-full w-80 max-w-[85vw] transform bg-white shadow-2xl transition-transform duration-300 ease-in-out md:hidden ${
+          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+      >
+        <div className="flex h-full flex-col">
+          {/* Mobile menu header */}
+          <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+            <h2 className="text-lg font-semibold text-white">Navigation</h2>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="rounded-lg p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
+              aria-label="Close menu"
+            >
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Mobile menu items */}
+          <nav className="flex-1 overflow-y-auto px-4 py-6">
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  setActiveTab("overview");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                  activeTab === "overview"
+                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Overview</span>
+                {activeTab === "overview" && (
+                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("create-user");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                  activeTab === "create-user"
+                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                <span>Create User</span>
+                {activeTab === "create-user" && (
+                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("export-data");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                  activeTab === "export-data"
+                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export Data</span>
+                {activeTab === "export-data" && (
+                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("server-management");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                  activeTab === "server-management"
+                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                </svg>
+                <span>Server Management</span>
+                {activeTab === "server-management" && (
+                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Conditional user calendar tab */}
+              {selectedUser && (
+                <button
+                  onClick={() => {
+                    setActiveTab("user-calendar");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                    activeTab === "user-calendar"
+                      ? "bg-blue-50 text-blue-600 shadow-sm"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>User Calendar</span>
+                  {activeTab === "user-calendar" && (
+                    <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              )}
+            </div>
+          </nav>
+
+          {/* Mobile menu footer */}
+          <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+            <p className="text-xs text-gray-500">Admin Dashboard</p>
+          </div>
         </div>
       </div>
 
@@ -817,6 +1041,267 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                 />
               </div>
             )}
+          </div>
+        )}
+
+        {/* Server Management Tab */}
+        {activeTab === "server-management" && (
+          <div className="space-y-6">
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Server Management</h2>
+                <p className="mt-2 text-sm text-gray-600">
+                  Database backup, restore operations, and PM2 process management
+                </p>
+              </div>
+
+              {/* Database Backup Section */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                    </svg>
+                    Database Backup & Restore
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Manage PostgreSQL database backups with automatic compression and retention policy
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Backup Commands */}
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
+                      <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                      </svg>
+                      Create Backup
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="rounded bg-gray-900 p-3">
+                        <code className="text-sm text-green-400">npm run backup:db</code>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Creates an immediate database backup with timestamp in <span className="font-mono">backups/database/</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Restore Commands */}
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
+                      <svg className="h-4 w-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Restore Backup
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="rounded bg-gray-900 p-3">
+                        <code className="text-sm text-orange-400">npm run restore:db backup_YYYYMMDD_HHMMSS.sql.gz</code>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        ⚠️ Restores database from backup file. Requires confirmation.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Cleanup Commands */}
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
+                      <svg className="h-4 w-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Cleanup Old Backups
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="rounded bg-gray-900 p-3">
+                        <code className="text-sm text-purple-400">npm run backup:cleanup</code>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Removes backups older than 30 days, keeps minimum 7 backups
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Backup Documentation */}
+                  <div className="rounded-lg border border-gray-200 bg-blue-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
+                      <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      Documentation
+                    </h4>
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-600">
+                        Complete backup strategy documentation including:
+                      </p>
+                      <ul className="space-y-1 text-xs text-gray-600">
+                        <li>• Automatic daily backups (2:00 AM)</li>
+                        <li>• Weekly cleanup (Sunday 3:00 AM)</li>
+                        <li>• Recovery scenarios</li>
+                        <li>• Troubleshooting guide</li>
+                      </ul>
+                      <p className="text-xs font-medium text-blue-600">
+                        See <span className="font-mono">BACKUP_STRATEGY.md</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PM2 Process Management Section */}
+                <div className="mt-8 border-t border-gray-200 pt-6">
+                  <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                    PM2 Process Management
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Monitor and control application processes and background tasks
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  {/* PM2 Status */}
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
+                      <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                      Status & List
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="rounded bg-gray-900 p-3">
+                        <code className="text-sm text-blue-400">pm2 list</code>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Shows all processes, status, CPU and memory usage
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* PM2 Logs */}
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
+                      <svg className="h-4 w-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      View Logs
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="rounded bg-gray-900 p-3">
+                        <code className="text-sm text-yellow-400">npm run pm2:logs</code>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Real-time application logs stream
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* PM2 Monitor */}
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
+                      <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      Monitor
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="rounded bg-gray-900 p-3">
+                        <code className="text-sm text-green-400">npm run pm2:monit</code>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Interactive resource monitoring dashboard
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* PM2 Restart */}
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
+                      <svg className="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Restart
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="rounded bg-gray-900 p-3">
+                        <code className="text-sm text-indigo-400">npm run pm2:restart</code>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Restart the application process
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* PM2 Stop */}
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
+                      <svg className="h-4 w-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                      </svg>
+                      Stop
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="rounded bg-gray-900 p-3">
+                        <code className="text-sm text-red-400">npm run pm2:stop</code>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Stop the application process
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Cron Jobs Info */}
+                  <div className="rounded-lg border border-gray-200 bg-green-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
+                      <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Cron Jobs
+                    </h4>
+                    <div className="space-y-2">
+                      <ul className="space-y-1 text-xs text-gray-600">
+                        <li className="flex items-center gap-1">
+                          <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
+                          Backup: Daily at 2:00 AM
+                        </li>
+                        <li className="flex items-center gap-1">
+                          <span className="inline-block h-2 w-2 rounded-full bg-purple-500"></span>
+                          Cleanup: Sunday at 3:00 AM
+                        </li>
+                      </ul>
+                      <p className="mt-2 text-xs text-gray-600">
+                        Check logs: <span className="font-mono">logs/backup-*.log</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Important Notes */}
+                <div className="mt-6 rounded-lg border-l-4 border-yellow-400 bg-yellow-50 p-4">
+                  <div className="flex">
+                    <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-yellow-800">Important Notes</h3>
+                      <div className="mt-2 text-xs text-yellow-700">
+                        <ul className="list-disc space-y-1 pl-5">
+                          <li>All commands should be run from the terminal/SSH with proper permissions</li>
+                          <li>Database restore operations require explicit confirmation</li>
+                          <li>Backups are stored locally in <span className="font-mono">backups/database/</span></li>
+                          <li>For production, implement offsite backup strategy (see BACKUP_STRATEGY.md)</li>
+                          <li>PM2 commands require server SSH access</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

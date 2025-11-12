@@ -317,7 +317,7 @@ export default function EmployeeDashboard({
       {/* Header with logo - hide in embedded views */}
       {!hideHeader && (
         <header className="border-b border-gray-200 bg-white shadow-sm">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 py-4">
             <div className="flex items-center gap-8">
               <img
                 src="/logo.svg"
@@ -338,7 +338,7 @@ export default function EmployeeDashboard({
         </header>
       )}
 
-      <div className="mx-auto max-w-7xl px-6 py-8">
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-8">
         {/* Stats cards */}
         <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
@@ -397,7 +397,7 @@ export default function EmployeeDashboard({
 
         {/* Calendar section */}
         <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-200 px-6 py-4">
+          <div className="border-b border-gray-200 px-3 sm:px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
@@ -431,14 +431,14 @@ export default function EmployeeDashboard({
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="px-2 py-4 sm:p-6">
             <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
                 <div key={day} className="py-2">{day}</div>
               ))}
             </div>
 
-            <div className="mt-2 grid grid-cols-7 gap-1 sm:gap-2">
+            <div className="mt-2 grid grid-cols-7 gap-0.5 sm:gap-2">
               {calendarDays.map((day) => {
                 const key = format(day, "yyyy-MM-dd");
                 const bucket = entriesByDay.get(key);
@@ -455,7 +455,7 @@ export default function EmployeeDashboard({
                     key={key}
                     onClick={() => handleDayClick(day)}
                     disabled={!editable}
-                    className={`flex min-h-[80px] sm:min-h-[100px] flex-col rounded-lg sm:rounded-xl border p-2 sm:p-3 text-left transition ${
+                    className={`flex min-h-[80px] sm:min-h-[100px] flex-col rounded-md sm:rounded-xl border p-1.5 sm:p-3 text-left transition ${
                       isSameMonth(day, currentMonth)
                         ? editable
                           ? "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md cursor-pointer hover:scale-105"
