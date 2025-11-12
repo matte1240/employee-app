@@ -3,7 +3,7 @@ name: Deploy to Staging
 on:
   push:
     branches:
-      - develop
+      - dev
   workflow_dispatch:
 
 jobs:
@@ -61,9 +61,9 @@ jobs:
             echo "Current user: $(whoami)"
             echo "Current directory: $(pwd)"
             
-            echo "📦 Pulling latest code from develop branch..."
+            echo "📦 Pulling latest code from dev branch..."
             git fetch origin
-            git reset --hard origin/develop
+            git reset --hard origin/dev
             
             echo "📥 Installing dependencies..."
             npm ci
