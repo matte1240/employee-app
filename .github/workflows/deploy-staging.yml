@@ -97,7 +97,7 @@ jobs:
               npx pm2 restart app-staging --update-env
             else
               echo "Starting new process..."
-              npx pm2 start ecosystem.staging.config.js
+              PM2_APP_NAME=app-staging npm run pm2:start
             fi
             
             echo "⏳ Waiting for app to start..."

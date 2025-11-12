@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'employee-tracker',
+      name: process.env.PM2_APP_NAME || 'employee-tracker',
       script: 'node_modules/next/dist/bin/next',
       args: 'start',
       instances: 1,
