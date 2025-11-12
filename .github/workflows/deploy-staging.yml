@@ -53,7 +53,7 @@ jobs:
       
       - name: Deploy to Staging
         run: |
-          ssh staging bash << 'ENDSSH'
+          ssh staging "DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' NEXTAUTH_SECRET='${{ secrets.STAGING_NEXTAUTH_SECRET }}' NEXTAUTH_URL='${{ secrets.STAGING_NEXTAUTH_URL }}' bash -s" << 'ENDSSH'
             set -e
             
             echo "🚀 Starting deployment to STAGING..."
@@ -76,7 +76,12 @@ jobs:
             git fetch origin
             git reset --hard origin/dev
             
-            echo "📥 Installing dependencies..."
+            echo "🔐 Creating .env file..."
+            echo "DATABASE_URL=\"${DATABASE_URL}\"" > .env
+            echo "NEXTAUTH_SECRET=\"${NEXTAUTH_SECRET}\"" >> .env
+            echo "NEXTAUTH_URL=\"${NEXTAUTH_URL}\"" >> .env
+            
+            echo "� Installing dependencies..."
             npm ci
             
             echo "🏗️  Building application..."
@@ -89,12 +94,6 @@ jobs:
             pm2 restart app-staging --update-env
             
             echo "⏳ Waiting for app to start..."
-            sleep 3
-            
-            echo "✅ Deployment completed!"
-            pm2 list
-            pm2 logs app-staging --lines 10 --nostream
-          ENDSSH
             sleep 3
             
             echo "✅ Deployment completed!"
