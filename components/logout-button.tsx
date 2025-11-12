@@ -8,7 +8,11 @@ export default function LogoutButton() {
 
   const handleLogout = () => {
     startTransition(async () => {
-      await signOut({ callbackUrl: "/" });
+      // Use current origin to avoid localhost redirect issues
+      const callbackUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/`
+        : '/';
+      await signOut({ callbackUrl });
     });
   };
 

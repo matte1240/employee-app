@@ -40,7 +40,7 @@ type RawEntry = {
 const toPlainEntry = (entry: RawEntry) => ({
   id: entry.id,
   userId: entry.userId,
-  workDate: entry.workDate.toISOString(),
+  workDate: entry.workDate.toISOString().split('T')[0], // Return only date part (YYYY-MM-DD)
   hoursWorked: parseFloat(entry.hoursWorked.toString()),
   overtimeHours: parseFloat(entry.overtimeHours.toString()),
   morningStart: entry.morningStart,
@@ -82,10 +82,10 @@ export async function GET(request: Request) {
   if (from || to) {
     where.workDate = {};
     if (from) {
-      where.workDate.gte = new Date(from);
+      where.workDate.gte = new Date(`${from}T00:00:00.000Z`);
     }
     if (to) {
-      where.workDate.lte = new Date(to);
+      where.workDate.lte = new Date(`${to}T23:59:59.999Z`);
     }
   }
 

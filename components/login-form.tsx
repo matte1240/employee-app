@@ -54,7 +54,7 @@ export default function LoginForm() {
           onChange={(event) =>
             setFormState((state) => ({ ...state, email: event.target.value }))
           }
-          className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           placeholder="your.email@company.com"
         />
       </div>
@@ -67,11 +67,12 @@ export default function LoginForm() {
           id="password"
           type="password"
           required
+          autoComplete="current-password"
           value={formState.password}
           onChange={(event) =>
             setFormState((state) => ({ ...state, password: event.target.value }))
           }
-          className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           placeholder="••••••••"
         />
       </div>

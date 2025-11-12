@@ -34,6 +34,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
   const [selectedUser, setSelectedUser] = useState<UserAggregate | null>(null);
   const [userEntries, setUserEntries] = useState<TimeEntryDTO[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isCreating, startCreating] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -116,7 +117,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
           const from = `${year}-${month.toString().padStart(2, '0')}-01`;
           const lastDay = new Date(year, month, 0).getDate();
           const to = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
-          
+
           const response = await fetch(`/api/hours?userId=${selectedUser.id}&from=${from}&to=${to}`);
           if (response.ok) {
             const data = await response.json();
@@ -128,10 +129,16 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
           setIsLoadingEntries(false);
         }
       };
-      
+
       fetchUserEntries();
     }
-  }, [selectedUser, activeTab]);
+  }, [selectedUser, activeTab, refreshTrigger]);
+
+  // Callback to trigger refetch after admin saves
+  const handleEntrySaved = () => {
+    setRefreshTrigger(prev => prev + 1);
+    router.refresh(); // Also refresh server component for overview
+  };
 
   const handleUserClick = (user: UserAggregate) => {
     setSelectedUser(user);
@@ -428,7 +435,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                     value={form.name}
                     onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     placeholder="John Doe"
                   />
                 </div>
@@ -442,7 +449,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                     value={form.email}
                     onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     placeholder="john.doe@example.com"
                   />
                 </div>
@@ -454,7 +461,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   <select
                     value={form.role}
                     onChange={(e) => setForm(f => ({ ...f, role: e.target.value as "EMPLOYEE" | "ADMIN" }))}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
                   >
                     <option value="EMPLOYEE">Employee</option>
                     <option value="ADMIN">Administrator</option>
@@ -476,7 +483,8 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                     onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
                     required
                     minLength={8}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    autoComplete="new-password"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     placeholder="Min. 8 characters"
                   />
                 </div>
@@ -490,7 +498,8 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                     value={form.confirmPassword}
                     onChange={(e) => setForm(f => ({ ...f, confirmPassword: e.target.value }))}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    autoComplete="new-password"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     placeholder="Re-enter password"
                   />
                 </div>
@@ -740,6 +749,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   userName={selectedUser.name ?? selectedUser.email}
                   hideHeader={true}
                   targetUserId={selectedUser.id}
+                  onEntrySaved={handleEntrySaved}
                 />
               </div>
             )}

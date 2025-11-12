@@ -9,13 +9,13 @@ Full stack time tracking portal built with Next.js App Router, Prisma, NextAuth,
 - Admin dashboard summarising total hours, last activity date, and join date for every user.
 - REST API routes for logging hours and managing users, secured by session and role checks.
 - Prisma schema with seed script that provisions sample admin and employee accounts.
-- Docker Compose setup for local development with PostgreSQL.
+- PM2 process manager for production deployment with automatic restart and monitoring.
 
 ### Prerequisites
 
 - Node.js 20+
 - npm 10+
-- Docker (optional, for container based workflows)
+- PostgreSQL 14+ (running as a service)
 
 ### Environment Variables
 
@@ -27,21 +27,21 @@ Copy `.env` and update values as needed. At minimum set:
 
 ### Local Development
 
-Install dependencies and generate the Prisma client:
+1. **Install dependencies and generate the Prisma client:**
 
 ```bash
 npm install
 npx prisma generate
 ```
 
-Create the database schema and seed sample data:
+2. **Create the database schema and seed sample data:**
 
 ```bash
 npx prisma migrate dev --name init
 npm run prisma:seed
 ```
 
-Launch the Next.js development server:
+3. **Launch the Next.js development server:**
 
 ```bash
 npm run dev
@@ -52,24 +52,58 @@ Sample credentials provided by the seed script:
 - Admin: `admin@example.com` / `Admin123!`
 - Employee: `employee@example.com` / `Employee123!`
 
-### Docker Workflow
+### Production Deployment
 
-Build and start PostgreSQL plus the Next.js app:
+1. **Build the application:**
 
 ```bash
-docker compose up --build
+npm run build
 ```
 
-The `web` service runs database migrations before starting the production server on port 3000.
+2. **Apply database migrations:**
+
+```bash
+npm run prisma:deploy
+```
+
+3. **Start with PM2:**
+
+```bash
+npm run pm2:start
+```
+
+4. **Manage the application:**
+
+```bash
+npm run pm2:logs      # View application logs
+npm run pm2:monit     # Monitor resources in real-time
+npm run pm2:restart   # Restart the application
+npm run pm2:stop      # Stop the application
+npm run pm2:delete    # Remove from PM2
+```
+
+PM2 configuration is in `ecosystem.config.js`. The app runs on port 3000 by default with automatic restart on crashes and memory limit of 1GB.
 
 ### Useful Scripts
 
+**Development:**
+- `npm run dev` - start development server.
 - `npm run lint` - lint the project with ESLint.
-- `npm run build` - create an optimised production build.
+
+**Database:**
 - `npm run prisma:generate` - regenerate the Prisma client.
 - `npm run prisma:migrate` - run development migrations.
 - `npm run prisma:deploy` - apply migrations in production environments.
 - `npm run prisma:seed` - seed the database with sample users and entries.
+
+**Production:**
+- `npm run build` - create an optimised production build.
+- `npm run pm2:start` - start application with PM2.
+- `npm run pm2:stop` - stop the PM2 process.
+- `npm run pm2:restart` - restart the application.
+- `npm run pm2:logs` - view application logs.
+- `npm run pm2:monit` - monitor resources in real-time.
+- `npm run pm2:delete` - remove application from PM2.
 
 ### Project Structure
 
@@ -77,4 +111,5 @@ The `web` service runs database migrations before starting the production server
 - `app/api/` - Route handlers for authentication, hours, and user management.
 - `components/` - Client components for login and dashboard experiences.
 - `prisma/` - Database schema and seed script.
-- `docker-compose.yml` - Local services for the app and PostgreSQL.
+- `ecosystem.config.js` - PM2 configuration for production deployment.
+- `logs/` - PM2 application logs (gitignored).

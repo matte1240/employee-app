@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: { setup?: string };
+  searchParams: Promise<{ setup?: string }>;
 }) {
   // Check if setup is needed (no users in database)
   const userCount = await prisma.user.count();
@@ -25,7 +25,8 @@ export default async function Home({
     redirect("/dashboard");
   }
 
-  const showSetupSuccess = searchParams.setup === "complete";
+  const params = await searchParams;
+  const showSetupSuccess = params.setup === "complete";
 
   return (
     <div className="flex min-h-screen bg-white">

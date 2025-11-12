@@ -43,9 +43,23 @@ export default async function AdminDashboardPage() {
     },
   })) as UserRow[];
 
+  // Filter by current month only (to match calendar view)
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const firstDay = new Date(`${year}-${month.toString().padStart(2, '0')}-01T00:00:00.000Z`);
+  const lastDay = new Date(year, month, 0).getDate();
+  const lastDayDate = new Date(`${year}-${month.toString().padStart(2, '0')}-${lastDay}T23:59:59.999Z`);
+
   const totals = await prisma.timeEntry.groupBy({
     by: ["userId"],
-    _sum: { hoursWorked: true },
+    _sum: { hoursWorked: true, overtimeHours: true },
+    where: {
+      workDate: {
+        gte: firstDay,
+        lte: lastDayDate,
+      },
+    },
   });
 
   const lastEntries = await prisma.timeEntry.groupBy({
@@ -55,8 +69,9 @@ export default async function AdminDashboardPage() {
 
   const hoursMap = new Map<string, number>();
   for (const row of totals) {
-    const value = row._sum.hoursWorked;
-    hoursMap.set(row.userId, value ? parseFloat(value.toString()) : 0);
+    const hoursWorked = row._sum.hoursWorked ? parseFloat(row._sum.hoursWorked.toString()) : 0;
+    const overtimeHours = row._sum.overtimeHours ? parseFloat(row._sum.overtimeHours.toString()) : 0;
+    hoursMap.set(row.userId, hoursWorked + overtimeHours);
   }
 
   const lastEntryMap = new Map<string, string | null>();
