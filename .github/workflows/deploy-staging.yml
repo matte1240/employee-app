@@ -55,10 +55,21 @@ jobs:
         run: |
           ssh staging bash << 'ENDSSH'
             set -e
-            cd /var/www/app-staging || exit 1
             
             echo "🚀 Starting deployment to STAGING..."
             echo "Current user: $(whoami)"
+            
+            # Verifica se la directory esiste e ha un repo git
+            if [ ! -d "/var/www/app-staging/.git" ]; then
+              echo "📁 Git repository not found. Cloning..."
+              rm -rf /var/www/app-staging
+              git clone https://github.com/matte1240/employee-app.git /var/www/app-staging
+              cd /var/www/app-staging
+              git checkout dev
+            else
+              cd /var/www/app-staging
+            fi
+            
             echo "Current directory: $(pwd)"
             
             echo "📦 Pulling latest code from dev branch..."
