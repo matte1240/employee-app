@@ -53,13 +53,13 @@ jobs:
       
       - name: Deploy to Staging
         run: |
-          ssh staging << 'ENDSSH'
+          ssh staging bash << 'ENDSSH'
             set -e
+            cd /var/www/app-staging || exit 1
+            
             echo "🚀 Starting deployment to STAGING..."
             echo "Current user: $(whoami)"
             echo "Current directory: $(pwd)"
-            
-            cd /var/www/app-staging
             
             echo "📦 Pulling latest code from develop branch..."
             git fetch origin
@@ -78,6 +78,12 @@ jobs:
             pm2 restart app-staging --update-env
             
             echo "⏳ Waiting for app to start..."
+            sleep 3
+            
+            echo "✅ Deployment completed!"
+            pm2 list
+            pm2 logs app-staging --lines 10 --nostream
+          ENDSSH
             sleep 3
             
             echo "✅ Deployment completed!"
