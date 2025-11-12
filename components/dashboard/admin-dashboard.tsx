@@ -31,6 +31,7 @@ type CreateUserForm = {
 export default function AdminDashboard({ users }: AdminDashboardProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"overview" | "create-user" | "export-data" | "user-calendar" | "server-management">("overview");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserAggregate | null>(null);
   const [userEntries, setUserEntries] = useState<TimeEntryDTO[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
@@ -135,6 +136,28 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
     }
   }, [selectedUser, activeTab, refreshTrigger]);
 
+  // Close mobile menu when clicking Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   // Callback to trigger refetch after admin saves
   const handleEntrySaved = () => {
     setRefreshTrigger(prev => prev + 1);
@@ -225,7 +248,35 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
       {/* Navigation tabs */}
       <div className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-7xl px-6">
-          <nav className="flex gap-8">
+          {/* Mobile hamburger button */}
+          <div className="flex items-center justify-between py-4 md:hidden">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {activeTab === "overview" && "Overview"}
+              {activeTab === "create-user" && "Create User"}
+              {activeTab === "export-data" && "Export Data"}
+              {activeTab === "user-calendar" && "User Calendar"}
+              {activeTab === "server-management" && "Server Management"}
+            </h2>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="flex items-center justify-center rounded-lg border border-gray-300 p-2 text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
+              aria-label="Toggle menu"
+              aria-expanded={isMobileMenuOpen}
+            >
+              {isMobileMenuOpen ? (
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {/* Desktop horizontal tabs */}
+          <nav className="hidden md:flex gap-8">
             <button
               onClick={() => setActiveTab("overview")}
               className={`border-b-2 px-1 py-4 text-sm font-semibold transition ${
@@ -287,6 +338,164 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
               </div>
             </button>
           </nav>
+        </div>
+      </div>
+
+      {/* Mobile slide-out menu overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile slide-out menu */}
+      <div
+        className={`fixed right-0 top-0 z-50 h-full w-80 max-w-[85vw] transform bg-white shadow-2xl transition-transform duration-300 ease-in-out md:hidden ${
+          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+      >
+        <div className="flex h-full flex-col">
+          {/* Mobile menu header */}
+          <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+            <h2 className="text-lg font-semibold text-white">Navigation</h2>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="rounded-lg p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
+              aria-label="Close menu"
+            >
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Mobile menu items */}
+          <nav className="flex-1 overflow-y-auto px-4 py-6">
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  setActiveTab("overview");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                  activeTab === "overview"
+                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Overview</span>
+                {activeTab === "overview" && (
+                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("create-user");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                  activeTab === "create-user"
+                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                <span>Create User</span>
+                {activeTab === "create-user" && (
+                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("export-data");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                  activeTab === "export-data"
+                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export Data</span>
+                {activeTab === "export-data" && (
+                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("server-management");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                  activeTab === "server-management"
+                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                </svg>
+                <span>Server Management</span>
+                {activeTab === "server-management" && (
+                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Conditional user calendar tab */}
+              {selectedUser && (
+                <button
+                  onClick={() => {
+                    setActiveTab("user-calendar");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                    activeTab === "user-calendar"
+                      ? "bg-blue-50 text-blue-600 shadow-sm"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>User Calendar</span>
+                  {activeTab === "user-calendar" && (
+                    <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              )}
+            </div>
+          </nav>
+
+          {/* Mobile menu footer */}
+          <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+            <p className="text-xs text-gray-500">Admin Dashboard</p>
+          </div>
         </div>
       </div>
 
