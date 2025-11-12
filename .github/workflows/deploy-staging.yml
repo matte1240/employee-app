@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -62,13 +63,16 @@ jobs:
             
             echo "📦 Pulling latest code from develop branch..."
             git fetch origin
-            git reset --hard origin/dev
+            git reset --hard origin/develop
             
             echo "📥 Installing dependencies..."
-            npm ci --production
+            npm ci
             
-            echo "🗄️  Database migrations (if needed)..."
-            # npm run migrate
+            echo "🏗️  Building application..."
+            npm run build
+            
+            echo "🗄️  Running database migrations..."
+            npm run prisma:deploy
             
             echo "♻️  Restarting PM2 process..."
             pm2 restart app-staging --update-env
