@@ -96,7 +96,7 @@ jobs:
               npx pm2 restart app-production --update-env
             else
               echo "Starting new process..."
-              npx pm2 start npm --name app-production -- start
+              PORT=3000 HOSTNAME=0.0.0.0 npx pm2 start npm --name app-production -- start
             fi
             
             echo "⏳ Waiting for app to start..."
