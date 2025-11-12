@@ -34,6 +34,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
   const [selectedUser, setSelectedUser] = useState<UserAggregate | null>(null);
   const [userEntries, setUserEntries] = useState<TimeEntryDTO[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isCreating, startCreating] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -116,7 +117,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
           const from = `${year}-${month.toString().padStart(2, '0')}-01`;
           const lastDay = new Date(year, month, 0).getDate();
           const to = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
-          
+
           const response = await fetch(`/api/hours?userId=${selectedUser.id}&from=${from}&to=${to}`);
           if (response.ok) {
             const data = await response.json();
@@ -128,10 +129,16 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
           setIsLoadingEntries(false);
         }
       };
-      
+
       fetchUserEntries();
     }
-  }, [selectedUser, activeTab]);
+  }, [selectedUser, activeTab, refreshTrigger]);
+
+  // Callback to trigger refetch after admin saves
+  const handleEntrySaved = () => {
+    setRefreshTrigger(prev => prev + 1);
+    router.refresh(); // Also refresh server component for overview
+  };
 
   const handleUserClick = (user: UserAggregate) => {
     setSelectedUser(user);
@@ -740,6 +747,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   userName={selectedUser.name ?? selectedUser.email}
                   hideHeader={true}
                   targetUserId={selectedUser.id}
+                  onEntrySaved={handleEntrySaved}
                 />
               </div>
             )}

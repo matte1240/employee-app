@@ -8,7 +8,6 @@ import {
   format,
   isSameDay,
   isSameMonth,
-  parseISO,
   startOfMonth,
   startOfWeek,
   endOfWeek,
@@ -33,6 +32,7 @@ type EmployeeDashboardProps = {
   userName: string;
   hideHeader?: boolean; // If true, hide the header (for embedded views)
   targetUserId?: string; // If set, admin is editing this user's calendar
+  onEntrySaved?: () => void; // Callback when entry is saved/deleted (for admin refetch)
 };
 
 type ModalFormState = {
@@ -72,6 +72,7 @@ export default function EmployeeDashboard({
   userName,
   hideHeader = false,
   targetUserId,
+  onEntrySaved,
 }: EmployeeDashboardProps) {
   const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
@@ -106,7 +107,10 @@ export default function EmployeeDashboard({
       try {
         const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
         const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-        const response = await fetch(`/api/hours?from=${from}&to=${to}`, {
+        const url = targetUserId
+          ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
+          : `/api/hours?from=${from}&to=${to}`;
+        const response = await fetch(url, {
           signal: controller.signal,
         });
 
@@ -135,19 +139,19 @@ export default function EmployeeDashboard({
     fetchEntries();
 
     return () => controller.abort();
-  }, [currentMonth, router]);
+  }, [currentMonth, router, targetUserId]);
 
   const entriesByDay = useMemo(() => {
     const map = new Map<string, TimeEntryDTO[]>();
     for (const entry of entries) {
-      const key = format(parseISO(entry.workDate), "yyyy-MM-dd");
+      const key = entry.workDate; // Already in YYYY-MM-DD format
       const bucket = map.get(key) ?? [];
       bucket.push(entry);
       map.set(key, bucket);
     }
 
     for (const [, bucket] of map) {
-      bucket.sort((a, b) => parseISO(a.workDate).getTime() - parseISO(b.workDate).getTime());
+      bucket.sort((a, b) => a.workDate.localeCompare(b.workDate));
     }
 
     return map;
@@ -198,9 +202,9 @@ export default function EmployeeDashboard({
 
     const dateStr = format(day, "yyyy-MM-dd");
     setSelectedDate(dateStr);
-    
+
     // Check if entry exists for this day and pre-fill
-    const existingEntry = entries.find(e => format(parseISO(e.workDate), "yyyy-MM-dd") === dateStr);
+    const existingEntry = entries.find(e => e.workDate === dateStr);
     if (existingEntry) {
       setModalForm({
         morningStart: existingEntry.morningStart || "08:00",
@@ -263,12 +267,13 @@ export default function EmployeeDashboard({
 
         setEntries((current) => {
           // Remove existing entry for this date if any
-          const filtered = current.filter(e => format(parseISO(e.workDate), "yyyy-MM-dd") !== selectedDate);
+          const filtered = current.filter(e => e.workDate !== selectedDate);
           return [...filtered, data as TimeEntryDTO];
         });
-        
+
         setIsModalOpen(false);
         router.refresh();
+        onEntrySaved?.(); // Trigger refetch in admin dashboard
       } catch {
         setModalError("Unexpected error while saving entry.");
       }
@@ -277,8 +282,8 @@ export default function EmployeeDashboard({
 
   const handleDelete = () => {
     if (!selectedDate) return;
-    
-    const entry = entries.find(e => format(parseISO(e.workDate), "yyyy-MM-dd") === selectedDate);
+
+    const entry = entries.find(e => e.workDate === selectedDate);
     if (!entry) return;
 
     if (!confirm("Are you sure you want to delete this entry?")) return;
@@ -300,6 +305,7 @@ export default function EmployeeDashboard({
         setEntries((current) => current.filter(e => e.id !== entry.id));
         setIsModalOpen(false);
         router.refresh();
+        onEntrySaved?.(); // Trigger refetch in admin dashboard
       } catch {
         setModalError("Unexpected error while deleting entry.");
       }
@@ -501,7 +507,7 @@ export default function EmployeeDashboard({
               {/* Modal Header */}
               <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl">
                 <h2 className="text-lg font-semibold text-white">
-                  {selectedDate && format(parseISO(selectedDate), "EEEE, MMM d, yyyy")}
+                  {selectedDate && format(new Date(`${selectedDate}T12:00:00`), "EEEE, MMM d, yyyy")}
                 </h2>
                 <button
                   type="button"
@@ -638,7 +644,7 @@ export default function EmployeeDashboard({
               {/* Modal Footer */}
               <div className="flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 rounded-b-2xl">
                 {/* Show delete button only if entry exists */}
-                {selectedDate && entries.find(e => format(parseISO(e.workDate), "yyyy-MM-dd") === selectedDate) && (
+                {selectedDate && entries.find(e => e.workDate === selectedDate) && (
                   <button
                     type="button"
                     onClick={handleDelete}
