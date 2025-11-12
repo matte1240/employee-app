@@ -90,6 +90,8 @@ export const authOptions: NextAuthOptions = {
     signIn: "/",
   },
   secret: process.env.NEXTAUTH_SECRET,
+  // Trust host header to support dynamic URLs (localhost, LAN IPs, production domains)
+  useSecureCookies: process.env.NODE_ENV === "production",
 };
 
 export const getAuthSession = () => getServerSession(authOptions);

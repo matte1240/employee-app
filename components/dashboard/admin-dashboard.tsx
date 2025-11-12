@@ -435,7 +435,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                     value={form.name}
                     onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     placeholder="John Doe"
                   />
                 </div>
@@ -449,7 +449,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                     value={form.email}
                     onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     placeholder="john.doe@example.com"
                   />
                 </div>
@@ -461,7 +461,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   <select
                     value={form.role}
                     onChange={(e) => setForm(f => ({ ...f, role: e.target.value as "EMPLOYEE" | "ADMIN" }))}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
                   >
                     <option value="EMPLOYEE">Employee</option>
                     <option value="ADMIN">Administrator</option>
@@ -483,7 +483,8 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                     onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
                     required
                     minLength={8}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    autoComplete="new-password"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     placeholder="Min. 8 characters"
                   />
                 </div>
@@ -497,7 +498,8 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                     value={form.confirmPassword}
                     onChange={(e) => setForm(f => ({ ...f, confirmPassword: e.target.value }))}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    autoComplete="new-password"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     placeholder="Re-enter password"
                   />
                 </div>
