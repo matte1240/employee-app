@@ -90,8 +90,14 @@ jobs:
             echo "🗄️  Running database migrations..."
             npm run prisma:deploy
             
-            echo "♻️  Restarting PM2 process..."
-            npx pm2 restart app-staging --update-env || npx pm2 start npm --name app-staging -- start
+            echo "♻️  Managing PM2 process..."
+            if npx pm2 describe app-staging > /dev/null 2>&1; then
+              echo "Restarting existing process..."
+              npx pm2 restart app-staging --update-env
+            else
+              echo "Starting new process..."
+              npx pm2 start npm --name app-staging -- start
+            fi
             
             echo "⏳ Waiting for app to start..."
             sleep 3
