@@ -38,6 +38,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
   const [isCreating, startCreating] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
   const [exportMonth, setExportMonth] = useState(() => {
@@ -573,12 +574,75 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Select Month
                 </label>
-                <input
-                  type="month"
-                  value={exportMonth}
-                  onChange={(e) => setExportMonth(e.target.value)}
-                  className="w-full max-w-xs rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                />
+                <div className="relative w-full max-w-xs">
+                  <button
+                    type="button"
+                    onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
+                    className="w-full cursor-pointer rounded-lg border border-gray-300 px-4 py-3 text-left text-sm text-gray-900 font-medium outline-none transition hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex items-center justify-between"
+                  >
+                    <span>
+                      {exportMonth ? new Date(exportMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Select a month'}
+                    </span>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                  
+                  {isMonthPickerOpen && (
+                    <div className="absolute z-10 mt-2 w-full bg-white border border-gray-300 rounded-lg shadow-lg p-4">
+                      <div className="mb-3">
+                        <label className="block text-xs font-semibold text-gray-800 mb-1">Year</label>
+                        <select
+                          value={exportMonth.split('-')[0] || new Date().getFullYear()}
+                          onChange={(e) => {
+                            const year = e.target.value;
+                            const month = exportMonth.split('-')[1] || '01';
+                            setExportMonth(`${year}-${month}`);
+                          }}
+                          className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        >
+                          {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
+                            <option key={year} value={year}>{year}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-xs font-semibold text-gray-800 mb-1">Month</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((monthName, idx) => {
+                            const monthNum = String(idx + 1).padStart(2, '0');
+                            const year = exportMonth.split('-')[0] || new Date().getFullYear();
+                            const isSelected = exportMonth === `${year}-${monthNum}`;
+                            return (
+                              <button
+                                key={monthName}
+                                type="button"
+                                onClick={() => {
+                                  setExportMonth(`${year}-${monthNum}`);
+                                  setIsMonthPickerOpen(false);
+                                }}
+                                className={`px-3 py-2 text-sm font-semibold rounded transition ${
+                                  isSelected
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                                }`}
+                              >
+                                {monthName}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsMonthPickerOpen(false)}
+                        className="w-full mt-2 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 hover:bg-gray-200 rounded transition"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* User selection */}
