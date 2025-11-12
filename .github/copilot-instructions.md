@@ -8,8 +8,9 @@ This is a **Next.js 16 + Prisma + NextAuth + PostgreSQL** time tracking applicat
 ### Core Stack
 - **Frontend**: Next.js App Router with React 19, Server Components, Tailwind CSS v4
 - **Auth**: NextAuth v4 with JWT sessions, credentials provider, Prisma adapter
-- **Database**: PostgreSQL with Prisma ORM (migrations in `prisma/migrations/`)
+- **Database**: PostgreSQL (external service) with Prisma ORM (migrations in `prisma/migrations/`)
 - **Validation**: Zod for runtime schema validation on API routes
+- **Process Manager**: PM2 for production deployment with automatic restart and monitoring
 
 ### Key Components
 - **`lib/auth.ts`**: NextAuth configuration, JWT callbacks, session/user enrichment with `role` field
@@ -60,14 +61,25 @@ if (!parsed.success) return NextResponse.json({ error: "Invalid query" }, { stat
 | `npm run dev` | Start dev server (port 3000) + watch mode |
 | `npm run build` | Production build (validates TS) |
 | `npm run prisma:migrate` | Create/apply dev migrations |
+| `npm run prisma:deploy` | Apply migrations in production |
 | `npm run prisma:seed` | Populate test data (admin + employee users) |
 | `npm run lint` | Run ESLint |
-| `docker compose up --build` | Full local stack (PostgreSQL + app) |
+| `npm run pm2:start` | Start app with PM2 in production |
+| `npm run pm2:logs` | View PM2 application logs |
+| `npm run pm2:monit` | Monitor PM2 resources in real-time |
+| `npm run pm2:restart` | Restart the PM2 process |
+| `npm run pm2:stop` | Stop the PM2 process |
 
 ### Database Workflows
 - **New migration**: `npm run prisma:migrate` → enter name → Prisma creates SQL
 - **Seed test data**: `npm run prisma:seed` (uses bcryptjs to hash passwords)
-- **Reset local DB**: `docker compose down -v && docker compose up --build`
+- **Production deployment**: `npm run prisma:deploy` to apply migrations without prompts
+
+### Production Deployment
+- **Build**: `npm run build` → creates `.next/` optimized bundle
+- **Deploy**: `npm run pm2:start` → starts app with PM2 (auto-restart on crash)
+- **Monitor**: `npm run pm2:monit` or `npm run pm2:logs` for real-time monitoring
+- **Configuration**: Edit `ecosystem.config.js` for PM2 settings (port, instances, memory limit)
 
 ## Project Conventions
 
@@ -106,6 +118,8 @@ components/
 lib/
   ├── auth.ts                     # NextAuth + JWT callbacks
   └── prisma.ts                   # Prisma singleton
+ecosystem.config.js               # PM2 configuration
+logs/                             # PM2 logs (gitignored)
 ```
 
 ## Debugging Tips
