@@ -91,17 +91,17 @@ jobs:
             npm run prisma:deploy
             
             echo "♻️  Restarting PM2 process..."
-            pm2 restart app-staging --update-env
+            npx pm2 restart app-staging --update-env || npx pm2 start npm --name app-staging -- start
             
             echo "⏳ Waiting for app to start..."
             sleep 3
             
             echo "✅ Deployment completed!"
-            pm2 list
-            pm2 logs app-staging --lines 10 --nostream
+            npx pm2 list
+            npx pm2 logs app-staging --lines 10 --nostream
           ENDSSH
       
       - name: Verify Deployment
         run: |
-          ssh staging "pm2 list | grep app-staging | grep online || exit 1"
+          ssh staging "cd ~/development-webapp && npx pm2 list | grep app-staging | grep online || exit 1"
           echo "✅ Staging is running!"
