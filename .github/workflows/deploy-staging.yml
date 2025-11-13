@@ -84,14 +84,18 @@ jobs:
             
             echo "� Installing dependencies..."
             npm ci
-            
-            echo "🏗️  Building application..."
-            npm run build
-            
+
+            echo "🔧 Generating Prisma client..."
+            npx prisma generate || npm run prisma:generate || true
+
             echo "🗄️  Running database migrations..."
             npm run prisma:deploy
+
             echo "📦 Seeding database on staging (always)..."
-            npm run prisma:seed || echo "⚠️ prisma:seed failed but continuing deployment"
+            npm run prisma:seed
+
+            echo "🏗️  Building application..."
+            npm run build
             
             echo "♻️  Managing PM2 process..."
             # Stop and delete existing process if it exists (handles errored states)
