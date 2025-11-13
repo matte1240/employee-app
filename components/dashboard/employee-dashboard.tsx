@@ -338,9 +338,9 @@ export default function EmployeeDashboard({
         </header>
       )}
 
-      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-8">
+      <div className={hideHeader ? "w-full py-8 flex flex-col" : "mx-auto max-w-7xl px-3 sm:px-6 py-8 flex flex-col"}>
         {/* Stats cards */}
-        <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="order-2 md:order-1 mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
@@ -396,7 +396,7 @@ export default function EmployeeDashboard({
         )}
 
         {/* Calendar section */}
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <section className="order-1 md:order-2 mb-8 md:mb-0 rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-200 px-3 sm:px-6 py-4">
             <div className="flex items-center justify-between">
               <div>

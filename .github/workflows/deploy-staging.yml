@@ -92,13 +92,15 @@ jobs:
             npm run prisma:deploy
             
             echo "♻️  Managing PM2 process..."
+            # Stop and delete existing process if it exists (handles errored states)
             if npx pm2 describe app-staging > /dev/null 2>&1; then
-              echo "Restarting existing process..."
-              npx pm2 restart app-staging --update-env
-            else
-              echo "Starting new process..."
-              PM2_APP_NAME=app-staging npm run pm2:start
+              echo "Deleting existing process..."
+              npx pm2 delete app-staging || true
             fi
+
+            # Always start fresh (only app-staging, not cron jobs)
+            echo "Starting new process..."
+            PM2_APP_NAME=app-staging npx pm2 start ecosystem.config.js --only app-staging
             
             echo "⏳ Waiting for app to start..."
             sleep 3

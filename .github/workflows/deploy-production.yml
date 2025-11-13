@@ -91,16 +91,29 @@ jobs:
             npm run prisma:deploy
             
             echo "♻️  Managing PM2 process..."
+            # Stop and delete existing process if it exists (handles errored states)
             if npx pm2 describe app-production > /dev/null 2>&1; then
-              echo "Restarting existing process..."
-              npx pm2 restart app-production --update-env
-            else
-              echo "Starting new process..."
-              PM2_APP_NAME=app-production npm run pm2:start
+              echo "Deleting existing process..."
+              npx pm2 delete app-production || true
             fi
-            
+
+            # Always start fresh (only app-production, cron jobs managed separately)
+            echo "Starting new process..."
+            PM2_APP_NAME=app-production npx pm2 start ecosystem.config.js --only app-production
+
             echo "⏳ Waiting for app to start..."
             sleep 3
+
+            echo "📅 Managing cron jobs (backup & cleanup)..."
+            # Ensure cron jobs are running (these are needed in production)
+            if ! npx pm2 describe db-backup-cron > /dev/null 2>&1; then
+              echo "Starting db-backup-cron..."
+              npx pm2 start ecosystem.config.js --only db-backup-cron
+            fi
+            if ! npx pm2 describe backup-cleanup-cron > /dev/null 2>&1; then
+              echo "Starting backup-cleanup-cron..."
+              npx pm2 start ecosystem.config.js --only backup-cleanup-cron
+            fi
             
             echo "✅ Deployment completed!"
             npx pm2 list

@@ -499,12 +499,12 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-6 py-8">
+      <div className="mx-auto max-w-7xl px-4 md:px-6 py-8">
         {/* Overview Tab */}
         {activeTab === "overview" && (
-          <>
+          <div className="flex flex-col gap-8">
             {/* Stats cards */}
-            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="order-2 md:order-1 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
@@ -551,7 +551,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
             </div>
 
             {/* Team overview table */}
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <section className="order-1 md:order-2 rounded-xl border border-gray-200 bg-white shadow-sm">
               <div className="border-b border-gray-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">Team Overview</h2>
                 <p className="mt-1 text-sm text-gray-500">Monitor employee activity and work hours</p>
@@ -638,7 +638,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                 </table>
               </div>
             </section>
-          </>
+          </div>
         )}
 
         {/* Create User Tab */}
@@ -1031,15 +1031,13 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-gray-200 bg-white p-6">
-                <EmployeeDashboard
-                  initialEntries={userEntries}
-                  userName={selectedUser.name ?? selectedUser.email}
-                  hideHeader={true}
-                  targetUserId={selectedUser.id}
-                  onEntrySaved={handleEntrySaved}
-                />
-              </div>
+              <EmployeeDashboard
+                initialEntries={userEntries}
+                userName={selectedUser.name ?? selectedUser.email}
+                hideHeader={true}
+                targetUserId={selectedUser.id}
+                onEntrySaved={handleEntrySaved}
+              />
             )}
           </div>
         )}
