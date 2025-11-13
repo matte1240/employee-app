@@ -46,24 +46,34 @@ async function main() {
   const existingEntries = await prisma.timeEntry.count({
     where: { userId: employee.id },
   });
+  // Ensure example time entries exist for the employee. Use find/create per-entry
+  // to make the seed idempotent (safe to run multiple times).
+  const entries = [
+    {
+      userId: employee.id,
+      workDate: new Date(),
+      hoursWorked: "8",
+      notes: "Project kickoff",
+    },
+    {
+      userId: employee.id,
+      workDate: new Date(Date.now() - 86400000),
+      hoursWorked: "7.5",
+      notes: "Client follow-up",
+    },
+  ];
 
-  if (existingEntries === 0) {
-    await prisma.timeEntry.createMany({
-      data: [
-        {
-          userId: employee.id,
-          workDate: new Date(),
-          hoursWorked: "8",
-          notes: "Project kickoff",
-        },
-        {
-          userId: employee.id,
-          workDate: new Date(Date.now() - 86400000),
-          hoursWorked: "7.5",
-          notes: "Client follow-up",
-        },
-      ],
+  for (const e of entries) {
+    const exists = await prisma.timeEntry.findFirst({
+      where: {
+        userId: e.userId,
+        workDate: e.workDate,
+      },
     });
+
+    if (!exists) {
+      await prisma.timeEntry.create({ data: e });
+    }
   }
 
   console.log("Seed completed.\nAdmin: admin@example.com / Admin123!\nEmployee: employee@example.com / Employee123!");
