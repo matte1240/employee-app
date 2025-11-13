@@ -64,15 +64,26 @@ async function main() {
   ];
 
   for (const e of entries) {
-    const exists = await prisma.timeEntry.findFirst({
-      where: {
-        userId: e.userId,
-        workDate: e.workDate,
-      },
-    });
+    try {
+      const exists = await prisma.timeEntry.findFirst({
+        where: {
+          userId: e.userId,
+          workDate: e.workDate,
+        },
+      });
 
-    if (!exists) {
-      await prisma.timeEntry.create({ data: e });
+      if (!exists) {
+        await prisma.timeEntry.create({ data: e });
+      }
+    } catch (err: any) {
+      // If the DB schema on the target doesn't yet include permessoHours (P2022),
+      // skip time entry seeding so the overall seed can continue without hard-failing.
+      // This makes `prisma:seed` resilient when run before migrations have been applied.
+      if (err?.code === 'P2022') {
+        console.warn('Warning: database schema missing column (permessoHours). Skipping TimeEntry seeding.');
+        break;
+      }
+      throw err;
     }
   }
 
