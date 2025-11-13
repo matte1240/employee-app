@@ -13,6 +13,7 @@ type PrismaEntry = {
   workDate: Date;
   hoursWorked: Decimal;
   overtimeHours: Decimal;
+  permessoHours: Decimal;
   morningStart: string | null;
   morningEnd: string | null;
   afternoonStart: string | null;
@@ -26,8 +27,9 @@ type UserAggregate = {
   email: string;
   role: "EMPLOYEE" | "ADMIN";
   createdAt: Date;
-  totalHours: number;
-  lastEntry?: string | null;
+  regularHours: number;
+  overtimeHours: number;
+  permessoHours: number;
 };
 
 type UserRow = {
@@ -43,6 +45,7 @@ const toDto = (entry: PrismaEntry): TimeEntryDTO => ({
   workDate: entry.workDate.toISOString().split('T')[0], // Return only date part (YYYY-MM-DD)
   hoursWorked: parseFloat(entry.hoursWorked.toString()),
   overtimeHours: parseFloat(entry.overtimeHours.toString()),
+  permessoHours: parseFloat(entry.permessoHours.toString()),
   morningStart: entry.morningStart,
   morningEnd: entry.morningEnd,
   afternoonStart: entry.afternoonStart,
@@ -80,7 +83,7 @@ export default async function DashboardPage() {
 
     const totals = await prisma.timeEntry.groupBy({
       by: ["userId"],
-      _sum: { hoursWorked: true, overtimeHours: true },
+      _sum: { hoursWorked: true, overtimeHours: true, permessoHours: true },
       where: {
         workDate: {
           gte: firstDay,
@@ -89,27 +92,26 @@ export default async function DashboardPage() {
       },
     });
 
-    const lastEntries = await prisma.timeEntry.groupBy({
-      by: ["userId"],
-      _max: { workDate: true },
-    });
+    const regularHoursMap = new Map<string, number>();
+    const overtimeHoursMap = new Map<string, number>();
+    const permessoHoursMap = new Map<string, number>();
 
-    const hoursMap = new Map<string, number>();
     for (const row of totals) {
       const hoursWorked = row._sum.hoursWorked ? parseFloat(row._sum.hoursWorked.toString()) : 0;
       const overtimeHours = row._sum.overtimeHours ? parseFloat(row._sum.overtimeHours.toString()) : 0;
-      hoursMap.set(row.userId, hoursWorked + overtimeHours);
-    }
+      const permessoHours = row._sum.permessoHours ? parseFloat(row._sum.permessoHours.toString()) : 0;
+      const regularHours = hoursWorked - overtimeHours;
 
-    const lastEntryMap = new Map<string, string | null>();
-    for (const row of lastEntries) {
-      lastEntryMap.set(row.userId, row._max.workDate ? row._max.workDate.toISOString() : null);
+      regularHoursMap.set(row.userId, regularHours);
+      overtimeHoursMap.set(row.userId, overtimeHours);
+      permessoHoursMap.set(row.userId, permessoHours);
     }
 
     const rows: UserAggregate[] = users.map((user) => ({
       ...user,
-      totalHours: hoursMap.get(user.id) ?? 0,
-      lastEntry: lastEntryMap.get(user.id) ?? null,
+      regularHours: regularHoursMap.get(user.id) ?? 0,
+      overtimeHours: overtimeHoursMap.get(user.id) ?? 0,
+      permessoHours: permessoHoursMap.get(user.id) ?? 0,
     }));
 
     const currentUser = {
@@ -138,6 +140,7 @@ export default async function DashboardPage() {
       workDate: true,
       hoursWorked: true,
       overtimeHours: true,
+      permessoHours: true,
       morningStart: true,
       morningEnd: true,
       afternoonStart: true,
