@@ -13,12 +13,13 @@ async function ensureUser(params: {
 }) {
   const existing = await prisma.user.findUnique({ where: { email: params.email } });
   if (existing) {
+    console.log(`- User ${params.email} already exists`);
     return existing;
   }
 
   const passwordHash = await hash(params.password, 10);
 
-  return prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       email: params.email,
       name: params.name,
@@ -26,9 +27,14 @@ async function ensureUser(params: {
       role: params.role,
     },
   });
+  
+  console.log(`✓ Created user ${params.email} (${params.role})`);
+  return user;
 }
 
 async function main() {
+  console.log("🌱 Starting database seed...\n");
+  
   await ensureUser({
     email: "admin@example.com",
     name: "Admin User",
@@ -43,22 +49,39 @@ async function main() {
     role: "EMPLOYEE",
   });
 
-  const existingEntries = await prisma.timeEntry.count({
-    where: { userId: employee.id },
-  });
+  console.log("\n📅 Creating sample time entries...");
+  
   // Ensure example time entries exist for the employee. Use find/create per-entry
   // to make the seed idempotent (safe to run multiple times).
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
   const entries = [
     {
       userId: employee.id,
-      workDate: new Date(),
-      hoursWorked: "8",
+      workDate: today,
+      hoursWorked: 8,
+      overtimeHours: 0,
+      permessoHours: 0,
+      morningStart: "09:00",
+      morningEnd: "13:00",
+      afternoonStart: "14:00",
+      afternoonEnd: "18:00",
       notes: "Project kickoff",
     },
     {
       userId: employee.id,
-      workDate: new Date(Date.now() - 86400000),
-      hoursWorked: "7.5",
+      workDate: yesterday,
+      hoursWorked: 7.5,
+      overtimeHours: 0,
+      permessoHours: 0,
+      morningStart: "09:00",
+      morningEnd: "12:30",
+      afternoonStart: "14:00",
+      afternoonEnd: "18:00",
       notes: "Client follow-up",
     },
   ];
@@ -74,20 +97,26 @@ async function main() {
 
       if (!exists) {
         await prisma.timeEntry.create({ data: e });
+        console.log(`✓ Created time entry for ${e.workDate.toISOString().split('T')[0]}`);
+      } else {
+        console.log(`- Time entry already exists for ${e.workDate.toISOString().split('T')[0]}`);
       }
     } catch (err: any) {
-      // If the DB schema on the target doesn't yet include permessoHours (P2022),
-      // skip time entry seeding so the overall seed can continue without hard-failing.
-      // This makes `prisma:seed` resilient when run before migrations have been applied.
-      if (err?.code === 'P2022') {
-        console.warn('Warning: database schema missing column (permessoHours). Skipping TimeEntry seeding.');
+      // If schema mismatch (missing columns), warn but don't fail
+      if (err?.code === 'P2022' || err?.message?.includes('column')) {
+        console.warn(`⚠️  Could not create time entry: database schema may be outdated. Run migrations first.`);
+        console.warn(`   Error: ${err.message}`);
         break;
       }
+      console.error(`❌ Failed to create time entry:`, err);
       throw err;
     }
   }
 
-  console.log("Seed completed.\nAdmin: admin@example.com / Admin123!\nEmployee: employee@example.com / Employee123!");
+  console.log("\n✅ Seed completed successfully!");
+  console.log("\n📋 Test Credentials:");
+  console.log("   Admin: admin@example.com / Admin123!");
+  console.log("   Employee: employee@example.com / Employee123!");
 }
 
 main()

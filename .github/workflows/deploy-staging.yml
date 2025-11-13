@@ -89,14 +89,14 @@ jobs:
             echo "🔧 Generating Prisma client..."
             npx prisma generate || npm run prisma:generate
 
-            echo "📋 Prisma migrate status (for debug)..."
+            echo "📋 Checking database migration status..."
             npx prisma migrate status --schema=./prisma/schema.prisma || true
 
-            echo "🗄️  Running database migrations..."
+            echo "🗄️  Applying database migrations..."
             npm run prisma:deploy
 
-            echo "📦 Seeding database on staging (always)..."
-            npm run prisma:seed
+            echo "📦 Seeding database (will skip existing records)..."
+            npm run prisma:seed || echo "⚠️ Seed failed, but continuing deployment..."
 
             echo "🏗️  Building application..."
             npm run build
