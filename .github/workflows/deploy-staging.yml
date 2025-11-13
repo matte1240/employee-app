@@ -61,14 +61,15 @@ jobs:
             echo "Current user: $(whoami)"
             
             # Verifica se la directory esiste e ha un repo git
-            if [ ! -d "~/development-webapp/.git" ]; then
+            REPO_DIR="$HOME/development-webapp"
+            if [ ! -d "$REPO_DIR/.git" ]; then
               echo "📁 Git repository not found. Cloning..."
-              rm -rf ~/development-webapp
-              git clone https://github.com/matte1240/employee-app.git ~/development-webapp
-              cd ~/development-webapp
-              git checkout dev
+              rm -rf "$REPO_DIR"
+              git clone https://github.com/matte1240/employee-app.git "$REPO_DIR"
+              cd "$REPO_DIR" || { echo "Failed to cd to $REPO_DIR after clone"; exit 1; }
+              git checkout dev || true
             else
-              cd ~/development-webapp
+              cd "$REPO_DIR" || { echo "Failed to cd to $REPO_DIR"; exit 1; }
             fi
             
             echo "Current directory: $(pwd)"
@@ -86,7 +87,10 @@ jobs:
             npm ci
 
             echo "🔧 Generating Prisma client..."
-            npx prisma generate || npm run prisma:generate || true
+            npx prisma generate || npm run prisma:generate
+
+            echo "📋 Prisma migrate status (for debug)..."
+            npx prisma migrate status --schema=./prisma/schema.prisma || true
 
             echo "🗄️  Running database migrations..."
             npm run prisma:deploy
