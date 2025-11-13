@@ -98,9 +98,9 @@ jobs:
               npx pm2 delete app-staging || true
             fi
 
-            # Always start fresh
+            # Always start fresh (only app-staging, not cron jobs)
             echo "Starting new process..."
-            PM2_APP_NAME=app-staging npm run pm2:start
+            PM2_APP_NAME=app-staging npx pm2 start ecosystem.config.js --only app-staging
             
             echo "⏳ Waiting for app to start..."
             sleep 3
