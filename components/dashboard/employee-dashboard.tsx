@@ -20,6 +20,7 @@ export type TimeEntryDTO = {
   workDate: string;
   hoursWorked: number;
   overtimeHours?: number;
+  permessoHours?: number;
   morningStart?: string | null;
   morningEnd?: string | null;
   afternoonStart?: string | null;
@@ -180,8 +181,20 @@ export default function EmployeeDashboard({
     const total = morning + afternoon;
     const regular = Math.min(total, 8);
     const overtime = Math.max(0, total - 8);
-    return { morning, afternoon, total, regular, overtime };
-  }, [modalForm]);
+
+    // Calculate permesso hours (only for weekdays when total < 8)
+    let permesso = 0;
+    if (selectedDate) {
+      const date = new Date(`${selectedDate}T12:00:00`);
+      const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+      if (isWeekday && total < 8) {
+        permesso = 8 - total;
+      }
+    }
+
+    return { morning, afternoon, total, regular, overtime, permesso };
+  }, [modalForm, selectedDate]);
 
   // Check if date is editable
   const isDateEditable = (date: Date): boolean => {
@@ -450,6 +463,35 @@ export default function EmployeeDashboard({
                 const highlight = isSameDay(day, new Date());
                 const editable = isDateEditable(day) && isSameMonth(day, currentMonth);
 
+                // Calculate permesso hours
+                let permessoHours = 0;
+                if (hasEntries) {
+                  // Use permessoHours from database entry
+                  permessoHours = dayEntry?.permessoHours ?? 0;
+                } else {
+                  // Calculate for days without entry
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const yesterday = new Date(today);
+                  yesterday.setDate(yesterday.getDate() - 1);
+                  const dayOfWeek = day.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+                  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+                  const isPastOrYesterday = day <= yesterday;
+                  const isInCurrentMonth = isSameMonth(day, currentMonth);
+
+                  if (isWeekday && isPastOrYesterday && isInCurrentMonth) {
+                    permessoHours = 8; // Full day permesso for empty weekdays in the past
+                  }
+                }
+
+                // Determine permesso indicator color
+                let permessoColor = "";
+                if (permessoHours > 0 && permessoHours < 8) {
+                  permessoColor = "bg-yellow-400";
+                } else if (permessoHours === 8) {
+                  permessoColor = "bg-red-500";
+                }
+
                 return (
                   <button
                     key={key}
@@ -464,9 +506,14 @@ export default function EmployeeDashboard({
                     } ${highlight ? "ring-2 ring-blue-400 shadow-md" : ""}`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className={`text-xs sm:text-sm font-semibold ${highlight ? "text-blue-600" : "text-gray-700"}`}>
-                        {format(day, "d")}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        {permessoColor && (
+                          <div className={`w-2 h-2 rounded-full ${permessoColor}`} title={`Permesso: ${permessoHours}h`}></div>
+                        )}
+                        <span className={`text-xs sm:text-sm font-semibold ${highlight ? "text-blue-600" : "text-gray-700"}`}>
+                          {format(day, "d")}
+                        </span>
+                      </div>
                     </div>
                     {hasEntries ? (
                       <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
@@ -617,6 +664,12 @@ export default function EmployeeDashboard({
                       <div className="flex justify-between items-center border-t border-orange-100 pt-2">
                         <span className="font-medium text-orange-700">Overtime:</span>
                         <span className="font-bold text-orange-600">{calculatedHours.overtime.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {calculatedHours.permesso > 0 && (
+                      <div className="flex justify-between items-center border-t border-yellow-100 pt-2">
+                        <span className="font-medium text-yellow-700">Permesso:</span>
+                        <span className="font-bold text-yellow-600">{calculatedHours.permesso.toFixed(2)}</span>
                       </div>
                     )}
                   </div>

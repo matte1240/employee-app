@@ -9,7 +9,9 @@ type UserAggregate = {
   email: string;
   role: "EMPLOYEE" | "ADMIN";
   createdAt: Date;
-  totalHours: number;
+  regularHours: number;
+  overtimeHours: number;
+  permessoHours: number;
   lastEntry?: string | null;
 };
 
@@ -53,7 +55,7 @@ export default async function AdminDashboardPage() {
 
   const totals = await prisma.timeEntry.groupBy({
     by: ["userId"],
-    _sum: { hoursWorked: true, overtimeHours: true },
+    _sum: { hoursWorked: true, overtimeHours: true, permessoHours: true },
     where: {
       workDate: {
         gte: firstDay,
@@ -67,11 +69,23 @@ export default async function AdminDashboardPage() {
     _max: { workDate: true },
   });
 
-  const hoursMap = new Map<string, number>();
+  const regularHoursMap = new Map<string, number>();
+  const overtimeHoursMap = new Map<string, number>();
+  const permessoHoursMap = new Map<string, number>();
+  
   for (const row of totals) {
-    const hoursWorked = row._sum.hoursWorked ? parseFloat(row._sum.hoursWorked.toString()) : 0;
-    const overtimeHours = row._sum.overtimeHours ? parseFloat(row._sum.overtimeHours.toString()) : 0;
-    hoursMap.set(row.userId, hoursWorked + overtimeHours);
+    if (row._sum) {
+      const regularHours = row._sum.hoursWorked ? parseFloat(row._sum.hoursWorked.toString()) : 0;
+      const overtimeHours = row._sum.overtimeHours ? parseFloat(row._sum.overtimeHours.toString()) : 0;
+      const permessoHours = row._sum.permessoHours ? parseFloat(row._sum.permessoHours.toString()) : 0;
+      
+      // Regular hours = total hours worked minus overtime
+      const actualRegularHours = regularHours - overtimeHours;
+      
+      regularHoursMap.set(row.userId, actualRegularHours);
+      overtimeHoursMap.set(row.userId, overtimeHours);
+      permessoHoursMap.set(row.userId, permessoHours);
+    }
   }
 
   const lastEntryMap = new Map<string, string | null>();
@@ -81,7 +95,9 @@ export default async function AdminDashboardPage() {
 
   const rows: UserAggregate[] = users.map((user) => ({
     ...user,
-    totalHours: hoursMap.get(user.id) ?? 0,
+    regularHours: regularHoursMap.get(user.id) ?? 0,
+    overtimeHours: overtimeHoursMap.get(user.id) ?? 0,
+    permessoHours: permessoHoursMap.get(user.id) ?? 0,
     lastEntry: lastEntryMap.get(user.id) ?? null,
   }));
 

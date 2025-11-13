@@ -34,6 +34,7 @@ model TimeEntry {
   workDate       DateTime
   hoursWorked    Decimal
   overtimeHours  Decimal  @default(0)
+  permessoHours  Decimal  @default(0)
   morningStart   String?
   morningEnd     String?
   afternoonStart String?

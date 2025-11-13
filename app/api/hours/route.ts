@@ -28,6 +28,7 @@ type RawEntry = {
   workDate: Date;
   hoursWorked: Decimal;
   overtimeHours: Decimal;
+  permessoHours: Decimal;
   morningStart: string | null;
   morningEnd: string | null;
   afternoonStart: string | null;
@@ -43,6 +44,7 @@ const toPlainEntry = (entry: RawEntry) => ({
   workDate: entry.workDate.toISOString().split('T')[0], // Return only date part (YYYY-MM-DD)
   hoursWorked: parseFloat(entry.hoursWorked.toString()),
   overtimeHours: parseFloat(entry.overtimeHours.toString()),
+  permessoHours: parseFloat(entry.permessoHours.toString()),
   morningStart: entry.morningStart,
   morningEnd: entry.morningEnd,
   afternoonStart: entry.afternoonStart,
@@ -148,6 +150,16 @@ export async function POST(request: Request) {
     }
   }
 
+  // Calculate permessoHours (only for weekdays when hours < 8)
+  const entryDate = new Date(`${workDate}T00:00:00.000Z`);
+  const dayOfWeek = entryDate.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+
+  let permessoHours = 0;
+  if (isWeekday && hoursWorked < 8) {
+    permessoHours = 8 - hoursWorked;
+  }
+
   // Check if entry already exists for this date
   const existing = await prisma.timeEntry.findFirst({
     where: {
@@ -165,6 +177,7 @@ export async function POST(request: Request) {
       data: {
         hoursWorked: hoursWorked.toString(),
         overtimeHours: (overtimeHours ?? 0).toString(),
+        permessoHours: permessoHours.toString(),
         morningStart,
         morningEnd,
         afternoonStart,
@@ -180,6 +193,7 @@ export async function POST(request: Request) {
         workDate: new Date(`${workDate}T00:00:00.000Z`),
         hoursWorked: hoursWorked.toString(),
         overtimeHours: (overtimeHours ?? 0).toString(),
+        permessoHours: permessoHours.toString(),
         morningStart,
         morningEnd,
         afternoonStart,

@@ -12,7 +12,9 @@ type UserAggregate = {
   email: string;
   role: "EMPLOYEE" | "ADMIN";
   createdAt: Date;
-  totalHours: number;
+  regularHours: number;
+  overtimeHours: number;
+  permessoHours: number;
   lastEntry?: string | null;
 };
 
@@ -97,19 +99,36 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
             console.log('Received entries:', entries.length);
             
             // Calculate hours per user for the selected month
-            const hoursMap = new Map<string, number>();
+            const regularHoursMap = new Map<string, number>();
+            const overtimeHoursMap = new Map<string, number>();
+            const permessoHoursMap = new Map<string, number>();
+
             entries.forEach((entry: any) => {
-              const current = hoursMap.get(entry.userId) || 0;
-              const totalHours = entry.hoursWorked + (entry.overtimeHours || 0);
-              hoursMap.set(entry.userId, current + totalHours);
+              const regularCurrent = regularHoursMap.get(entry.userId) || 0;
+              const overtimeCurrent = overtimeHoursMap.get(entry.userId) || 0;
+              const permessoCurrent = permessoHoursMap.get(entry.userId) || 0;
+
+              const regularHours = entry.hoursWorked - (entry.overtimeHours || 0);
+              const overtimeHours = entry.overtimeHours || 0;
+              const permessoHours = entry.permessoHours || 0;
+
+              regularHoursMap.set(entry.userId, regularCurrent + regularHours);
+              overtimeHoursMap.set(entry.userId, overtimeCurrent + overtimeHours);
+              permessoHoursMap.set(entry.userId, permessoCurrent + permessoHours);
             });
-            
-            console.log('Hours map:', Object.fromEntries(hoursMap));
-            
+
+            console.log('Hours maps:', {
+              regular: Object.fromEntries(regularHoursMap),
+              overtime: Object.fromEntries(overtimeHoursMap),
+              permesso: Object.fromEntries(permessoHoursMap)
+            });
+
             // Update users with month-specific hours
             const updatedUsers = users.map(user => ({
               ...user,
-              totalHours: hoursMap.get(user.id) || 0,
+              regularHours: regularHoursMap.get(user.id) || 0,
+              overtimeHours: overtimeHoursMap.get(user.id) || 0,
+              permessoHours: permessoHoursMap.get(user.id) || 0,
             }));
             
             console.log('Updated users:', updatedUsers);
@@ -667,9 +686,9 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
               <div className="rounded-xl border border-green-100 bg-white p-6 shadow-sm transition hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Hours Logged</p>
+                    <p className="text-sm font-medium text-gray-600">Total Hours This Month</p>
                     <p className="mt-2 text-3xl font-bold text-green-600">
-                      {users.reduce((sum, r) => sum + r.totalHours, 0).toFixed(0)}
+                      {users.reduce((sum, r) => sum + r.regularHours + r.overtimeHours + r.permessoHours, 0).toFixed(0)}
                     </p>
                   </div>
                   <div className="rounded-full bg-green-50 p-3">
@@ -716,13 +735,13 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                         Role
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
-                        Total Hours
+                        Ore Ordinarie
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
-                        Last Activity
+                        Ore Straordinarie
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
-                        Joined
+                        Ore di Permesso
                       </th>
                     </tr>
                   </thead>
@@ -757,25 +776,21 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                         </td>
                         <td className="whitespace-nowrap px-6 py-4">
                           <div className="flex items-center">
-                            <span className="text-lg font-bold text-gray-900">{row.totalHours.toFixed(1)}</span>
+                            <span className="text-lg font-bold text-gray-900">{row.regularHours.toFixed(1)}</span>
                             <span className="ml-1 text-sm text-gray-500">hrs</span>
                           </div>
                         </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                          {row.lastEntry ? (
-                            <div className="flex items-center gap-2">
-                              <div className="h-2 w-2 rounded-full bg-green-400"></div>
-                              {format(new Date(row.lastEntry), "MMM d, yyyy")}
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <div className="h-2 w-2 rounded-full bg-gray-300"></div>
-                              <span className="text-gray-400">No activity</span>
-                            </div>
-                          )}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center">
+                            <span className="text-lg font-bold text-orange-600">{row.overtimeHours.toFixed(1)}</span>
+                            <span className="ml-1 text-sm text-gray-500">hrs</span>
+                          </div>
                         </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                          {format(row.createdAt, "MMM d, yyyy")}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center">
+                            <span className="text-lg font-bold text-blue-600">{row.permessoHours.toFixed(1)}</span>
+                            <span className="ml-1 text-sm text-gray-500">hrs</span>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1083,9 +1098,9 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                             <div className="text-sm text-gray-500">{user.email}</div>
                           )}
                         </div>
-                        {user.totalHours !== null && user.totalHours > 0 && (
+                        {(user.regularHours + user.overtimeHours + user.permessoHours) > 0 && (
                           <div className="text-sm font-medium text-gray-600">
-                            {user.totalHours.toFixed(1)}h
+                            {(user.regularHours + user.overtimeHours + user.permessoHours).toFixed(1)}h
                           </div>
                         )}
                       </label>
