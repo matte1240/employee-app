@@ -85,5 +85,12 @@ export default async function AdminDashboardPage() {
     lastEntry: lastEntryMap.get(user.id) ?? null,
   }));
 
-  return <AdminDashboard users={rows} />;
+  const currentUser = {
+    id: session.user.id,
+    name: session.user.name,
+    email: session.user.email,
+    role: session.user.role,
+  };
+
+  return <AdminDashboard users={rows} currentUser={currentUser} />;
 }

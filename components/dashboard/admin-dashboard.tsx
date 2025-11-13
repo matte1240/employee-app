@@ -16,8 +16,16 @@ type UserAggregate = {
   lastEntry?: string | null;
 };
 
+type CurrentUser = {
+  id: string;
+  name: string | null | undefined;
+  email: string;
+  role: string;
+};
+
 type AdminDashboardProps = {
   users: UserAggregate[];
+  currentUser: CurrentUser;
 };
 
 type CreateUserForm = {
@@ -28,7 +36,7 @@ type CreateUserForm = {
   role: "EMPLOYEE" | "ADMIN";
 };
 
-export default function AdminDashboard({ users }: AdminDashboardProps) {
+export default function AdminDashboard({ users, currentUser }: AdminDashboardProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"overview" | "create-user" | "export-data" | "user-calendar" | "server-management">("overview");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -107,9 +115,11 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
     }
   }, [exportMonth, activeTab, users]);
 
-  // Fetch user entries when a user is selected
+  // Fetch user entries when viewing calendar (either current user's or specific user's)
   useEffect(() => {
-    if (selectedUser && activeTab === "user-calendar") {
+    const shouldFetchCalendar = activeTab === "user-calendar" || (activeTab === "overview" && selectedUser);
+
+    if (shouldFetchCalendar) {
       const fetchUserEntries = async () => {
         setIsLoadingEntries(true);
         try {
@@ -120,7 +130,9 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
           const lastDay = new Date(year, month, 0).getDate();
           const to = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
 
-          const response = await fetch(`/api/hours?userId=${selectedUser.id}&from=${from}&to=${to}`);
+          // Use selectedUser if viewing from overview, otherwise use currentUser
+          const targetUserId = (activeTab === "overview" && selectedUser) ? selectedUser.id : currentUser.id;
+          const response = await fetch(`/api/hours?userId=${targetUserId}&from=${from}&to=${to}`);
           if (response.ok) {
             const data = await response.json();
             setUserEntries(data);
@@ -134,7 +146,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
 
       fetchUserEntries();
     }
-  }, [selectedUser, activeTab, refreshTrigger]);
+  }, [selectedUser, activeTab, refreshTrigger, currentUser.id]);
 
   // Close mobile menu when clicking Escape key
   useEffect(() => {
@@ -166,7 +178,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
 
   const handleUserClick = (user: UserAggregate) => {
     setSelectedUser(user);
-    setActiveTab("user-calendar");
+    // Don't change activeTab - keep it on "overview" so User Calendar tab is not highlighted
   };
 
   const handleCreateUser = (e: React.FormEvent) => {
@@ -278,10 +290,13 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
           {/* Desktop horizontal tabs */}
           <nav className="hidden md:flex gap-8">
             <button
-              onClick={() => setActiveTab("overview")}
-              className={`border-b-2 px-1 py-4 text-sm font-semibold transition ${
+              onClick={() => {
+                setActiveTab("overview");
+                setSelectedUser(null);
+              }}
+              className={`border-b-2 px-1 py-4 text-sm font-semibold transition cursor-pointer ${
                 activeTab === "overview"
-                  ? "border-blue-600 text-blue-600"
+                  ? "border-blue-600 text-blue-600 hover:text-blue-700"
                   : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
             >
@@ -293,10 +308,13 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
               </div>
             </button>
             <button
-              onClick={() => setActiveTab("create-user")}
-              className={`border-b-2 px-1 py-4 text-sm font-semibold transition ${
+              onClick={() => {
+                setActiveTab("create-user");
+                setSelectedUser(null);
+              }}
+              className={`border-b-2 px-1 py-4 text-sm font-semibold transition cursor-pointer ${
                 activeTab === "create-user"
-                  ? "border-blue-600 text-blue-600"
+                  ? "border-blue-600 text-blue-600 hover:text-blue-700"
                   : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
             >
@@ -308,10 +326,13 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
               </div>
             </button>
             <button
-              onClick={() => setActiveTab("export-data")}
-              className={`border-b-2 px-1 py-4 text-sm font-semibold transition ${
+              onClick={() => {
+                setActiveTab("export-data");
+                setSelectedUser(null);
+              }}
+              className={`border-b-2 px-1 py-4 text-sm font-semibold transition cursor-pointer ${
                 activeTab === "export-data"
-                  ? "border-blue-600 text-blue-600"
+                  ? "border-blue-600 text-blue-600 hover:text-blue-700"
                   : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
             >
@@ -323,10 +344,31 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
               </div>
             </button>
             <button
-              onClick={() => setActiveTab("server-management")}
-              className={`border-b-2 px-1 py-4 text-sm font-semibold transition ${
+              onClick={() => {
+                setActiveTab("user-calendar");
+                setSelectedUser(null); // Reset to show current user's calendar
+              }}
+              className={`border-b-2 px-1 py-4 text-sm font-semibold transition cursor-pointer ${
+                activeTab === "user-calendar"
+                  ? "border-blue-600 text-blue-600 hover:text-blue-700"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                User Calendar
+              </div>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("server-management");
+                setSelectedUser(null);
+              }}
+              className={`border-b-2 px-1 py-4 text-sm font-semibold transition cursor-pointer ${
                 activeTab === "server-management"
-                  ? "border-blue-600 text-blue-600"
+                  ? "border-blue-600 text-blue-600 hover:text-blue-700"
                   : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
             >
@@ -380,11 +422,12 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
               <button
                 onClick={() => {
                   setActiveTab("overview");
+                  setSelectedUser(null);
                   setIsMobileMenuOpen(false);
                 }}
-                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition cursor-pointer ${
                   activeTab === "overview"
-                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    ? "bg-blue-50 text-blue-600 shadow-sm hover:bg-blue-100"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
@@ -392,21 +435,17 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 <span>Overview</span>
-                {activeTab === "overview" && (
-                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
               </button>
 
               <button
                 onClick={() => {
                   setActiveTab("create-user");
+                  setSelectedUser(null);
                   setIsMobileMenuOpen(false);
                 }}
-                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition cursor-pointer ${
                   activeTab === "create-user"
-                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    ? "bg-blue-50 text-blue-600 shadow-sm hover:bg-blue-100"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
@@ -414,21 +453,17 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
                 <span>Create User</span>
-                {activeTab === "create-user" && (
-                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
               </button>
 
               <button
                 onClick={() => {
                   setActiveTab("export-data");
+                  setSelectedUser(null);
                   setIsMobileMenuOpen(false);
                 }}
-                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition cursor-pointer ${
                   activeTab === "export-data"
-                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    ? "bg-blue-50 text-blue-600 shadow-sm hover:bg-blue-100"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
@@ -436,21 +471,35 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span>Export Data</span>
-                {activeTab === "export-data" && (
-                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("user-calendar");
+                  setSelectedUser(null); // Reset to show current user's calendar
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition cursor-pointer ${
+                  activeTab === "user-calendar"
+                    ? "bg-blue-50 text-blue-600 shadow-sm hover:bg-blue-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>User Calendar</span>
               </button>
 
               <button
                 onClick={() => {
                   setActiveTab("server-management");
+                  setSelectedUser(null);
                   setIsMobileMenuOpen(false);
                 }}
-                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition cursor-pointer ${
                   activeTab === "server-management"
-                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    ? "bg-blue-50 text-blue-600 shadow-sm hover:bg-blue-100"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
@@ -458,37 +507,7 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
                 </svg>
                 <span>Server Management</span>
-                {activeTab === "server-management" && (
-                  <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
               </button>
-
-              {/* Conditional user calendar tab */}
-              {selectedUser && (
-                <button
-                  onClick={() => {
-                    setActiveTab("user-calendar");
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
-                    activeTab === "user-calendar"
-                      ? "bg-blue-50 text-blue-600 shadow-sm"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>User Calendar</span>
-                  {activeTab === "user-calendar" && (
-                    <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </button>
-              )}
             </div>
           </nav>
 
@@ -500,8 +519,8 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 md:px-6 py-8">
-        {/* Overview Tab */}
-        {activeTab === "overview" && (
+        {/* Overview Tab or Specific User Calendar */}
+        {activeTab === "overview" && !selectedUser && (
           <div className="flex flex-col gap-8">
             {/* Stats cards */}
             <div className="order-2 md:order-1 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -998,13 +1017,13 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
           </div>
         )}
 
-        {/* User Calendar Tab */}
-        {activeTab === "user-calendar" && selectedUser && (
+        {/* Specific User Calendar (from Overview click) */}
+        {activeTab === "overview" && selectedUser && (
           <div>
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => setActiveTab("overview")}
+                  onClick={() => setSelectedUser(null)}
                   className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1036,6 +1055,39 @@ export default function AdminDashboard({ users }: AdminDashboardProps) {
                 userName={selectedUser.name ?? selectedUser.email}
                 hideHeader={true}
                 targetUserId={selectedUser.id}
+                onEntrySaved={handleEntrySaved}
+              />
+            )}
+          </div>
+        )}
+
+        {/* User Calendar Tab (Current User's Calendar) */}
+        {activeTab === "user-calendar" && (
+          <div>
+            <div className="mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {currentUser.name ?? currentUser.email}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {currentUser.email} • {currentUser.role} (Your Calendar)
+                </p>
+              </div>
+            </div>
+
+            {isLoadingEntries ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+                  <p className="mt-4 text-sm text-gray-600">Loading calendar...</p>
+                </div>
+              </div>
+            ) : (
+              <EmployeeDashboard
+                initialEntries={userEntries}
+                userName={currentUser.name ?? currentUser.email}
+                hideHeader={true}
+                targetUserId={currentUser.id}
                 onEntrySaved={handleEntrySaved}
               />
             )}
