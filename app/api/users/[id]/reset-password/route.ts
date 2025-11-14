@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-
-const resetPasswordSchema = z.object({
-  newPassword: z.string().min(8, "Password must be at least 8 characters"),
-});
+import { sendPasswordResetEmail } from "@/lib/email";
 
 export async function POST(
   request: Request,
@@ -34,21 +31,12 @@ export async function POST(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const body = await request.json();
-    const parsed = resetPasswordSchema.safeParse(body);
-
-    if (!parsed.success) {
-      const firstError = parsed.error.issues[0];
-      return NextResponse.json(
-        { error: firstError?.message ?? "Invalid input" },
-        { status: 400 }
-      );
-    }
-
-    const { newPassword } = parsed.data;
+    // Generate a temporary password (8 characters with uppercase, lowercase, and numbers)
+    const tempPassword = crypto.randomBytes(4).toString('hex') + 
+                         String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Add uppercase letter
 
     // Hash new password
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
 
     // Update user password
     await prisma.user.update({
@@ -56,7 +44,25 @@ export async function POST(
       data: { passwordHash },
     });
 
-    return NextResponse.json({ message: "Password reset successfully" });
+    // Send email notification with temporary password
+    try {
+      await sendPasswordResetEmail(
+        existingUser.email,
+        existingUser.name || existingUser.email,
+        tempPassword
+      );
+      console.log(`✅ Password reset email sent to ${existingUser.email}`);
+    } catch (emailError) {
+      console.error("⚠️ Failed to send password reset email:", emailError);
+      // Rollback password change if email fails
+      return NextResponse.json({
+        error: "Failed to send email notification. Password not changed.",
+      }, { status: 500 });
+    }
+
+    return NextResponse.json({ 
+      message: "Password reset successfully. User will receive an email with temporary password." 
+    });
   } catch (error) {
     console.error("Error resetting password:", error);
     return NextResponse.json(
