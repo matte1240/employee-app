@@ -3,7 +3,6 @@
 import { format } from "date-fns";
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import LogoutButton from "@/components/logout-button";
 import EmployeeDashboard, { type TimeEntryDTO } from "./employee-dashboard";
 
 type UserAggregate = {
@@ -375,25 +374,10 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Header with logo and navigation */}
-      <header className="border-b border-gray-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-8">
-            <img
-              src="/logo.svg"
-              alt="Ivicolors"
-              className="h-10 w-auto"
-            />
-            <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
-          </div>
-          <LogoutButton />
-        </div>
-      </header>
-
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Navigation tabs */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6">
+      <div className="border-b border-gray-200 bg-white rounded-lg mb-6">
+        <div className="px-6">
           {/* Mobile hamburger button */}
           <div className="flex items-center justify-between py-4 md:hidden">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -652,7 +636,8 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 md:px-6 py-8">
+      {/* Tab Content */}
+      <div>
         {/* Overview Tab or Specific User Calendar */}
         {activeTab === "overview" && !selectedUser && (
           <div className="flex flex-col gap-8">
@@ -1921,6 +1906,6 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }

@@ -1,0 +1,37 @@
+import { redirect } from "next/navigation";
+import { getAuthSession } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import ManageUsers from "@/components/dashboard/manage-users";
+
+type UserRow = {
+  id: string;
+  name: string | null;
+  email: string;
+  role: "EMPLOYEE" | "ADMIN";
+  createdAt: Date;
+};
+
+export default async function UsersPage() {
+  const session = await getAuthSession();
+
+  if (!session) {
+    redirect("/");
+  }
+
+  if (session.user.role !== "ADMIN") {
+    redirect("/dashboard");
+  }
+
+  const users = (await prisma.user.findMany({
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      createdAt: true,
+    },
+  })) as UserRow[];
+
+  return <ManageUsers users={users} currentUserId={session.user.id} />;
+}
