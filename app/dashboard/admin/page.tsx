@@ -78,11 +78,11 @@ export default async function AdminDashboardPage() {
       const regularHours = row._sum.hoursWorked ? parseFloat(row._sum.hoursWorked.toString()) : 0;
       const overtimeHours = row._sum.overtimeHours ? parseFloat(row._sum.overtimeHours.toString()) : 0;
       const permessoHours = row._sum.permessoHours ? parseFloat(row._sum.permessoHours.toString()) : 0;
-      
-      // Regular hours = total hours worked minus overtime
-      const actualRegularHours = regularHours - overtimeHours;
-      
-      regularHoursMap.set(row.userId, actualRegularHours);
+
+      console.log(`[SERVER] userId: ${row.userId}, hoursWorked: ${regularHours}, overtime: ${overtimeHours}, permesso: ${permessoHours}`);
+
+      // hoursWorked already contains only regular hours (max 8 per day)
+      regularHoursMap.set(row.userId, regularHours);
       overtimeHoursMap.set(row.userId, overtimeHours);
       permessoHoursMap.set(row.userId, permessoHours);
     }
