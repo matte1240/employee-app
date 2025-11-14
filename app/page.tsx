@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ setup?: string }>;
+  searchParams: Promise<{ setup?: string; expired?: string }>;
 }) {
   // Check if setup is needed (no users in database)
   const userCount = await prisma.user.count();
@@ -27,6 +27,7 @@ export default async function Home({
 
   const params = await searchParams;
   const showSetupSuccess = params.setup === "complete";
+  const showExpiredMessage = params.expired === "true";
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -116,6 +117,21 @@ export default async function Home({
                     </div>
                     <p className="text-sm text-green-800 font-medium pt-1">
                       Setup completed successfully! You can now sign in with your admin account.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {showExpiredMessage && (
+                <div className="mb-6 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 p-4 border border-orange-200/50 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-orange-800 font-medium pt-1">
+                      Your session has expired due to inactivity. Please log in again.
                     </p>
                   </div>
                 </div>
