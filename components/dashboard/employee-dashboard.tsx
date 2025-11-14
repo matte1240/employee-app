@@ -97,6 +97,31 @@ export default function EmployeeDashboard({
     notes: "",
   });
 
+  // Block body scroll when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      
+      // Apply styles to prevent scrolling
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        // Restore body scroll
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        
+        // Restore scroll position
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isModalOpen]);
+
   useEffect(() => {
     if (!hasFetched.current) {
       hasFetched.current = true;
@@ -591,11 +616,11 @@ export default function EmployeeDashboard({
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
-          <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <form onSubmit={handleModalSubmit} className="flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto" onClick={() => setIsModalOpen(false)}>
+          <div className="w-full max-w-lg my-8 rounded-2xl border border-gray-200 bg-white shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <form onSubmit={handleModalSubmit} className="flex flex-col h-full">
               {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl">
+              <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl flex-shrink-0">
                 <h2 className="text-lg font-semibold text-white">
                   {selectedDate && format(new Date(`${selectedDate}T12:00:00`), "EEEE, MMM d, yyyy")}
                 </h2>
@@ -611,7 +636,7 @@ export default function EmployeeDashboard({
               </div>
 
               {/* Modal Body */}
-              <div className="space-y-5 p-6">
+              <div className="space-y-5 p-6 overflow-y-auto flex-1">
                 {/* Morning shift */}
                 <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 shadow-sm">
                   <div className="mb-3 flex items-center gap-2">
@@ -738,7 +763,7 @@ export default function EmployeeDashboard({
               </div>
 
               {/* Modal Footer */}
-              <div className="flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 rounded-b-2xl">
+              <div className="flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 rounded-b-2xl flex-shrink-0">
                 {/* Show delete button only if entry exists */}
                 {selectedDate && entries.find(e => e.workDate === selectedDate) && (
                   <button
