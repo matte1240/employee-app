@@ -31,7 +31,7 @@ type EditUserForm = {
   role: "EMPLOYEE" | "ADMIN";
 };
 
-export default function ManageUsers({ users, currentUserId }: ManageUsersProps) {
+export default function ManageUsersDev({ users, currentUserId }: ManageUsersProps) {
   const router = useRouter();
 
   // Modal states
@@ -53,6 +53,10 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
     email: "",
     role: "EMPLOYEE",
   });
+  const [resetPasswordForm, setResetPasswordForm] = useState({
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   // Transition states
   const [isCreating, startCreating] = useTransition();
@@ -70,14 +74,26 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
     setError(null);
     setSuccess(null);
 
+    // Validazione password
+    if (createForm.password !== createForm.confirmPassword) {
+      setError("Le password non coincidono");
+      return;
+    }
+
+    if (createForm.password.length < 8) {
+      setError("La password deve contenere almeno 8 caratteri");
+      return;
+    }
+
     startCreating(async () => {
       try {
-        const response = await fetch("/api/users/create", {
+        const response = await fetch("/api/users/create-dev", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: createForm.name,
             email: createForm.email,
+            password: createForm.password,
             role: createForm.role,
           }),
         });
@@ -89,7 +105,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
           return;
         }
 
-        setSuccess(`Utente ${createForm.email} creato! Riceverà un'email per impostare la password.`);
+        setSuccess(`Utente ${createForm.email} creato con successo!`);
         setCreateForm({
           name: "",
           email: "",
@@ -185,11 +201,23 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
     setError(null);
     setSuccess(null);
 
+    // Validazione password
+    if (resetPasswordForm.newPassword !== resetPasswordForm.confirmPassword) {
+      setError("Le password non coincidono");
+      return;
+    }
+
+    if (resetPasswordForm.newPassword.length < 8) {
+      setError("La password deve contenere almeno 8 caratteri");
+      return;
+    }
+
     startResettingPassword(async () => {
       try {
-        const response = await fetch(`/api/users/${resettingPasswordUser.id}/reset-password`, {
+        const response = await fetch(`/api/users/${resettingPasswordUser.id}/reset-password-dev`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newPassword: resetPasswordForm.newPassword }),
         });
 
         const data = await response.json();
@@ -199,8 +227,9 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
           return;
         }
 
-        setSuccess(`Password reimpostata! L'utente ${resettingPasswordUser.email} riceverà un'email con la password temporanea.`);
+        setSuccess(`Password reimpostata con successo per ${resettingPasswordUser.email}!`);
         setResettingPasswordUser(null);
+        setResetPasswordForm({ newPassword: "", confirmPassword: "" });
       } catch (err) {
         setError("Si è verificato un errore imprevisto");
       }
@@ -212,9 +241,9 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
       {/* Header with Create Button */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestione Utenti</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Gestione Utenti DEV</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Visualizza, modifica, elimina utenti e reimposta le loro password
+            Modalità sviluppo: imposta le password manualmente (nessuna email verrà inviata)
           </p>
         </div>
         <button
@@ -322,6 +351,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                       <button
                         onClick={() => {
                           setResettingPasswordUser(user);
+                          setResetPasswordForm({ newPassword: "", confirmPassword: "" });
                           setError(null);
                           setSuccess(null);
                         }}
@@ -429,18 +459,48 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 </select>
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={createForm.password}
+                  onChange={(e) => setCreateForm(f => ({ ...f, password: e.target.value }))}
+                  required
+                  minLength={8}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  placeholder="Almeno 8 caratteri"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Conferma Password
+                </label>
+                <input
+                  type="password"
+                  value={createForm.confirmPassword}
+                  onChange={(e) => setCreateForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                  required
+                  minLength={8}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  placeholder="Ripeti la password"
+                />
+              </div>
+
               {/* Info Box */}
-              <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <div className="text-sm">
-                  <p className="font-semibold text-blue-900 mb-1">
-                    Configurazione Password
+                  <p className="font-semibold text-amber-900 mb-1">
+                    Modalità DEV Attiva
                   </p>
-                  <p className="text-blue-800">
-                    L'utente riceverà un'email con un link per impostare la propria password al primo accesso.
-                    Il link sarà valido per 24 ore.
+                  <p className="text-amber-800">
+                    Imposti manualmente la password. Nessuna email verrà inviata all'utente.
+                    Questa modalità è da usare solo per test e sviluppo.
                   </p>
                 </div>
               </div>
@@ -678,6 +738,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 <button
                   onClick={() => {
                     setResettingPasswordUser(null);
+                    setResetPasswordForm({ newPassword: "", confirmPassword: "" });
                     setError(null);
                     setSuccess(null);
                   }}
@@ -692,21 +753,50 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
 
             <form onSubmit={handleResetPassword} className="p-6 space-y-4">
               <div className="mb-4">
-                <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="text-sm">
-                    <p className="font-semibold text-blue-900 mb-1">
+                    <p className="font-semibold text-amber-900 mb-1">
                       Reimpostazione password per:
                     </p>
-                    <p className="text-blue-800 font-medium">{resettingPasswordUser.email}</p>
-                    <p className="text-blue-700 mt-2">
-                      Una password temporanea verrà generata automaticamente e inviata via email all'utente.
-                      L'utente dovrà cambiarla al primo accesso.
+                    <p className="text-amber-800 font-medium">{resettingPasswordUser.email}</p>
+                    <p className="text-amber-700 mt-2">
+                      Modalità DEV: imposta manualmente la nuova password. Nessuna email verrà inviata.
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Nuova Password
+                </label>
+                <input
+                  type="password"
+                  value={resetPasswordForm.newPassword}
+                  onChange={(e) => setResetPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
+                  required
+                  minLength={8}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  placeholder="Almeno 8 caratteri"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Conferma Nuova Password
+                </label>
+                <input
+                  type="password"
+                  value={resetPasswordForm.confirmPassword}
+                  onChange={(e) => setResetPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                  required
+                  minLength={8}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  placeholder="Ripeti la password"
+                />
               </div>
 
               {error && (
@@ -725,6 +815,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   type="button"
                   onClick={() => {
                     setResettingPasswordUser(null);
+                    setResetPasswordForm({ newPassword: "", confirmPassword: "" });
                     setError(null);
                     setSuccess(null);
                   }}
@@ -737,7 +828,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   disabled={isResettingPassword}
                   className="flex-1 rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-yellow-700 hover:to-yellow-800 disabled:cursor-not-allowed disabled:from-yellow-300 disabled:to-yellow-400"
                 >
-                  {isResettingPassword ? "Invio email..." : "Conferma Reset"}
+                  {isResettingPassword ? "Reimpostazione..." : "Reimposta Password"}
                 </button>
               </div>
             </form>
