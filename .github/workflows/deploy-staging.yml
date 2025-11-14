@@ -84,7 +84,7 @@ jobs:
             echo "NEXTAUTH_URL=\"${NEXTAUTH_URL}\"" >> .env
             
             echo "� Installing dependencies..."
-            npm ci
+            npm install
 
             echo "🔧 Generating Prisma client..."
             npx prisma generate || npm run prisma:generate
