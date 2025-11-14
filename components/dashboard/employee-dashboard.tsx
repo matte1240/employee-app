@@ -174,6 +174,11 @@ export default function EmployeeDashboard({
     [entries]
   );
 
+  const totalPermesso = useMemo(
+    () => entries.reduce((sum, entry) => sum + (entry.permessoHours ?? 0), 0),
+    [entries]
+  );
+
   // Calculate hours from modal form
   const calculatedHours = useMemo(() => {
     const morning = calculateHours(modalForm.morningStart, modalForm.morningEnd);
@@ -386,16 +391,16 @@ export default function EmployeeDashboard({
             </div>
           )}
 
-          <div className="rounded-xl border border-green-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div className="rounded-xl border border-purple-100 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Days Logged</p>
-                <p className="mt-2 text-3xl font-bold text-green-600">{entries.length}</p>
-                <p className="text-xs text-gray-500">this month</p>
+                <p className="text-sm font-medium text-gray-600">Permesso</p>
+                <p className="mt-2 text-3xl font-bold text-purple-600">{totalPermesso.toFixed(1)}</p>
+                <p className="text-xs text-gray-500">hours used</p>
               </div>
-              <div className="rounded-full bg-green-50 p-3">
-                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              <div className="rounded-full bg-purple-50 p-3">
+                <svg className="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
             </div>

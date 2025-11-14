@@ -89,15 +89,11 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
           const from = `${year}-${month}-01`;
           const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
           const to = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
-          
-          console.log('Fetching hours for:', { from, to, exportMonth });
-          
+
           const response = await fetch(`/api/hours?userId=all&from=${from}&to=${to}`);
           if (response.ok) {
             const entries = await response.json();
-            
-            console.log('Received entries:', entries.length);
-            
+
             // Calculate hours per user for the selected month
             const regularHoursMap = new Map<string, number>();
             const overtimeHoursMap = new Map<string, number>();
@@ -108,19 +104,14 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
               const overtimeCurrent = overtimeHoursMap.get(entry.userId) || 0;
               const permessoCurrent = permessoHoursMap.get(entry.userId) || 0;
 
-              const regularHours = entry.hoursWorked - (entry.overtimeHours || 0);
+              // hoursWorked already contains only regular hours (max 8 per day)
+              const regularHours = entry.hoursWorked || 0;
               const overtimeHours = entry.overtimeHours || 0;
               const permessoHours = entry.permessoHours || 0;
 
               regularHoursMap.set(entry.userId, regularCurrent + regularHours);
               overtimeHoursMap.set(entry.userId, overtimeCurrent + overtimeHours);
               permessoHoursMap.set(entry.userId, permessoCurrent + permessoHours);
-            });
-
-            console.log('Hours maps:', {
-              regular: Object.fromEntries(regularHoursMap),
-              overtime: Object.fromEntries(overtimeHoursMap),
-              permesso: Object.fromEntries(permessoHoursMap)
             });
 
             // Update users with month-specific hours
@@ -130,9 +121,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
               overtimeHours: overtimeHoursMap.get(user.id) || 0,
               permessoHours: permessoHoursMap.get(user.id) || 0,
             }));
-            
-            console.log('Updated users:', updatedUsers);
-            
+
             setUsersWithMonthHours(updatedUsers);
           }
         } catch (err) {
@@ -688,7 +677,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Hours This Month</p>
                     <p className="mt-2 text-3xl font-bold text-green-600">
-                      {users.reduce((sum, r) => sum + r.regularHours + r.overtimeHours + r.permessoHours, 0).toFixed(0)}
+                      {users.reduce((sum, r) => sum + r.regularHours + r.overtimeHours, 0).toFixed(0)}
                     </p>
                   </div>
                   <div className="rounded-full bg-green-50 p-3">
@@ -735,7 +724,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                         Role
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
-                        Ore Ordinarie
+                        Totale Ore
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
                         Ore Straordinarie
@@ -776,7 +765,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                         </td>
                         <td className="whitespace-nowrap px-6 py-4">
                           <div className="flex items-center">
-                            <span className="text-lg font-bold text-gray-900">{row.regularHours.toFixed(1)}</span>
+                            <span className="text-lg font-bold text-gray-900">{(row.regularHours + row.overtimeHours).toFixed(1)}</span>
                             <span className="ml-1 text-sm text-gray-500">hrs</span>
                           </div>
                         </td>
