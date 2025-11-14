@@ -5,6 +5,7 @@ Full stack time tracking portal built with Next.js App Router, Prisma, NextAuth,
 ### Features
 
 - Email and password authentication backed by NextAuth and Prisma.
+- **Automatic session timeout** after 30 minutes of inactivity with activity tracking.
 - Employee dashboard with interactive calendar, quick entry form, and recent activity list.
 - Admin dashboard summarising total hours, last activity date, and join date for every user.
 - REST API routes for logging hours and managing users, secured by session and role checks.
@@ -102,6 +103,16 @@ PM2 configuration is in `ecosystem.config.js`. The app runs on port 3000 by defa
 - `npm run backup:cleanup` - remove old backups (retention policy).
 
 See [BACKUP_STRATEGY.md](./BACKUP_STRATEGY.md) for complete backup documentation.
+
+### Security Features
+
+**Session Management:**
+- Automatic logout after 30 minutes of inactivity.
+- Activity tracking monitors user interactions (clicks, scrolls, key presses).
+- Session automatically renewed every 5 minutes if user is active.
+- Server-side and client-side validation for session expiration.
+
+See [INACTIVITY_TIMEOUT.md](./INACTIVITY_TIMEOUT.md) for detailed implementation and configuration.
 
 **Production:**
 - `npm run build` - create an optimised production build.
