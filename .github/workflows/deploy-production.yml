@@ -82,7 +82,7 @@ jobs:
             echo "NEXTAUTH_URL=\"${NEXTAUTH_URL}\"" >> .env
             
             echo "📥 Installing dependencies..."
-            npm ci
+            npm install
             
             echo "🏗️  Building application..."
             npm run build
