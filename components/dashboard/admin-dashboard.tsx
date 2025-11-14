@@ -2,7 +2,6 @@
 
 import { format } from "date-fns";
 import { useState, useTransition, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import LogoutButton from "@/components/logout-button";
 import EmployeeDashboard, { type TimeEntryDTO } from "./employee-dashboard";
 
@@ -39,7 +38,6 @@ type CreateUserForm = {
 };
 
 export default function AdminDashboard({ users, currentUser }: AdminDashboardProps) {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"overview" | "manage-users" | "export-data" | "user-calendar" | "server-management">("overview");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserAggregate | null>(null);
@@ -193,7 +191,8 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
   // Callback to trigger refetch after admin saves
   const handleEntrySaved = () => {
     setRefreshTrigger(prev => prev + 1);
-    router.refresh(); // Also refresh server component for overview
+    // In MPA mode, reload to refresh server component data
+    window.location.reload();
   };
 
   const handleUserClick = (user: UserAggregate) => {
@@ -247,7 +246,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
         setIsCreatingUserModalOpen(false);
 
         // Refresh the page to show the new user
-        router.refresh();
+        window.location.reload();
       } catch (err) {
         setError("Unexpected error occurred");
       }
@@ -297,7 +296,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
 
         setSuccess("User updated successfully!");
         setEditingUser(null);
-        router.refresh();
+        window.location.reload();
       } catch (err) {
         setError("Unexpected error occurred");
       }
@@ -325,7 +324,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
 
         setSuccess(`User ${deletingUser.email} deleted successfully!`);
         setDeletingUser(null);
-        router.refresh();
+        window.location.reload();
       } catch (err) {
         setError("Unexpected error occurred");
       }

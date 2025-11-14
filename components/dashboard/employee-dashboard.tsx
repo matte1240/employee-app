@@ -12,7 +12,6 @@ import {
   startOfWeek,
   endOfWeek,
 } from "date-fns";
-import { useRouter } from "next/navigation";
 import LogoutButton from "@/components/logout-button";
 
 export type TimeEntryDTO = {
@@ -75,7 +74,6 @@ export default function EmployeeDashboard({
   targetUserId,
   onEntrySaved,
 }: EmployeeDashboardProps) {
-  const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [entries, setEntries] = useState<TimeEntryDTO[]>(initialEntries);
   const [isFetching, setIsFetching] = useState(false);
@@ -116,7 +114,7 @@ export default function EmployeeDashboard({
         });
 
         if (response.status === 401) {
-          router.push("/");
+          window.location.href = "/";
           return;
         }
 
@@ -140,7 +138,7 @@ export default function EmployeeDashboard({
     fetchEntries();
 
     return () => controller.abort();
-  }, [currentMonth, router, targetUserId]);
+  }, [currentMonth, targetUserId]);
 
   const entriesByDay = useMemo(() => {
     const map = new Map<string, TimeEntryDTO[]>();
@@ -290,7 +288,6 @@ export default function EmployeeDashboard({
         });
 
         setIsModalOpen(false);
-        router.refresh();
         onEntrySaved?.(); // Trigger refetch in admin dashboard
       } catch {
         setModalError("Unexpected error while saving entry.");
@@ -322,7 +319,6 @@ export default function EmployeeDashboard({
 
         setEntries((current) => current.filter(e => e.id !== entry.id));
         setIsModalOpen(false);
-        router.refresh();
         onEntrySaved?.(); // Trigger refetch in admin dashboard
       } catch {
         setModalError("Unexpected error while deleting entry.");

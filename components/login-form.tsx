@@ -2,7 +2,6 @@
 
 import { useState, useTransition, FormEvent } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 
 const initialState = {
   email: "",
@@ -10,7 +9,6 @@ const initialState = {
 };
 
 export default function LoginForm() {
-  const router = useRouter();
   const [formState, setFormState] = useState(initialState);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -32,8 +30,7 @@ export default function LoginForm() {
       }
 
       // All users go to /dashboard, which handles role-based display
-      router.push("/dashboard");
-      router.refresh();
+      window.location.href = "/dashboard";
     });
   };
 

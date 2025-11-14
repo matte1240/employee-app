@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 
 const initialState = {
   name: "",
@@ -11,7 +10,6 @@ const initialState = {
 };
 
 export default function SetupForm() {
-  const router = useRouter();
   const [formState, setFormState] = useState(initialState);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -46,7 +44,7 @@ export default function SetupForm() {
         }
 
         // Setup successful, redirect to login
-        router.push("/?setup=complete");
+        window.location.href = "/?setup=complete";
       } catch (err) {
         setError("An unexpected error occurred");
         console.error(err);
