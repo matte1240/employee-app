@@ -745,7 +745,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                               ? "bg-purple-100 text-purple-700"
                               : "bg-blue-100 text-blue-700"
                           }`}>
-                            {row.role}
+                            {row.role === "ADMIN" ? "Amministratore" : "Dipendente"}
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-6 py-4">
@@ -868,7 +868,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                               ? "bg-purple-100 text-purple-700"
                               : "bg-blue-100 text-blue-700"
                           }`}>
-                            {user.role}
+                            {user.role === "ADMIN" ? "Amministratore" : "Dipendente"}
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
@@ -1161,7 +1161,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                     {selectedUser.name ?? selectedUser.email}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    {selectedUser.email} • {selectedUser.role}
+                    {selectedUser.email} • {selectedUser.role === "ADMIN" ? "Amministratore" : "Dipendente"}
                   </p>
                 </div>
               </div>
@@ -1195,7 +1195,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                   {currentUser.name ?? currentUser.email}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {currentUser.email} • {currentUser.role} (Your Calendar)
+                  {currentUser.email} • {currentUser.role === "ADMIN" ? "Amministratore" : "Dipendente"} (Il Tuo Calendario)
                 </p>
               </div>
             </div>

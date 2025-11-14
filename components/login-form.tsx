@@ -28,7 +28,7 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password.");
+        setError("Email o password non validi.");
         return;
       }
 
@@ -45,7 +45,7 @@ export default function LoginForm() {
     >
       <div>
         <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
-          Email address
+          Indirizzo Email
         </label>
         <input
           id="email"
@@ -56,7 +56,7 @@ export default function LoginForm() {
             setFormState((state) => ({ ...state, email: event.target.value }))
           }
           className="block w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100 focus:bg-white hover:border-slate-300"
-          placeholder="your.email@company.com"
+          placeholder="tua.email@azienda.com"
         />
       </div>
 
@@ -123,10 +123,10 @@ export default function LoginForm() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            Signing in...
+            Accesso in corso...
           </>
         ) : (
-          "Sign in"
+          "Accedi"
         )}
       </button>
     </form>

@@ -66,19 +66,19 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Create User Handler
+  // Crea Utente Handler
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
     if (createForm.password !== createForm.confirmPassword) {
-      setError("Passwords do not match");
+      setError("Le password non corrispondono");
       return;
     }
 
     if (createForm.password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError("La password deve essere lunga almeno 8 caratteri");
       return;
     }
 
@@ -98,11 +98,11 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         const data = await response.json();
 
         if (!response.ok) {
-          setError(data.error || "Failed to create user");
+          setError(data.error || "Impossibile creare l'utente");
           return;
         }
 
-        setSuccess(`User ${createForm.email} created successfully!`);
+        setSuccess(`Utente ${createForm.email} creato con successo!`);
         setCreateForm({
           name: "",
           email: "",
@@ -113,12 +113,12 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         setIsCreatingUserModalOpen(false);
         router.refresh();
       } catch (err) {
-        setError("Unexpected error occurred");
+        setError("Si è verificato un errore imprevisto");
       }
     });
   };
 
-  // Edit User Handler
+  // Modifica Utente Handler
   const handleEditClick = (user: User) => {
     setEditingUser(user);
     setEditForm({
@@ -148,20 +148,20 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         const data = await response.json();
 
         if (!response.ok) {
-          setError(data.error || "Failed to update user");
+          setError(data.error || "Impossibile aggiornare l'utente");
           return;
         }
 
-        setSuccess("User updated successfully!");
+        setSuccess("Utente aggiornato con successo!");
         setEditingUser(null);
         router.refresh();
       } catch (err) {
-        setError("Unexpected error occurred");
+        setError("Si è verificato un errore imprevisto");
       }
     });
   };
 
-  // Delete User Handler
+  // Elimina Utente Handler
   const handleDeleteUser = () => {
     if (!deletingUser) return;
 
@@ -177,20 +177,20 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         const data = await response.json();
 
         if (!response.ok) {
-          setError(data.error || "Failed to delete user");
+          setError(data.error || "Impossibile eliminare l'utente");
           return;
         }
 
-        setSuccess(`User ${deletingUser.email} deleted successfully!`);
+        setSuccess(`Utente ${deletingUser.email} eliminato con successo!`);
         setDeletingUser(null);
         router.refresh();
       } catch (err) {
-        setError("Unexpected error occurred");
+        setError("Si è verificato un errore imprevisto");
       }
     });
   };
 
-  // Reset Password Handler
+  // Reimposta Password Handler
   const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (!resettingPasswordUser) return;
@@ -199,12 +199,12 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
     setSuccess(null);
 
     if (newPassword !== confirmNewPassword) {
-      setError("Passwords do not match");
+      setError("Le password non corrispondono");
       return;
     }
 
     if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError("La password deve essere lunga almeno 8 caratteri");
       return;
     }
 
@@ -219,16 +219,16 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         const data = await response.json();
 
         if (!response.ok) {
-          setError(data.error || "Failed to reset password");
+          setError(data.error || "Impossibile reimpostare la password");
           return;
         }
 
-        setSuccess(`Password for ${resettingPasswordUser.email} reset successfully!`);
+        setSuccess(`Password per ${resettingPasswordUser.email} reimpostata con successo!`);
         setResettingPasswordUser(null);
         setNewPassword("");
         setConfirmNewPassword("");
       } catch (err) {
-        setError("Unexpected error occurred");
+        setError("Si è verificato un errore imprevisto");
       }
     });
   };
@@ -238,9 +238,9 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
       {/* Header with Create Button */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Manage Users</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Gestione Utenti</h2>
           <p className="mt-2 text-sm text-gray-600">
-            View, edit, delete users and reset their passwords
+            Visualizza, modifica, elimina utenti e reimposta le loro password
           </p>
         </div>
         <button
@@ -254,7 +254,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
           </svg>
-          Create User
+          Crea Utente
         </button>
       </div>
 
@@ -289,19 +289,19 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
-                  Name
+                  Nome
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
                   Email
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
-                  Role
+                  Ruolo
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
-                  Joined
+                  Registrato
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700">
-                  Actions
+                  Azioni
                 </th>
               </tr>
             </thead>
@@ -314,7 +314,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                         {(user.name ?? "U")[0].toUpperCase()}
                       </div>
                       <div className="ml-3">
-                        <p className="font-semibold text-gray-900">{user.name ?? "Unassigned"}</p>
+                        <p className="font-semibold text-gray-900">{user.name ?? "Non assegnato"}</p>
                       </div>
                     </div>
                   </td>
@@ -327,7 +327,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                         ? "bg-purple-100 text-purple-700"
                         : "bg-blue-100 text-blue-700"
                     }`}>
-                      {user.role}
+                      {user.role === "ADMIN" ? "Amministratore" : "Dipendente"}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
@@ -338,12 +338,12 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                       <button
                         onClick={() => handleEditClick(user)}
                         className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
-                        title="Edit user"
+                        title="Modifica utente"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
-                        Edit
+                        Modifica
                       </button>
                       <button
                         onClick={() => {
@@ -354,12 +354,12 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                           setSuccess(null);
                         }}
                         className="inline-flex items-center gap-1 rounded-lg bg-yellow-50 px-3 py-2 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-100"
-                        title="Reset password"
+                        title="Reimposta password"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                         </svg>
-                        Reset
+                        Reimposta
                       </button>
                       <button
                         onClick={() => {
@@ -369,12 +369,12 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                         }}
                         disabled={user.id === currentUserId}
                         className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                        title={user.id === currentUserId ? "Cannot delete your own account" : "Delete user"}
+                        title={user.id === currentUserId ? "Non puoi eliminare il tuo account" : "Elimina utente"}
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        Delete
+                        Elimina
                       </button>
                     </div>
                   </td>
@@ -385,13 +385,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         </div>
       </div>
 
-      {/* Create User Modal */}
+      {/* Crea Utente Modal */}
       {isCreatingUserModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
             <div className="border-b border-gray-200 bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Create New User</h2>
+                <h2 className="text-lg font-semibold text-white">Crea Nuovo Utente</h2>
                 <button
                   onClick={() => {
                     setIsCreatingUserModalOpen(false);
@@ -417,7 +417,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
             <form onSubmit={handleCreateUser} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Full Name
+                  Nome Completo
                 </label>
                 <input
                   type="text"
@@ -425,13 +425,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   onChange={(e) => setCreateForm(f => ({ ...f, name: e.target.value }))}
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="John Doe"
+                  placeholder="Mario Rossi"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address
+                  Indirizzo Email
                 </label>
                 <input
                   type="email"
@@ -439,21 +439,21 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   onChange={(e) => setCreateForm(f => ({ ...f, email: e.target.value }))}
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="john.doe@example.com"
+                  placeholder="mario.rossi@esempio.com"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Role
+                  Ruolo
                 </label>
                 <select
                   value={createForm.role}
                   onChange={(e) => setCreateForm(f => ({ ...f, role: e.target.value as "EMPLOYEE" | "ADMIN" }))}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
                 >
-                  <option value="EMPLOYEE">Employee</option>
-                  <option value="ADMIN">Administrator</option>
+                  <option value="EMPLOYEE">Dipendente</option>
+                  <option value="ADMIN">Amministratore</option>
                 </select>
               </div>
 
@@ -469,13 +469,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   minLength={8}
                   autoComplete="new-password"
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="Min. 8 characters"
+                  placeholder="Min. 8 caratteri"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Confirm Password
+                  Conferma Password
                 </label>
                 <input
                   type="password"
@@ -484,7 +484,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   required
                   autoComplete="new-password"
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="Re-enter password"
+                  placeholder="Ripeti la password"
                 />
               </div>
 
@@ -516,14 +516,14 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   }}
                   className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                 >
-                  Cancel
+                  Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
                   className="flex-1 rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-green-700 hover:to-green-800 disabled:cursor-not-allowed disabled:from-green-300 disabled:to-green-400"
                 >
-                  {isCreating ? "Creating..." : "Create User"}
+                  {isCreating ? "Creazione..." : "Crea Utente"}
                 </button>
               </div>
             </form>
@@ -531,13 +531,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         </div>
       )}
 
-      {/* Edit User Modal */}
+      {/* Modifica Utente Modal */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
             <div className="border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Edit User</h2>
+                <h2 className="text-lg font-semibold text-white">Modifica Utente</h2>
                 <button
                   onClick={() => {
                     setEditingUser(null);
@@ -556,7 +556,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
             <form onSubmit={handleEditUser} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Full Name
+                  Nome Completo
                 </label>
                 <input
                   type="text"
@@ -564,13 +564,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))}
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="John Doe"
+                  placeholder="Mario Rossi"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address
+                  Indirizzo Email
                 </label>
                 <input
                   type="email"
@@ -578,13 +578,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))}
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="john.doe@example.com"
+                  placeholder="mario.rossi@esempio.com"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Role
+                  Ruolo
                 </label>
                 <select
                   value={editForm.role}
@@ -592,12 +592,12 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   disabled={editingUser?.id === currentUserId}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                 >
-                  <option value="EMPLOYEE">Employee</option>
-                  <option value="ADMIN">Administrator</option>
+                  <option value="EMPLOYEE">Dipendente</option>
+                  <option value="ADMIN">Amministratore</option>
                 </select>
                 {editingUser?.id === currentUserId && (
                   <p className="mt-2 text-xs text-amber-600">
-                    You cannot change your own role to prevent losing admin access
+                    Non puoi modificare il tuo ruolo per evitare di perdere l'accesso amministratore
                   </p>
                 )}
               </div>
@@ -623,14 +623,14 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   }}
                   className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                 >
-                  Cancel
+                  Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isUpdating}
                   className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
                 >
-                  {isUpdating ? "Updating..." : "Update User"}
+                  {isUpdating ? "Aggiornamento..." : "Aggiorna Utente"}
                 </button>
               </div>
             </form>
@@ -638,13 +638,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         </div>
       )}
 
-      {/* Delete User Modal */}
+      {/* Elimina Utente Modal */}
       {deletingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
             <div className="border-b border-gray-200 bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Delete User</h2>
+                <h2 className="text-lg font-semibold text-white">Elimina Utente</h2>
                 <button
                   onClick={() => {
                     setDeletingUser(null);
@@ -668,9 +668,9 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">Are you sure?</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Sei sicuro?</h3>
                   <p className="mt-1 text-sm text-gray-600">
-                    This will permanently delete the user <span className="font-semibold">{deletingUser.email}</span> and all their time entries. This action cannot be undone.
+                    Questo eliminerà permanentemente l'utente <span className="font-semibold">{deletingUser.email}</span> e tutte le sue registrazioni orarie. Questa azione non può essere annullata.
                   </p>
                 </div>
               </div>
@@ -696,14 +696,14 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   }}
                   className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                 >
-                  Cancel
+                  Annulla
                 </button>
                 <button
                   onClick={handleDeleteUser}
                   disabled={isDeleting}
                   className="flex-1 rounded-lg bg-gradient-to-r from-red-600 to-red-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-red-700 hover:to-red-800 disabled:cursor-not-allowed disabled:from-red-300 disabled:to-red-400"
                 >
-                  {isDeleting ? "Deleting..." : "Delete User"}
+                  {isDeleting ? "Eliminazione..." : "Elimina Utente"}
                 </button>
               </div>
             </div>
@@ -711,13 +711,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         </div>
       )}
 
-      {/* Reset Password Modal */}
+      {/* Reimposta Password Modal */}
       {resettingPasswordUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
             <div className="border-b border-gray-200 bg-gradient-to-r from-yellow-600 to-yellow-700 px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Reset Password</h2>
+                <h2 className="text-lg font-semibold text-white">Reimposta Password</h2>
                 <button
                   onClick={() => {
                     setResettingPasswordUser(null);
@@ -738,13 +738,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
             <form onSubmit={handleResetPassword} className="p-6 space-y-4">
               <div className="mb-4">
                 <p className="text-sm text-gray-600">
-                  Resetting password for: <span className="font-semibold text-gray-900">{resettingPasswordUser.email}</span>
+                  Reimpostazione password per: <span className="font-semibold text-gray-900">{resettingPasswordUser.email}</span>
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  New Password
+                  Nuova Password
                 </label>
                 <input
                   type="password"
@@ -754,13 +754,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   minLength={8}
                   autoComplete="new-password"
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="Min. 8 characters"
+                  placeholder="Min. 8 caratteri"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Confirm New Password
+                  Conferma Nuova Password
                 </label>
                 <input
                   type="password"
@@ -769,7 +769,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   required
                   autoComplete="new-password"
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="Re-enter password"
+                  placeholder="Ripeti la password"
                 />
               </div>
 
@@ -796,14 +796,14 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   }}
                   className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                 >
-                  Cancel
+                  Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isResettingPassword}
                   className="flex-1 rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-yellow-700 hover:to-yellow-800 disabled:cursor-not-allowed disabled:from-yellow-300 disabled:to-yellow-400"
                 >
-                  {isResettingPassword ? "Resetting..." : "Reset Password"}
+                  {isResettingPassword ? "Reimpostazione..." : "Reimposta Password"}
                 </button>
               </div>
             </form>
