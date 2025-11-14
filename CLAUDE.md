@@ -373,10 +373,17 @@ app/
 │   ├── hours/route.ts                 # TimeEntry CRUD + RBAC filtering
 │   ├── users/route.ts & create/       # Admin user management
 │   ├── export-csv/route.ts            # CSV/ZIP export with archiver
+│   ├── export-excel/route.ts          # Excel export
 │   └── setup/route.ts                 # Initial admin creation
 ├── dashboard/
-│   ├── page.tsx                       # Routes to employee/admin dashboard
-│   └── admin/page.tsx                 # Admin-specific view
+│   ├── layout.tsx                     # Shared dashboard layout with Navbar & auth
+│   ├── page.tsx                       # Employee dashboard (calendar) / Admin overview
+│   ├── admin/page.tsx                 # Full admin dashboard with tabs
+│   ├── users/page.tsx                 # User management (Admin only)
+│   ├── calendar/page.tsx              # User calendar view (Admin only)
+│   ├── reports/page.tsx               # Data export (Admin only)
+│   ├── employee-reports/page.tsx      # Employee personal reports & export
+│   └── profile/page.tsx               # Employee profile & password management
 ├── setup/page.tsx                     # First-time setup flow
 ├── page.tsx                           # Login page (public)
 └── layout.tsx                         # Root layout with metadata
@@ -384,7 +391,14 @@ app/
 components/
 ├── dashboard/
 │   ├── employee-dashboard.tsx         # Interactive calendar + time entry modal
-│   └── admin-dashboard.tsx            # User table, creation form, export UI
+│   ├── employee-reports.tsx           # Employee monthly reports & CSV export
+│   ├── employee-profile.tsx           # User profile & password change
+│   ├── admin-dashboard.tsx            # Full admin dashboard with tabs (deprecated)
+│   ├── admin-overview.tsx             # Admin overview with user statistics
+│   ├── admin-calendar.tsx             # Admin calendar with user selector
+│   ├── manage-users.tsx               # User management (create, edit, delete, reset password)
+│   └── export-data.tsx                # Data export UI for multiple users
+├── navbar.tsx                         # Navigation bar with role-based links
 ├── login-form.tsx                     # Email/password form
 ├── setup-form.tsx                     # Initial admin account creation
 └── logout-button.tsx                  # Sign out trigger
@@ -427,6 +441,77 @@ types/
 
 **Date validation failures**: Employees can only log hours for current month up to today. Check client-side validation in [employee-dashboard.tsx](components/dashboard/employee-dashboard.tsx) and server-side validation in [app/api/hours/route.ts](app/api/hours/route.ts).
 
+## Application Routes & Navigation
+
+### Employee Routes
+
+All employee pages are under `/dashboard` and use the shared layout with Navbar:
+
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/dashboard` | `EmployeeDashboard` | Main dashboard with interactive calendar for logging hours |
+| `/dashboard/employee-reports` | `EmployeeReports` | View monthly statistics and export personal hours to CSV |
+| `/dashboard/profile` | `EmployeeProfile` | User profile information and password management |
+
+**Employee Navigation (Navbar):**
+- 📊 Dashboard → `/dashboard`
+- 📈 Report → `/dashboard/employee-reports`
+- 👤 Profilo → `/dashboard/profile`
+
+### Admin Routes
+
+Admin pages are also under `/dashboard` with role-based access control:
+
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/dashboard` | `AdminOverview` | Overview with user statistics and hours summary |
+| `/dashboard/admin` | `AdminDashboard` | Full admin dashboard with tabs (deprecated, migrated to separate pages) |
+| `/dashboard/users` | `ManageUsers` | User management (create, edit, delete, password reset) |
+| `/dashboard/calendar` | `AdminCalendar` | View any user's calendar with user selector |
+| `/dashboard/reports` | `ExportData` | Export data for multiple users as Excel/ZIP |
+
+**Admin Navigation (Navbar):**
+- 📊 Overview → `/dashboard`
+- 👥 Utenti → `/dashboard/users`
+- 📅 Calendario → `/dashboard/calendar`
+- 📈 Report → `/dashboard/reports`
+
+### Layout Architecture
+
+**Shared Dashboard Layout** (`app/dashboard/layout.tsx`):
+- Enforces authentication (redirects to `/` if not logged in)
+- Renders `Navbar` component with role-based navigation
+- Applies background gradient (`from-gray-50 to-blue-50`)
+- Provides consistent structure across all dashboard pages
+
+**Page-Level Consistency**:
+All dashboard pages follow the same container pattern:
+```tsx
+<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+  {/* Page content */}
+</div>
+```
+
+This ensures:
+- ✅ Consistent max-width and centering
+- ✅ Responsive padding (smaller on mobile, larger on desktop)
+- ✅ Uniform vertical spacing
+- ✅ Professional appearance across all pages
+
+### Styling Conventions
+
+**Global Styles** (`app/globals.css`):
+- Custom scrollbar completely hidden for all browsers
+- Maintains scroll functionality (mouse, trackpad, touch)
+- Supports Firefox, Chrome, Safari, Edge, IE
+
+**Component Styling**:
+- Tailwind CSS 4 utility classes
+- Consistent color palette (blue primary, gray neutrals)
+- Gradient buttons and backgrounds
+- Rounded corners and subtle shadows
+- Smooth transitions and hover effects
+
 ## Known Limitations & Important Notes
 
 **Time Zone Handling:**
@@ -454,9 +539,12 @@ types/
 - Session cookies use `secure: false` to support HTTP on LAN deployments
 
 **Component Architecture:**
-- Admin dashboard supports embedded employee calendar via props: `hideHeader`, `targetUserId`, `onEntrySaved`
-- Large client components (679 and 1102 lines) could be split for better maintainability
+- All dashboard pages use shared layout (`app/dashboard/layout.tsx`) with Navbar and consistent styling
+- Employee dashboard supports embedded mode via `hideHeader` prop for flexible reuse
+- Admin dashboard migrated from single-page tabs to separate routes for better maintainability
+- Large client components could be further split for better code organization
 - No lazy loading implemented (consider for future performance optimization)
+- Navbar component provides role-based navigation (different links for ADMIN vs EMPLOYEE)
 
 ## Environment Variables
 

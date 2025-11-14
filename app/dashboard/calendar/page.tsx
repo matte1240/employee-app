@@ -43,7 +43,7 @@ const toDto = (entry: PrismaEntry): TimeEntryDTO => ({
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: { userId?: string };
+  searchParams: Promise<{ userId?: string }>;
 }) {
   const session = await getAuthSession();
 
@@ -65,8 +65,11 @@ export default async function CalendarPage({
     },
   })) as UserRow[];
 
+  // Await searchParams (Next.js 15+)
+  const params = await searchParams;
+
   // Determine which user's calendar to show
-  const targetUserId = searchParams.userId || session.user.id;
+  const targetUserId = params.userId || session.user.id;
   const targetUser = users.find((u) => u.id === targetUserId) || {
     id: session.user.id,
     name: session.user.name || null,
