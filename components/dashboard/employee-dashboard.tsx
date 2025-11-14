@@ -617,8 +617,8 @@ export default function EmployeeDashboard({
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto" onClick={() => setIsModalOpen(false)}>
-          <div className="w-full max-w-lg my-8 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-            <form onSubmit={handleModalSubmit} className="flex flex-col h-full">
+          <div className="w-full max-w-lg my-8 rounded-2xl border border-gray-200 bg-white shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <form onSubmit={handleModalSubmit} className="flex flex-col min-h-0 flex-1">
               {/* Modal Header */}
               <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex-shrink-0">
                 <h2 className="text-lg font-semibold text-white">
