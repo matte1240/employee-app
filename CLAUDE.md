@@ -127,6 +127,74 @@ NextAuth with JWT strategy:
 
 **Pattern**: All protected API routes call `getAuthSession()` first, return 401 if missing, then check `session.user.role !== "ADMIN"` for admin-only operations.
 
+### Time Entry Calculation Logic
+
+**Core Principle**: Work hours are split into **regular hours** (capped at 8 per day) and **overtime hours** (anything above 8).
+
+#### Calculation Flow
+
+**1. User Input** ([employee-dashboard.tsx](components/dashboard/employee-dashboard.tsx))
+- Morning shift: start/end time (e.g., `08:00` → `12:00`)
+- Afternoon shift: start/end time (e.g., `14:00` → `18:30`)
+
+**2. Hours Calculation** ([employee-dashboard.tsx:48-55](components/dashboard/employee-dashboard.tsx#L48-L55))
+```typescript
+function calculateHours(start: string, end: string): number {
+  const startMinutes = startHour * 60 + startMin;
+  const endMinutes = endHour * 60 + endMin;
+  return Math.max(0, (endMinutes - startMinutes) / 60);
+}
+```
+
+**3. Regular vs Overtime Split** ([employee-dashboard.tsx:183-188](components/dashboard/employee-dashboard.tsx#L183-L188))
+```typescript
+const morning = calculateHours(morningStart, morningEnd);      // e.g., 4h
+const afternoon = calculateHours(afternoonStart, afternoonEnd);  // e.g., 4.5h
+const total = morning + afternoon;                             // e.g., 8.5h
+const regular = Math.min(total, 8);                           // e.g., 8h
+const overtime = Math.max(0, total - 8);                       // e.g., 0.5h
+```
+
+**4. Permesso Hours** (calculated on backend and frontend)
+- Only applies on **weekdays** (Monday-Friday)
+- When `total < 8`: `permessoHours = 8 - total`
+- Represents leave/absence hours to reach 8-hour workday
+- Example: Work 6h on Monday → 2h permesso
+
+#### Field Definitions
+
+| Field | Contains | Formula | Example (9h day) |
+|-------|----------|---------|------------------|
+| `hoursWorked` | Regular hours only (max 8/day) | `Math.min(total, 8)` | 8 |
+| `overtimeHours` | Hours beyond 8/day | `Math.max(0, total - 8)` | 1 |
+| `permessoHours` | Leave hours (weekdays, when total < 8) | `8 - total` (if < 8) | 0 |
+| **Total hours** | Sum of worked hours | `hoursWorked + overtimeHours` | 9 |
+
+#### Display Logic
+
+**Employee Calendar:**
+- **Individual day cells**: Show `hoursWorked + overtimeHours` (total worked)
+- **Month Total card**: Sums `hoursWorked + overtimeHours` for all entries
+- **Overtime badge**: Shows `overtimeHours` separately
+
+**Admin Dashboard:**
+- **Total Hours column**: Shows `regularHours + overtimeHours` per user
+- **Ore Straordinarie column**: Shows `overtimeHours` separately
+- **Ore di Permesso column**: Shows `permessoHours` separately
+- **Month total card**: Sums all users' `regularHours + overtimeHours`
+
+#### Examples
+
+| Morning | Afternoon | Total | hoursWorked | overtimeHours | permessoHours (weekday) |
+|---------|-----------|-------|-------------|---------------|-------------------------|
+| 08:00-12:00 (4h) | 14:00-18:00 (4h) | 8h | 8 | 0 | 0 |
+| 08:00-12:00 (4h) | 14:00-18:30 (4.5h) | 8.5h | 8 | 0.5 | 0 |
+| 08:00-12:00 (4h) | 14:00-20:00 (6h) | 10h | 8 | 2 | 0 |
+| 08:00-11:00 (3h) | 14:00-16:00 (2h) | 5h | 5 | 0 | 3 |
+| 08:00-12:00 (4h) | None | 4h | 4 | 0 | 4 |
+
+**Key Point**: The database stores hours **correctly** with this split. Display logic must always sum `hoursWorked + overtimeHours` to show total hours worked.
+
 ## Common Development Patterns
 
 ### Adding a New API Endpoint
@@ -424,7 +492,7 @@ DATABASE_URL="postgresql://youruser:yourpassword@localhost:5432/timetracker?sche
 
 **Export functionality**: [POST /api/export-csv](app/api/export-csv/route.ts) uses `archiver` library to create ZIP files when multiple users selected; single user returns CSV directly.
 
-**Time calculation**: Hours are calculated from `(end_time - start_time) / 60` for morning/afternoon shifts; overtime tracked separately in `overtimeHours` field.
+**Time calculation**: See detailed [Time Entry Calculation Logic](#time-entry-calculation-logic) section above for complete explanation of how `hoursWorked`, `overtimeHours`, and `permessoHours` are calculated and displayed.
 
 **PM2 configuration**: [ecosystem.config.js](ecosystem.config.js) defines three processes:
 - `employee-tracker`: Main Next.js app (port 3000, binds to 0.0.0.0, 1GB memory limit, auto-restart on crash)

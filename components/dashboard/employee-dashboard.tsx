@@ -165,7 +165,7 @@ export default function EmployeeDashboard({
   }, [currentMonth]);
 
   const totalHours = useMemo(
-    () => entries.reduce((sum, entry) => sum + entry.hoursWorked, 0),
+    () => entries.reduce((sum, entry) => sum + entry.hoursWorked + (entry.overtimeHours ?? 0), 0),
     [entries]
   );
 
