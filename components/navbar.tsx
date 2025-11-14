@@ -189,25 +189,25 @@ export default function Navbar({ userRole, userName, userEmail }: NavbarProps) {
           }`}
         >
           {/* Drawer Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
             <div className="flex items-center space-x-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
-                <span className="text-lg font-bold text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                <span className="text-lg font-bold text-gray-700">
                   {(userName || userEmail || "U").charAt(0).toUpperCase()}
                 </span>
               </div>
               <div>
-                <div className="text-sm font-semibold text-white">
+                <div className="text-sm font-semibold text-gray-900">
                   {userName || userEmail}
                 </div>
-                <div className="text-xs text-blue-100">
+                <div className="text-xs text-gray-500">
                   {userRole === "ADMIN" ? "Amministratore" : "Dipendente"}
                 </div>
               </div>
             </div>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="p-2 rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               aria-label="Close menu"
             >
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,17 +226,12 @@ export default function Navbar({ userRole, userName, userEmail }: NavbarProps) {
                   href={link.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                     isActive
-                      ? "bg-blue-50 text-blue-700 shadow-sm"
+                      ? "bg-blue-50 text-blue-700"
                       : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
                   <span className="w-5 h-5 flex items-center justify-center">{link.icon}</span>
                   <span>{link.label}</span>
-                  {isActive && (
-                    <svg className="ml-auto h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
                 </Link>
               );
             })}

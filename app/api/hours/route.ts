@@ -135,6 +135,15 @@ export async function POST(request: Request) {
     today.setUTCHours(0, 0, 0, 0);
     const currentMonthStart = new Date(today.getUTCFullYear(), today.getUTCMonth(), 1);
 
+    // Block Sundays (0 = Sunday)
+    const dayOfWeek = entryDate.getUTCDay();
+    if (dayOfWeek === 0) {
+      return NextResponse.json(
+        { error: "Cannot enter hours on Sundays" },
+        { status: 403 }
+      );
+    }
+
     if (entryDate > today) {
       return NextResponse.json(
         { error: "Cannot enter hours for future dates" },

@@ -82,8 +82,12 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
             <h1 className="text-2xl font-bold text-gray-900">{user.name || "N/A"}</h1>
             <p className="text-gray-600">{user.email}</p>
             <div className="mt-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                {user.role}
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                user.role === "ADMIN"
+                  ? "bg-purple-100 text-purple-700"
+                  : "bg-blue-100 text-blue-700"
+              }`}>
+                {user.role === "ADMIN" ? "Amministratore" : "Dipendente"}
               </span>
             </div>
           </div>
@@ -135,7 +139,7 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Ruolo</dt>
-            <dd className="mt-1 text-sm text-gray-900">{user.role}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{user.role === "ADMIN" ? "Amministratore" : "Dipendente"}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Data registrazione</dt>

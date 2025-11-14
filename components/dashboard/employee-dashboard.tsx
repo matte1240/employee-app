@@ -34,6 +34,7 @@ type EmployeeDashboardProps = {
   hideHeader?: boolean; // If true, hide the header (for embedded views)
   targetUserId?: string; // If set, admin is editing this user's calendar
   onEntrySaved?: () => void; // Callback when entry is saved/deleted (for admin refetch)
+  isAdmin?: boolean; // If true, bypass Sunday restriction
 };
 
 type ModalFormState = {
@@ -74,6 +75,7 @@ export default function EmployeeDashboard({
   hideHeader = false,
   targetUserId,
   onEntrySaved,
+  isAdmin = false,
 }: EmployeeDashboardProps) {
   const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
@@ -208,13 +210,32 @@ export default function EmployeeDashboard({
     const checkDate = new Date(date);
     checkDate.setHours(0, 0, 0, 0);
     const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // Block Sundays (0 = Sunday) only for employees
+    if (!isAdmin) {
+      const dayOfWeek = checkDate.getDay();
+      if (dayOfWeek === 0) {
+        return false;
+      }
+    }
+    
     return checkDate >= currentMonthStart && checkDate <= today;
   };
 
   const handleDayClick = (day: Date) => {
     if (!isSameMonth(day, currentMonth)) return;
+    
+    // Check if it's Sunday (only for employees)
+    if (!isAdmin) {
+      const dayOfWeek = day.getDay();
+      if (dayOfWeek === 0) {
+        setError("Non è possibile inserire ore la domenica.");
+        return;
+      }
+    }
+    
     if (!isDateEditable(day)) {
-      setError("Can only enter hours for the current month up to today.");
+      setError("È possibile inserire ore solo per il mese corrente fino ad oggi.");
       return;
     }
 
@@ -250,7 +271,7 @@ export default function EmployeeDashboard({
     setModalError(null);
 
     if (calculatedHours.total === 0) {
-      setModalError("Please enter valid work hours.");
+      setModalError("Inserisci ore di lavoro valide.");
       return;
     }
 
@@ -279,7 +300,7 @@ export default function EmployeeDashboard({
         const data = await response.json();
 
         if (!response.ok) {
-          setModalError(data?.error ?? "Unable to save entry.");
+          setModalError(data?.error ?? "Impossibile salvare l'inserimento.");
           return;
         }
 
@@ -293,7 +314,7 @@ export default function EmployeeDashboard({
         router.refresh();
         onEntrySaved?.(); // Trigger refetch in admin dashboard
       } catch {
-        setModalError("Unexpected error while saving entry.");
+        setModalError("Errore imprevisto durante il salvataggio.");
       }
     });
   };
@@ -304,7 +325,7 @@ export default function EmployeeDashboard({
     const entry = entries.find(e => e.workDate === selectedDate);
     if (!entry) return;
 
-    if (!confirm("Are you sure you want to delete this entry?")) return;
+    if (!confirm("Sei sicuro di voler eliminare questo inserimento?")) return;
 
     setModalError(null);
 
@@ -316,7 +337,7 @@ export default function EmployeeDashboard({
 
         if (!response.ok) {
           const data = await response.json();
-          setModalError(data?.error ?? "Unable to delete entry.");
+          setModalError(data?.error ?? "Impossibile eliminare l'inserimento.");
           return;
         }
 
@@ -325,7 +346,7 @@ export default function EmployeeDashboard({
         router.refresh();
         onEntrySaved?.(); // Trigger refetch in admin dashboard
       } catch {
-        setModalError("Unexpected error while deleting entry.");
+        setModalError("Errore imprevisto durante l'eliminazione.");
       }
     });
   };
@@ -344,10 +365,10 @@ export default function EmployeeDashboard({
               />
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">
-                  Welcome, {userName.split(" ")[0] ?? userName}
+                  Benvenuto, {userName.split(" ")[0] ?? userName}
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Track your work hours
+                  Gestisci le tue ore di lavoro
                 </p>
               </div>
             </div>
@@ -362,9 +383,9 @@ export default function EmployeeDashboard({
           <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Month Total</p>
+                <p className="text-sm font-medium text-gray-600">Totale Mese</p>
                 <p className="mt-2 text-3xl font-bold text-blue-600">{totalHours.toFixed(1)}</p>
-                <p className="text-xs text-gray-500">hours worked</p>
+                <p className="text-xs text-gray-500">ore lavorate</p>
               </div>
               <div className="rounded-full bg-blue-50 p-3">
                 <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -378,9 +399,9 @@ export default function EmployeeDashboard({
             <div className="rounded-xl border border-orange-100 bg-white p-6 shadow-sm transition hover:shadow-md">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Overtime</p>
+                  <p className="text-sm font-medium text-gray-600">Straordinario</p>
                   <p className="mt-2 text-3xl font-bold text-orange-600">{totalOvertime.toFixed(1)}</p>
-                  <p className="text-xs text-gray-500">extra hours</p>
+                  <p className="text-xs text-gray-500">ore extra</p>
                 </div>
                 <div className="rounded-full bg-orange-50 p-3">
                   <svg className="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,7 +417,7 @@ export default function EmployeeDashboard({
               <div>
                 <p className="text-sm font-medium text-gray-600">Permesso</p>
                 <p className="mt-2 text-3xl font-bold text-purple-600">{totalPermesso.toFixed(1)}</p>
-                <p className="text-xs text-gray-500">hours used</p>
+                <p className="text-xs text-gray-500">ore utilizzate</p>
               </div>
               <div className="rounded-full bg-purple-50 p-3">
                 <svg className="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -421,7 +442,7 @@ export default function EmployeeDashboard({
                 <h2 className="text-lg font-semibold text-gray-900">
                   {format(currentMonth, "MMMM yyyy")}
                 </h2>
-                {isFetching && <p className="text-xs text-gray-500">Refreshing calendar...</p>}
+                {isFetching && <p className="text-xs text-gray-500">Aggiornamento calendario...</p>}
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -436,7 +457,7 @@ export default function EmployeeDashboard({
                   onClick={() => setCurrentMonth(startOfMonth(new Date()))}
                   className="rounded-lg border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
                 >
-                  Today
+                  Oggi
                 </button>
                 <button
                   type="button"
@@ -451,7 +472,7 @@ export default function EmployeeDashboard({
 
           <div className="px-2 py-4 sm:p-6">
             <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+              {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map((day) => (
                 <div key={day} className="py-2">{day}</div>
               ))}
             </div>
@@ -467,6 +488,9 @@ export default function EmployeeDashboard({
                 const hasEntries = Boolean(dayEntry);
                 const highlight = isSameDay(day, new Date());
                 const editable = isDateEditable(day) && isSameMonth(day, currentMonth);
+                const dayOfWeek = day.getDay(); // 0 = Sunday, 6 = Saturday
+                const isSaturday = dayOfWeek === 6;
+                const isSunday = dayOfWeek === 0;
 
                 // Calculate permesso hours
                 let permessoHours = 0;
@@ -479,7 +503,6 @@ export default function EmployeeDashboard({
                   today.setHours(0, 0, 0, 0);
                   const yesterday = new Date(today);
                   yesterday.setDate(yesterday.getDate() - 1);
-                  const dayOfWeek = day.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
                   const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
                   const isPastOrYesterday = day <= yesterday;
                   const isInCurrentMonth = isSameMonth(day, currentMonth);
@@ -497,6 +520,21 @@ export default function EmployeeDashboard({
                   permessoColor = "bg-red-500";
                 }
 
+                // Determine background color based on day type
+                let bgColorClass = "bg-white";
+                let bgColorDisabled = "bg-gray-50";
+                let bgColorOutside = "bg-gray-50/50";
+                
+                if (isSaturday) {
+                  bgColorClass = "bg-blue-50";
+                  bgColorDisabled = "bg-blue-50/70";
+                  bgColorOutside = "bg-blue-50/40";
+                } else if (isSunday) {
+                  bgColorClass = "bg-red-50";
+                  bgColorDisabled = "bg-red-50/70";
+                  bgColorOutside = "bg-red-50/40";
+                }
+
                 return (
                   <button
                     key={key}
@@ -505,9 +543,9 @@ export default function EmployeeDashboard({
                     className={`flex min-h-[80px] sm:min-h-[100px] flex-col rounded-md sm:rounded-xl border p-1.5 sm:p-3 text-left transition ${
                       isSameMonth(day, currentMonth)
                         ? editable
-                          ? "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md cursor-pointer hover:scale-105"
-                          : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
-                        : "border-dashed border-gray-200 bg-gray-50/50 text-gray-300"
+                          ? `border-gray-200 ${bgColorClass} hover:border-blue-300 hover:shadow-md cursor-pointer hover:scale-105`
+                          : `border-gray-200 ${bgColorDisabled} text-gray-400 cursor-not-allowed`
+                        : `border-dashed border-gray-200 ${bgColorOutside} text-gray-300`
                     } ${highlight ? "ring-2 ring-blue-400 shadow-md" : ""}`}
                   >
                     <div className="flex items-center justify-between mb-1">
@@ -527,7 +565,7 @@ export default function EmployeeDashboard({
                             {totalHours.toFixed(1)}
                           </div>
                           <div className="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
-                            hours
+                            ore
                           </div>
                         </div>
                         {dayEntry?.notes && (
@@ -580,11 +618,11 @@ export default function EmployeeDashboard({
                     <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    <h3 className="text-sm font-bold text-blue-900">Morning Shift</h3>
+                    <h3 className="text-sm font-bold text-blue-900">Turno Mattina</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <label className="flex flex-col gap-2">
-                      <span className="text-xs font-semibold text-blue-800">Start time</span>
+                      <span className="text-xs font-semibold text-blue-800">Ora inizio</span>
                       <select
                         value={modalForm.morningStart}
                         onChange={(e) => setModalForm(f => ({ ...f, morningStart: e.target.value }))}
@@ -596,7 +634,7 @@ export default function EmployeeDashboard({
                       </select>
                     </label>
                     <label className="flex flex-col gap-2">
-                      <span className="text-xs font-semibold text-blue-800">End time</span>
+                      <span className="text-xs font-semibold text-blue-800">Ora fine</span>
                       <select
                         value={modalForm.morningEnd}
                         onChange={(e) => setModalForm(f => ({ ...f, morningEnd: e.target.value }))}
@@ -609,8 +647,8 @@ export default function EmployeeDashboard({
                     </label>
                   </div>
                   <p className="mt-3 flex items-center justify-between text-xs">
-                    <span className="font-medium text-blue-700">Duration:</span>
-                    <span className="font-bold text-blue-900">{calculatedHours.morning.toFixed(2)} hours</span>
+                    <span className="font-medium text-blue-700">Durata:</span>
+                    <span className="font-bold text-blue-900">{calculatedHours.morning.toFixed(2)} ore</span>
                   </p>
                 </div>
 
@@ -620,11 +658,11 @@ export default function EmployeeDashboard({
                     <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
-                    <h3 className="text-sm font-bold text-orange-900">Afternoon Shift</h3>
+                    <h3 className="text-sm font-bold text-orange-900">Turno Pomeriggio</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <label className="flex flex-col gap-2">
-                      <span className="text-xs font-semibold text-orange-800">Start time</span>
+                      <span className="text-xs font-semibold text-orange-800">Ora inizio</span>
                       <select
                         value={modalForm.afternoonStart}
                         onChange={(e) => setModalForm(f => ({ ...f, afternoonStart: e.target.value }))}
@@ -636,7 +674,7 @@ export default function EmployeeDashboard({
                       </select>
                     </label>
                     <label className="flex flex-col gap-2">
-                      <span className="text-xs font-semibold text-orange-800">End time</span>
+                      <span className="text-xs font-semibold text-orange-800">Ora fine</span>
                       <select
                         value={modalForm.afternoonEnd}
                         onChange={(e) => setModalForm(f => ({ ...f, afternoonEnd: e.target.value }))}
@@ -649,8 +687,8 @@ export default function EmployeeDashboard({
                     </label>
                   </div>
                   <p className="mt-3 flex items-center justify-between text-xs">
-                    <span className="font-medium text-orange-700">Duration:</span>
-                    <span className="font-bold text-orange-900">{calculatedHours.afternoon.toFixed(2)} hours</span>
+                    <span className="font-medium text-orange-700">Durata:</span>
+                    <span className="font-bold text-orange-900">{calculatedHours.afternoon.toFixed(2)} ore</span>
                   </p>
                 </div>
 
@@ -658,16 +696,16 @@ export default function EmployeeDashboard({
                 <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm">
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-gray-700">Total hours:</span>
+                      <span className="font-semibold text-gray-700">Ore totali:</span>
                       <span className="text-2xl font-bold text-blue-600">{calculatedHours.total.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center border-t border-blue-100 pt-2">
-                      <span className="font-medium text-gray-600">Regular hours:</span>
+                      <span className="font-medium text-gray-600">Ore regolari:</span>
                       <span className="font-bold text-gray-900">{calculatedHours.regular.toFixed(2)}</span>
                     </div>
                     {calculatedHours.overtime > 0 && (
                       <div className="flex justify-between items-center border-t border-orange-100 pt-2">
-                        <span className="font-medium text-orange-700">Overtime:</span>
+                        <span className="font-medium text-orange-700">Straordinario:</span>
                         <span className="font-bold text-orange-600">{calculatedHours.overtime.toFixed(2)}</span>
                       </div>
                     )}
@@ -682,11 +720,11 @@ export default function EmployeeDashboard({
 
                 {/* Notes */}
                 <label className="flex flex-col gap-2">
-                  <span className="text-sm font-semibold text-gray-700">Notes (optional)</span>
+                  <span className="text-sm font-semibold text-gray-700">Note (opzionali)</span>
                   <textarea
                     value={modalForm.notes}
                     onChange={(e) => setModalForm(f => ({ ...f, notes: e.target.value }))}
-                    placeholder="Add any notes about your work..."
+                    placeholder="Aggiungi note sul tuo lavoro..."
                     rows={3}
                     className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                   />
@@ -709,7 +747,7 @@ export default function EmployeeDashboard({
                     disabled={isSaving}
                     className="rounded-lg border-2 border-red-300 bg-white px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isSaving ? "Deleting..." : "Delete"}
+                    {isSaving ? "Eliminazione..." : "Elimina"}
                   </button>
                 )}
                 <button
@@ -717,14 +755,14 @@ export default function EmployeeDashboard({
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 hover:border-gray-400"
                 >
-                  Cancel
+                  Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving || calculatedHours.total === 0}
                   className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
                 >
-                  {isSaving ? "Saving..." : "Save Entry"}
+                  {isSaving ? "Salvataggio..." : "Salva"}
                 </button>
               </div>
             </form>

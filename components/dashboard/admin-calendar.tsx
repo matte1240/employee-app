@@ -145,6 +145,7 @@ export default function AdminCalendar({
         hideHeader={true}
         targetUserId={selectedUserId}
         onEntrySaved={handleEntrySaved}
+        isAdmin={true}
       />
     </div>
   );
