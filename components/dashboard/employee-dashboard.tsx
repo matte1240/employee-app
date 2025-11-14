@@ -617,10 +617,10 @@ export default function EmployeeDashboard({
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto" onClick={() => setIsModalOpen(false)}>
-          <div className="w-full max-w-lg my-8 rounded-2xl border border-gray-200 bg-white shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-lg my-8 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleModalSubmit} className="flex flex-col h-full">
               {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl flex-shrink-0">
+              <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex-shrink-0">
                 <h2 className="text-lg font-semibold text-white">
                   {selectedDate && format(new Date(`${selectedDate}T12:00:00`), "EEEE, MMM d, yyyy")}
                 </h2>
@@ -636,7 +636,7 @@ export default function EmployeeDashboard({
               </div>
 
               {/* Modal Body */}
-              <div className="space-y-5 p-6 overflow-y-auto flex-1">
+              <div className="space-y-5 p-6 pb-5 overflow-y-auto flex-1">
                 {/* Morning shift */}
                 <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 shadow-sm">
                   <div className="mb-3 flex items-center gap-2">
@@ -751,7 +751,8 @@ export default function EmployeeDashboard({
                     onChange={(e) => setModalForm(f => ({ ...f, notes: e.target.value }))}
                     placeholder="Aggiungi note sul tuo lavoro..."
                     rows={3}
-                    className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-200 resize-none"
+                    style={{ backgroundColor: 'white' }}
                   />
                 </label>
 
@@ -763,7 +764,7 @@ export default function EmployeeDashboard({
               </div>
 
               {/* Modal Footer */}
-              <div className="flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 rounded-b-2xl flex-shrink-0">
+              <div className="flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 pt-6 rounded-b-2xl flex-shrink-0">
                 {/* Show delete button only if entry exists */}
                 {selectedDate && entries.find(e => e.workDate === selectedDate) && (
                   <button
