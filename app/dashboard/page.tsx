@@ -1,12 +1,12 @@
 import type { Decimal } from "@prisma/client/runtime/library";
 import { redirect } from "next/navigation";
-import { endOfMonth, startOfMonth } from "date-fns";
+import prisma from "@/lib/prisma";
+import { getAuthSession } from "@/lib/auth";
+import AdminOverview from "@/components/dashboard/admin-overview";
 import EmployeeDashboard, {
   type TimeEntryDTO,
 } from "@/components/dashboard/employee-dashboard";
-import AdminDashboard from "@/components/dashboard/admin-dashboard";
-import { getAuthSession } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { endOfMonth, startOfMonth } from "date-fns";
 
 type PrismaEntry = {
   id: string;
@@ -42,7 +42,7 @@ type UserRow = {
 
 const toDto = (entry: PrismaEntry): TimeEntryDTO => ({
   id: entry.id,
-  workDate: entry.workDate.toISOString().split('T')[0], // Return only date part (YYYY-MM-DD)
+  workDate: entry.workDate.toISOString().split('T')[0],
   hoursWorked: parseFloat(entry.hoursWorked.toString()),
   overtimeHours: parseFloat(entry.overtimeHours.toString()),
   permessoHours: parseFloat(entry.permessoHours.toString()),
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  // If user is ADMIN, show admin dashboard
+  // ADMIN: Show overview with user statistics
   if (session.user.role === "ADMIN") {
     const users = (await prisma.user.findMany({
       orderBy: { createdAt: "asc" },
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
       },
     })) as UserRow[];
 
-    // Filter by current month only (to match calendar view)
+    // Calculate totals for current month
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
@@ -114,19 +114,11 @@ export default async function DashboardPage() {
       permessoHours: permessoHoursMap.get(user.id) ?? 0,
     }));
 
-    const currentUser = {
-      id: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      role: session.user.role,
-    };
-
-    return <AdminDashboard users={rows} currentUser={currentUser} />;
+    return <AdminOverview users={rows} />;
   }
 
-  // Otherwise, show employee dashboard
+  // EMPLOYEE: Show personal dashboard with calendar
   const now = new Date();
-
   const entries = (await prisma.timeEntry.findMany({
     where: {
       userId: session.user.id,
@@ -153,11 +145,12 @@ export default async function DashboardPage() {
   const plain = entries.map(toDto);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <EmployeeDashboard
         initialEntries={plain}
         userName={session.user.name ?? session.user.email}
+        hideHeader={true}
       />
-    </main>
+    </div>
   );
 }
