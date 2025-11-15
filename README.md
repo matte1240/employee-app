@@ -624,6 +624,7 @@ See `docs/` folder for additional guides:
 - **INACTIVITY_TIMEOUT.md** - Session timeout details
 - **CHANGELOG.md** - Version history and updates
 - **RELEASE_GUIDE.md** - How to create GitHub releases
+- **BRANCHING_STRATEGY.md** - Git workflow and deployment strategy
 
 ---
 

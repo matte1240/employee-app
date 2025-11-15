@@ -16,21 +16,32 @@ Il progetto usa **GitHub Actions** per automatizzare:
 
 ## 🚀 Come Creare una Release
 
-### Metodo 1: Release Automatica con Tag (Consigliato)
+### ⚠️ IMPORTANTE: Release solo da `main`
+
+Le release devono essere create **solo dal branch `main`** dopo che il codice è stato testato su `staging`.
+
+### Workflow Completo: dev → staging → main → release
 
 ```bash
-# 1. Assicurati di essere sul branch main/master
+# 1. Test su staging
+git checkout staging
+git merge dev
+git push origin staging
+# → Testa su server staging
+
+# 2. Deploy su main (dopo test OK)
 git checkout main
 git pull origin main
+git merge staging
+git push origin main
 
-# 2. Crea un tag con semantic versioning
+# 3. Crea release da main
+git checkout main
 git tag -a v1.0.0 -m "Release v1.0.0: Initial production release"
-
-# 3. Pusha il tag su GitHub
 git push origin v1.0.0
 
 # 4. GitHub Actions si attiva automaticamente e:
-#    - Buildi l'immagine Docker
+#    - Buildi l'immagine Docker multi-platform
 #    - Pusha su ghcr.io/matte1240/employee-app:1.0.0
 #    - Crea la release GitHub con changelog
 ```

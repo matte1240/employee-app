@@ -1,9 +1,11 @@
-name: Release & Docker Build
+name: Release & Docker Build (Production)
 
 on:
   push:
     tags:
       - 'v*.*.*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+    branches:
+      - main  # Only allow releases from main branch
 
 env:
   REGISTRY: ghcr.io

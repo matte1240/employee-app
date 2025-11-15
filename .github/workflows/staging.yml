@@ -1,21 +1,19 @@
-name: Docker Build (Dev & Main)
+name: Deploy to Staging
 
 on:
   push:
     branches:
-      - dev
-      - main
+      - staging
   pull_request:
     branches:
-      - dev
-      - main
+      - staging
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
+  build-staging:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,9 +40,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            type=raw,value=staging
+            type=sha,prefix=staging-
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -60,11 +57,18 @@ jobs:
       - name: Summary
         if: github.event_name != 'pull_request'
         run: |
-          echo "### ✅ Docker Build Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Staging Build Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Staging" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Images pushed:**" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deploy to staging server:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ghcr.io/${{ github.repository }}:staging" >> $GITHUB_STEP_SUMMARY
+          echo "docker compose -f docker-compose.staging.yml up -d" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
