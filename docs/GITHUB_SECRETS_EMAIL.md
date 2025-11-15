@@ -64,11 +64,11 @@ Quando fai push su `dev` (staging) o `main` (production), il workflow:
 
 1. Si connette al server via bastion
 2. Clona/aggiorna il repository
-3. Crea il file `.env` con TUTTE le variabili (database + auth + email)
-4. Installa dipendenze
-5. Esegue build
-6. Applica migrazioni database
-7. Riavvia l'app con PM2
+3. Crea il file `.env.docker` con TUTTE le variabili (database + auth + email)
+4. Costruisce le immagini Docker
+5. Avvia i containers con Docker Compose
+6. Applica migrazioni database automaticamente
+7. L'app è disponibile con restart automatico
 
 ## ⚠️ Note Importanti
 
@@ -97,11 +97,14 @@ Se le email non funzionano:
 
 1. Verifica che i secrets siano stati aggiunti correttamente su GitHub
 2. Controlla i log del workflow GitHub Actions per errori
-3. SSH nel server e verifica il file `.env`:
+3. SSH nel server e verifica il file `.env.docker`:
    ```bash
-   ssh staging "cat ~/development-webapp/.env | grep EMAIL"
+   ssh staging "cat ~/development-webapp/.env.docker | grep EMAIL"
    ```
-4. Controlla i log PM2 per errori di invio email
+4. Controlla i log Docker per errori di invio email:
+   ```bash
+   docker compose logs app | grep -i email
+   ```
 5. Verifica che la App Password di Gmail sia corretta e non scaduta
 
 ## 📚 Riferimenti

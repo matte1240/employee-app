@@ -39,7 +39,6 @@ Thumbs.db
 # Logs
 logs
 *.log
-pm2-*.log
 
 # Database
 db_data
@@ -57,9 +56,6 @@ docker-compose.yml
 # Documentation
 *.md
 !README.md
-
-# PM2
-ecosystem.config.js
 
 # Scripts (non necessari in container)
 scripts/*.sh

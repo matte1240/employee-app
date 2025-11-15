@@ -11,13 +11,12 @@ Full stack time tracking portal built with Next.js App Router, Prisma, NextAuth,
 - REST API routes for logging hours and managing users, secured by session and role checks.
 - Prisma schema with seed script that provisions sample admin and employee accounts.
 - Docker deployment with PostgreSQL container and automated migrations.
-- PM2 process manager for production deployment with automatic restart and monitoring.
 
 ### Prerequisites
 
 - Node.js 20+
 - npm 10+
-- PostgreSQL 14+ (running as a service) OR Docker for containerized deployment
+- Docker and Docker Compose for deployment
 
 ### Quick Start
 
@@ -64,35 +63,29 @@ Sample credentials provided by the seed script:
 
 ### Production Deployment
 
-1. **Build the application:**
+The application is deployed using Docker Compose:
 
 ```bash
-npm run build
+# 1. Configure environment
+cp .env.docker.example .env.docker
+# Edit .env.docker with your database credentials and secrets
+
+# 2. Build and start containers
+npm run docker:deploy
+
+# 3. View logs
+npm run docker:logs
+
+# 4. Manage containers
+npm run docker:restart  # Restart containers
+npm run docker:down     # Stop containers
 ```
 
-2. **Apply database migrations:**
-
-```bash
-npm run prisma:deploy
-```
-
-3. **Start with PM2:**
-
-```bash
-npm run pm2:start
-```
-
-4. **Manage the application:**
-
-```bash
-npm run pm2:logs      # View application logs
-npm run pm2:monit     # Monitor resources in real-time
-npm run pm2:restart   # Restart the application
-npm run pm2:stop      # Stop the application
-npm run pm2:delete    # Remove from PM2
-```
-
-PM2 configuration is in `ecosystem.config.js`. The app runs on port 3000 by default with automatic restart on crashes and memory limit of 1GB.
+Docker automatically handles:
+- Database initialization and migrations
+- Application restart on crashes
+- Health checks and dependency management
+- Volume persistence for data and logs
 
 ### Useful Scripts
 
@@ -123,15 +116,6 @@ See [BACKUP_STRATEGY.md](./BACKUP_STRATEGY.md) for complete backup documentation
 
 See [docs/INACTIVITY_TIMEOUT.md](./docs/INACTIVITY_TIMEOUT.md) for detailed implementation and configuration.
 
-**Production:**
-- `npm run build` - create an optimised production build.
-- `npm run pm2:start` - start application with PM2.
-- `npm run pm2:stop` - stop the PM2 process.
-- `npm run pm2:restart` - restart the application.
-- `npm run pm2:logs` - view application logs.
-- `npm run pm2:monit` - monitor resources in real-time.
-- `npm run pm2:delete` - remove application from PM2.
-
 ### Project Structure
 
 - `app/` - Next.js App Router routes, including employee and admin dashboards.
@@ -140,8 +124,6 @@ See [docs/INACTIVITY_TIMEOUT.md](./docs/INACTIVITY_TIMEOUT.md) for detailed impl
 - `prisma/` - Database schema and seed script.
 - `scripts/` - Backup and maintenance scripts for database management.
 - `backups/` - Database backups directory (gitignored).
-- `ecosystem.config.js` - PM2 configuration for production deployment.
-- `logs/` - PM2 application logs (gitignored).
 
 ## 📚 Documentation
 
@@ -178,10 +160,3 @@ Additional documentation is available in the [`docs/`](./docs/) directory:
 - `npm run docker:logs` - View container logs
 - `npm run docker:restart` - Restart containers
 - `npm run docker:deploy` - Full deployment (build + start)
-
-### Production (PM2)
-- `npm run pm2:start` - Start with PM2
-- `npm run pm2:stop` - Stop PM2 process
-- `npm run pm2:restart` - Restart application
-- `npm run pm2:logs` - View PM2 logs
-- `npm run pm2:monit` - Monitor resources

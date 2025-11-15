@@ -36,6 +36,9 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+# Install PostgreSQL client tools for backup/restore
+RUN apk add --no-cache postgresql16-client
+
 # Set to production environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
