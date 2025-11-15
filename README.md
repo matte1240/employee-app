@@ -102,10 +102,10 @@ git clone https://github.com/yourusername/employee-app.git
 cd employee-app
 
 # Copy environment template
-cp .env.example .env.docker
+cp .env.example .env
 
 # Edit configuration (secrets, database credentials)
-nano .env.docker
+nano .env
 ```
 
 ### 2. Start the Application
@@ -134,7 +134,7 @@ docker compose down
 
 ## 🔧 Environment Configuration
 
-### `.env.docker` Variables
+### `.env` File (Usato per Sviluppo E Docker)
 
 **Database Configuration:**
 ```env
@@ -350,7 +350,8 @@ employee-app/
 │
 ├── docker-compose.yml               # Docker configuration
 ├── Dockerfile                       # Multi-stage build
-├── .env.docker.example              # Environment template
+├── .env.example                     # Development environment template
+├── .env.production.example          # Production environment template
 ├── next.config.ts                   # Next.js config
 ├── tsconfig.json                    # TypeScript config
 ├── tailwind.config.js               # Tailwind config

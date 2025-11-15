@@ -77,6 +77,20 @@ jobs:
             # Pull latest image
             docker compose -f docker-compose.staging.yml pull
             
+            # Apply database migrations
+            echo "🔄 Applying database migrations..."
+            docker compose -f docker-compose.staging.yml run --rm app npx prisma migrate deploy
+            
+            # Seed database if empty (first deployment)
+            echo "🌱 Checking if database needs seeding..."
+            USER_COUNT=$(docker compose -f docker-compose.staging.yml exec -T db psql -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-employee_tracker} -t -c "SELECT COUNT(*) FROM \"User\";" 2>/dev/null | tr -d ' ' || echo "0")
+            if [ "$USER_COUNT" = "0" ]; then
+              echo "📦 Database is empty, running seed..."
+              docker compose -f docker-compose.staging.yml run --rm app npx prisma db seed
+            else
+              echo "✅ Database already has $USER_COUNT users, skipping seed"
+            fi
+            
             # Stop and remove old containers
             docker compose -f docker-compose.staging.yml down
             

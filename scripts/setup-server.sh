@@ -146,35 +146,42 @@ check_success "Repository clonato/aggiornato"
 mkdir -p backups/database
 check_success "Directory backups creata"
 
-# 9. Generate .env.docker template
-print_step "8. Generazione file .env.docker"
+# 9. Generate .env template
+print_step "8. Generazione file .env"
 
 # Generate random passwords
 DB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
 NEXTAUTH_SECRET=$(openssl rand -base64 32)
 
-cat > $APP_DIR/.env.docker << EOF
+cat > $APP_DIR/.env << EOF
 # Database Configuration
-DB_PASSWORD=$DB_PASSWORD
+POSTGRES_USER=app
+POSTGRES_PASSWORD=$DB_PASSWORD
+POSTGRES_DB=employee_tracker
+DB_PORT=5433
 
 # NextAuth Configuration
 NEXTAUTH_URL=https://${ENVIRONMENT}.example.com
 NEXTAUTH_SECRET=$NEXTAUTH_SECRET
 
+# Application
+APP_PORT=3000
+APP_URL=https://${ENVIRONMENT}.example.com
+NODE_ENV=production
+
 # Email Configuration (optional for staging, required for production)
-EMAIL_SERVER_HOST=smtp.gmail.com
-EMAIL_SERVER_PORT=587
-EMAIL_SERVER_USER=your-email@gmail.com
-EMAIL_SERVER_PASSWORD=your-app-password
-EMAIL_FROM=noreply@${ENVIRONMENT}.example.com
+EMAIL_HOST=smtp.gmail.com
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+EMAIL_FROM_NAME=Time Tracker
 EOF
 
-chmod 600 $APP_DIR/.env.docker
-check_success ".env.docker creato"
+chmod 600 $APP_DIR/.env
+check_success ".env creato"
 
 echo ""
-echo -e "${YELLOW}⚠️  IMPORTANTE: Modifica il file .env.docker con le tue credenziali!${NC}"
-echo -e "${YELLOW}   Posizione: $APP_DIR/.env.docker${NC}"
+echo -e "${YELLOW}⚠️  IMPORTANTE: Modifica il file .env con le tue credenziali!${NC}"
+echo -e "${YELLOW}   Posizione: $APP_DIR/.env${NC}"
 echo ""
 echo "   Devi configurare:"
 echo "   - NEXTAUTH_URL (il dominio del tuo server)"
@@ -243,12 +250,12 @@ echo ""
 echo "  Directory app:     $APP_DIR"
 echo "  Environment:       $ENVIRONMENT"
 echo "  Compose file:      $COMPOSE_FILE"
-echo "  Config file:       $APP_DIR/.env.docker"
+echo "  Config file:       $APP_DIR/.env"
 echo ""
 echo -e "${YELLOW}⚠️  PROSSIMI PASSI OBBLIGATORI:${NC}"
 echo ""
-echo "1️⃣  Modifica il file .env.docker:"
-echo "   vim $APP_DIR/.env.docker"
+echo "1️⃣  Modifica il file .env:"
+echo "   vim $APP_DIR/.env"
 echo ""
 echo "2️⃣  IMPORTANTE: Fai logout e login per applicare il gruppo docker:"
 echo "   exit"
