@@ -13,20 +13,20 @@ Questa applicazione è pronta per il deployment Docker con:
 
 - Docker Engine 24.0+ 
 - Docker Compose 2.0+
-- File `.env.docker` configurato (vedi sotto)
+- File `.env` configurato (vedi sotto)
 
 ## 🚀 Quick Start
 
 ### 1. Configurazione Ambiente
 
-Assicurati che il file `.env.docker` sia configurato correttamente:
+Assicurati che il file `.env` sia configurato correttamente:
 
 ```bash
 # Verifica la presenza del file
-ls -la .env.docker
+ls -la .env
 
 # Se necessario, modifica le variabili
-nano .env.docker
+nano .env
 ```
 
 Variabili chiave:
@@ -52,28 +52,28 @@ Questo comando:
 ```bash
 # 1. Build delle immagini
 npm run docker:build
-# oppure: docker compose --env-file .env.docker build
+# oppure: docker compose build
 
 # 2. Avvio dei container
 npm run docker:up
-# oppure: docker compose --env-file .env.docker up -d
+# oppure: docker compose up -d
 
 # 3. Verifica lo stato
-docker compose --env-file .env.docker ps
+docker compose ps
 
 # 4. Esegui migrazioni (già automatiche al primo avvio)
-docker compose --env-file .env.docker exec app npx prisma migrate deploy
+docker compose exec app npx prisma migrate deploy
 ```
 
 ### 4. Verifica Deployment
 
 ```bash
 # Controlla i container
-docker compose --env-file .env.docker ps
+docker compose ps
 
 # Visualizza i logs
-docker compose --env-file .env.docker logs -f app
-docker compose --env-file .env.docker logs -f postgres
+docker compose logs -f app
+docker compose logs -f postgres
 
 # Testa l'applicazione
 curl http://localhost:3000/api/auth/session
@@ -162,34 +162,34 @@ employee-app/
 
 ```bash
 # Verifica i logs
-docker compose --env-file .env.docker logs
+docker compose logs
 
 # Ricostruisci le immagini
-docker compose --env-file .env.docker build --no-cache
+docker compose build --no-cache
 
 # Verifica le variabili d'ambiente
-docker compose --env-file .env.docker config
+docker compose config
 ```
 
 ### Errori di connessione database
 
 ```bash
 # Verifica che PostgreSQL sia healthy
-docker compose --env-file .env.docker ps
+docker compose ps
 
 # Controlla i logs del database
-docker compose --env-file .env.docker logs postgres
+docker compose logs postgres
 
 # Riavvia solo il database
-docker compose --env-file .env.docker restart postgres
+docker compose restart postgres
 ```
 
 ### Reset completo
 
 ```bash
 # ATTENZIONE: Rimuove tutti i dati!
-docker compose --env-file .env.docker down -v
-docker compose --env-file .env.docker up -d
+docker compose down -v
+docker compose up -d
 ```
 
 ## 🔒 Migrazioni Database
@@ -200,10 +200,10 @@ Per eseguirle manualmente:
 
 ```bash
 # Esegui migrazioni
-docker compose --env-file .env.docker exec app npx prisma migrate deploy
+docker compose exec app npx prisma migrate deploy
 
 # Seed database (utenti di test)
-docker compose --env-file .env.docker exec app npx prisma db seed
+docker compose exec app npx prisma db seed
 ```
 
 ## 🌐 Deploy in Produzione
@@ -236,7 +236,7 @@ docker compose --env-file .env.docker exec app npx prisma db seed
 4. **Backup automatici**:
    ```bash
    # Aggiungi a crontab
-   0 2 * * * docker compose --env-file /path/to/.env.docker exec postgres \
+   0 2 * * * cd /path/to/employee-app && docker compose exec postgres \
        pg_dump -U app employee_tracker > /backups/backup-$(date +\%Y\%m\%d).sql
    ```
 
@@ -250,7 +250,7 @@ docker stats
 docker inspect employee-tracker-app | grep -A 10 Health
 
 # Logs strutturati
-docker compose --env-file .env.docker logs --tail=100 --follow app
+docker compose logs --tail=100 --follow app
 ```
 
 ## 🛠️ Sviluppo vs Produzione
