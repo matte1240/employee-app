@@ -11,7 +11,7 @@ COPY package.json package-lock.json* ./
 COPY prisma ./prisma
 
 # Install ALL dependencies (including Prisma for migrations)
-RUN npm ci && npm cache clean --force
+RUN npm install && npm cache clean --force
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
