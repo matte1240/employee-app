@@ -64,7 +64,7 @@ Quando fai push su `dev` (staging) o `main` (production), il workflow:
 
 1. Si connette al server via bastion
 2. Clona/aggiorna il repository
-3. Crea il file `.env.docker` con TUTTE le variabili (database + auth + email)
+3. Crea il file `.env` con TUTTE le variabili (database + auth + email)
 4. Costruisce le immagini Docker
 5. Avvia i containers con Docker Compose
 6. Applica migrazioni database automaticamente
@@ -97,9 +97,9 @@ Se le email non funzionano:
 
 1. Verifica che i secrets siano stati aggiunti correttamente su GitHub
 2. Controlla i log del workflow GitHub Actions per errori
-3. SSH nel server e verifica il file `.env.docker`:
+3. SSH nel server e verifica il file `.env`:
    ```bash
-   ssh staging "cat ~/development-webapp/.env.docker | grep EMAIL"
+   ssh staging "cat ~/development-webapp/.env | grep EMAIL"
    ```
 4. Controlla i log Docker per errori di invio email:
    ```bash

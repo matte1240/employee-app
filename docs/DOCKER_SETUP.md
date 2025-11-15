@@ -12,7 +12,7 @@
 - **`DOCKER.md`**: Guida completa al deployment Docker
 
 ### Configurazione
-- **`.env.docker.example`**: Template configurazione (già presente)
+- **`.env.example`**: Template configurazione (già presente)
 - **`next.config.ts`**: Aggiunto `output: 'standalone'`
 - **`package.json`**: Aggiunti script npm per Docker
 
@@ -43,7 +43,7 @@ npm run docker:restart
 npm run docker:down
 
 # Stato container
-docker compose --env-file .env.docker ps
+docker compose ps
 ```
 
 ## 🔧 Struttura Docker
@@ -94,8 +94,8 @@ Entrambi i container usano `restart: unless-stopped` per alta disponibilità.
 
 ### Per Sviluppo Locale
 ```bash
-# 1. Verifica .env.docker
-cat .env.docker
+# 1. Verifica .env
+cat .env
 
 # 2. Deploy
 ./docker-deploy.sh deploy
@@ -108,7 +108,7 @@ open http://localhost:3000
 ```
 
 ### Per Produzione
-1. Aggiorna `.env.docker`:
+1. Aggiorna `.env`:
    - `NEXTAUTH_URL` → dominio pubblico
    - `POSTGRES_PASSWORD` → password sicura
    - `NEXTAUTH_SECRET` → nuovo secret (`openssl rand -base64 32`)

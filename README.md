@@ -24,15 +24,24 @@ Full stack time tracking portal built with Next.js App Router, Prisma, NextAuth,
 
 ```bash
 # 1. Configure environment
-cp .env.docker.example .env.docker
-# Edit .env.docker with your settings
+cp .env.example .env
+# Edit .env with your settings
 
-# 2. Deploy
-npm run docker:deploy
+# 2. Build & start containers
+docker compose up -d --build
 
 # 3. Access the app
-open http://localhost:3000
+open http://localhost:3001
 ```
+
+#### Option 1-bis: Setup automatizzato (primo deploy)
+
+```bash
+bash scripts/first-deploy.sh
+```
+
+Lo script guida l'inserimento delle variabili (`.env.docker`), crea le cartelle necessarie e avvia automaticamente `npm run docker:deploy`. Alle esecuzioni successive mostra i valori correnti e permette di aggiornarli prima di rilanciare il deploy.
+Lo script guida l'inserimento delle variabili (`.env`), crea le cartelle necessarie e avvia automaticamente `docker compose up -d --build`. Alle esecuzioni successive mostra i valori correnti e permette di aggiornarli prima di rilanciare il deploy.
 
 #### Option 2: Local Development
 
@@ -67,18 +76,18 @@ The application is deployed using Docker Compose:
 
 ```bash
 # 1. Configure environment
-cp .env.docker.example .env.docker
-# Edit .env.docker with your database credentials and secrets
+cp .env.example .env
+# Edit .env with your database credentials and secrets
 
 # 2. Build and start containers
-npm run docker:deploy
+docker compose up -d --build
 
 # 3. View logs
-npm run docker:logs
+docker compose logs -f app
 
 # 4. Manage containers
-npm run docker:restart  # Restart containers
-npm run docker:down     # Stop containers
+docker compose restart  # Restart services
+docker compose down     # Stop and remove
 ```
 
 Docker automatically handles:
@@ -154,9 +163,9 @@ Additional documentation is available in the [`docs/`](./docs/) directory:
 - `npm run backup:cleanup` - Clean old backups
 
 ### Docker
-- `npm run docker:build` - Build Docker images
-- `npm run docker:up` - Start containers
-- `npm run docker:down` - Stop containers
-- `npm run docker:logs` - View container logs
-- `npm run docker:restart` - Restart containers
-- `npm run docker:deploy` - Full deployment (build + start)
+- `docker compose build` - Build images
+- `docker compose up -d` - Start (detached)
+- `docker compose up -d --build` - Build + start
+- `docker compose logs -f app` - Tail app logs
+- `docker compose restart` - Restart services
+- `docker compose down` - Stop and remove containers

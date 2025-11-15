@@ -15,11 +15,11 @@
     "backup:db": "bash scripts/backup-db.sh",
     "restore:db": "bash scripts/restore-db.sh",
     "backup:cleanup": "bash scripts/cleanup-backups.sh",
-    "docker:build": "docker compose --env-file .env.docker build",
-    "docker:up": "docker compose --env-file .env.docker up -d",
-    "docker:down": "docker compose --env-file .env.docker down",
-    "docker:logs": "docker compose --env-file .env.docker logs -f",
-    "docker:restart": "docker compose --env-file .env.docker restart",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:restart": "docker compose restart",
     "docker:deploy": "bash docker-deploy.sh deploy"
   },
   "dependencies": {
