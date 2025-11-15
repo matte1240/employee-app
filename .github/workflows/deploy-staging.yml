@@ -111,17 +111,17 @@ jobs:
             git reset --hard origin/dev
             
             echo "🔐 Creating .env file for Docker Compose..."
-            cat > .env << EOF
-DATABASE_URL=${DATABASE_URL}
-NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-NEXTAUTH_URL=${NEXTAUTH_URL}
-EMAIL_HOST=${EMAIL_HOST}
-EMAIL_PORT=${EMAIL_PORT}
-EMAIL_USER=${EMAIL_USER}
-EMAIL_PASSWORD=${EMAIL_PASSWORD}
-EMAIL_FROM_NAME=${EMAIL_FROM_NAME}
+            cat > .env << 'ENVEOF'
+DATABASE_URL=\${DATABASE_URL}
+NEXTAUTH_SECRET=\${NEXTAUTH_SECRET}
+NEXTAUTH_URL=\${NEXTAUTH_URL}
+EMAIL_HOST=\${EMAIL_HOST}
+EMAIL_PORT=\${EMAIL_PORT}
+EMAIL_USER=\${EMAIL_USER}
+EMAIL_PASSWORD=\${EMAIL_PASSWORD}
+EMAIL_FROM_NAME=\${EMAIL_FROM_NAME}
 APP_PORT=3001
-EOF
+ENVEOF
             
             echo "🐳 Logging into GitHub Container Registry..."
             echo "${GITHUB_TOKEN}" | docker login ghcr.io -u matte1240 --password-stdin
