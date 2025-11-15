@@ -78,11 +78,14 @@ export async function POST(request: Request) {
     // Hash new password
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
-    // Update password, delete token, and invalidate all sessions
+    // Update password, increment tokenVersion, delete token, and invalidate all sessions
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { passwordHash },
+        data: { 
+          passwordHash,
+          tokenVersion: { increment: 1 },
+        },
       }),
       prisma.verificationToken.delete({
         where: {
