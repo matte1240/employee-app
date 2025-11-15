@@ -567,12 +567,158 @@ docker compose up -d
 
 ---
 
+## 🌐 Deployment to Servers
+
+### Overview
+
+L'applicazione supporta **deployment automatico** su due server separati:
+
+- **🟡 Staging Server**: Ambiente di test per validare nuove funzionalità
+- **🟢 Production Server**: Ambiente di produzione per gli utenti finali
+
+### Deployment Workflow
+
+```
+Developer → dev branch → Push
+                ↓
+         GitHub Actions
+                ↓
+         Build Docker :dev
+                ↓
+         Test Locally
+                ↓
+    Merge dev → staging → Push
+                ↓
+    🟡 Auto Deploy to Staging Server
+                ↓
+         Test on Staging
+                ↓
+    Merge staging → main → Push
+                ↓
+    🟢 Auto Deploy to Production Server
+```
+
+### Quick Setup
+
+#### 1. Setup Servers
+
+Run the automated setup script on both servers:
+
+```bash
+# On staging server
+wget https://raw.githubusercontent.com/matte1240/employee-app/main/scripts/setup-server.sh
+chmod +x setup-server.sh
+./setup-server.sh staging
+
+# On production server
+wget https://raw.githubusercontent.com/matte1240/employee-app/main/scripts/setup-server.sh
+chmod +x setup-server.sh
+./setup-server.sh production
+```
+
+#### 2. Configure GitHub Secrets
+
+Add the following secrets to your GitHub repository:
+
+**Settings → Secrets and variables → Actions → New repository secret**
+
+**Staging Secrets:**
+- `STAGING_HOST` - Server hostname (e.g., `staging.example.com`)
+- `STAGING_USER` - SSH username
+- `STAGING_SSH_KEY` - SSH private key
+- `STAGING_PORT` - SSH port (default: 22)
+- `STAGING_APP_DIR` - App directory (default: `/opt/employee-app`)
+
+**Production Secrets:**
+- `PRODUCTION_HOST` - Server hostname
+- `PRODUCTION_USER` - SSH username
+- `PRODUCTION_SSH_KEY` - SSH private key
+- `PRODUCTION_PORT` - SSH port (default: 22)
+- `PRODUCTION_APP_DIR` - App directory (default: `/opt/employee-app`)
+
+#### 3. Deploy Workflow
+
+```bash
+# Development
+git checkout dev
+# ... make changes ...
+git push origin dev  # Builds :dev image
+
+# Staging deployment
+git checkout staging
+git merge dev
+git push origin staging  # ⚡ Auto-deploys to staging server!
+
+# Production deployment (after staging tests pass)
+git checkout main
+git merge staging
+git push origin main  # ⚡ Auto-deploys to production server!
+```
+
+### What Happens During Deployment
+
+**Staging Deployment (automatic on push to `staging`):**
+1. Build Docker image with `:staging` tag
+2. Push to GitHub Container Registry
+3. SSH to staging server
+4. Pull latest code from `staging` branch
+5. Pull Docker image `:staging`
+6. Restart containers with zero-downtime
+7. Health check validation
+8. Cleanup old images
+
+**Production Deployment (automatic on push to `main`):**
+1. **Automatic database backup** before deployment
+2. Build Docker image with `:main` tag
+3. Push to GitHub Container Registry
+4. SSH to production server
+5. Pull latest code from `main` branch
+6. Apply Prisma migrations
+7. Pull Docker image `:main`
+8. Rolling update with zero-downtime
+9. Health check validation
+10. Cleanup old images
+
+### Manual Deployment (Emergency)
+
+If automated deployment fails:
+
+```bash
+# SSH to the server
+ssh user@your-server.com
+
+# Navigate to app directory
+cd /opt/employee-app
+
+# Pull latest changes
+git pull origin main  # or staging
+
+# Pull Docker image
+docker compose pull
+
+# Restart containers
+docker compose down && docker compose up -d
+
+# Check logs
+docker compose logs -f
+```
+
+### Monitoring Deployments
+
+- **GitHub Actions**: https://github.com/matte1240/employee-app/actions
+- **Staging Health**: `https://staging.example.com/api/health`
+- **Production Health**: `https://production.example.com/api/health`
+
+**📖 Complete deployment guide:** See [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for detailed setup instructions, SSH configuration, troubleshooting, and rollback procedures.
+
+---
+
 ## 🚢 Creating Releases
 
 ### Quick Release Steps
 
 ```bash
-# 1. Checkout main branch
+# 1. Ensure main branch is deployed and tested
 git checkout main
 git pull origin main
 
@@ -585,9 +731,9 @@ git push origin v1.0.0
 
 GitHub Actions will automatically:
 - ✅ Build Docker images for multiple platforms (amd64, arm64)
-- ✅ Push to GitHub Container Registry (ghcr.io)
+- ✅ Push to GitHub Container Registry (ghcr.io) with `:1.0.0` and `:latest` tags
 - ✅ Create GitHub Release with auto-generated changelog
-- ✅ Tag images with version and `latest`
+- ✅ Attach release notes and artifacts
 
 ### Using Released Images
 
@@ -618,13 +764,14 @@ services:
 
 ### Project Documentation
 See `docs/` folder for additional guides:
+- **DEPLOYMENT_GUIDE.md** - Complete server setup and deployment guide
+- **BRANCHING_STRATEGY.md** - Git workflow and deployment strategy
+- **RELEASE_GUIDE.md** - How to create GitHub releases
 - **DOCKER.md** - Detailed Docker configuration
 - **BACKUP_STRATEGY.md** - Database backup procedures
 - **EMAIL_SETUP.md** - Email configuration guide
 - **INACTIVITY_TIMEOUT.md** - Session timeout details
 - **CHANGELOG.md** - Version history and updates
-- **RELEASE_GUIDE.md** - How to create GitHub releases
-- **BRANCHING_STRATEGY.md** - Git workflow and deployment strategy
 
 ---
 
