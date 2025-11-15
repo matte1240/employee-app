@@ -6,17 +6,17 @@ services:
     container_name: employee-app-staging
     restart: unless-stopped
     ports:
-      - "3001:3000"  # Different port for staging
+      - "${APP_PORT:-3001}:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://employee_user:${DB_PASSWORD:-employee_password_staging}@db:5432/employee_db_staging?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-employee_password_staging}@db:5432/${POSTGRES_DB:-employee_tracker}?schema=public
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3001}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - EMAIL_SERVER_HOST=${EMAIL_SERVER_HOST:-smtp.gmail.com}
-      - EMAIL_SERVER_PORT=${EMAIL_SERVER_PORT:-587}
-      - EMAIL_SERVER_USER=${EMAIL_SERVER_USER}
-      - EMAIL_SERVER_PASSWORD=${EMAIL_SERVER_PASSWORD}
-      - EMAIL_FROM=${EMAIL_FROM:-noreply@example.com}
+      - APP_URL=${APP_URL:-http://localhost:3001}
+      - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
+      - EMAIL_USER=${EMAIL_USER:-}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD:-}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-Time Tracker Staging}
     depends_on:
       db:
         condition: service_healthy
@@ -34,15 +34,15 @@ services:
     container_name: employee-db-staging
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=employee_user
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-employee_password_staging}
-      - POSTGRES_DB=employee_db_staging
+      - POSTGRES_USER=${POSTGRES_USER:-app}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-employee_password_staging}
+      - POSTGRES_DB=${POSTGRES_DB:-employee_tracker}
     volumes:
       - postgres-data-staging:/var/lib/postgresql/data
     networks:
       - app-network-staging
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U employee_user -d employee_db_staging"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-employee_tracker}"]
       interval: 10s
       timeout: 5s
       retries: 5
