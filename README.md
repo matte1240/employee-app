@@ -34,15 +34,6 @@ docker compose up -d --build
 open http://localhost:3001
 ```
 
-#### Option 1-bis: Setup automatizzato (primo deploy)
-
-```bash
-bash scripts/first-deploy.sh
-```
-
-Lo script guida l'inserimento delle variabili (`.env.docker`), crea le cartelle necessarie e avvia automaticamente `npm run docker:deploy`. Alle esecuzioni successive mostra i valori correnti e permette di aggiornarli prima di rilanciare il deploy.
-Lo script guida l'inserimento delle variabili (`.env`), crea le cartelle necessarie e avvia automaticamente `docker compose up -d --build`. Alle esecuzioni successive mostra i valori correnti e permette di aggiornarli prima di rilanciare il deploy.
-
 #### Option 2: Local Development
 
 1. **Install dependencies and generate the Prisma client:**
