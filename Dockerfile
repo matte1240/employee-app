@@ -10,22 +10,21 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
 
-# Install dependencies (this will run prisma generate via postinstall)
-RUN npm ci --only=production && npm cache clean --force
+# Install ALL dependencies (including Prisma for migrations)
+RUN npm ci && npm cache clean --force
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy dependencies from deps stage
+# Copy all dependencies from deps stage (including Prisma)
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Copy package files and install all dependencies (including devDependencies)
+# Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci
 
-# Generate Prisma Client
+# Generate Prisma Client (Prisma is already installed)
 RUN npx prisma generate
 
 # Build Next.js application
@@ -49,14 +48,15 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 
+# Copy all production dependencies (including Prisma)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+
 # Copy built application
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Copy Prisma schema and migrations
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 # Create directories for logs and backups
 RUN mkdir -p /app/logs /app/backups/database && \
