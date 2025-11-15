@@ -20,7 +20,13 @@
     "pm2:monit": "pm2 monit",
     "backup:db": "bash scripts/backup-db.sh",
     "restore:db": "bash scripts/restore-db.sh",
-    "backup:cleanup": "bash scripts/cleanup-backups.sh"
+    "backup:cleanup": "bash scripts/cleanup-backups.sh",
+    "docker:build": "docker compose --env-file .env.docker build",
+    "docker:up": "docker compose --env-file .env.docker up -d",
+    "docker:down": "docker compose --env-file .env.docker down",
+    "docker:logs": "docker compose --env-file .env.docker logs -f",
+    "docker:restart": "docker compose --env-file .env.docker restart",
+    "docker:deploy": "bash docker-deploy.sh deploy"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
