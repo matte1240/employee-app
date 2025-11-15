@@ -70,8 +70,16 @@ function ResetPasswordForm() {
         }
 
         setSuccess(true);
+        
+        // Forza il logout per invalidare la sessione corrente
+        await fetch("/api/auth/signout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ callbackUrl: "/" }),
+        });
+        
         setTimeout(() => {
-          router.push("/");
+          router.push("/?passwordReset=true");
         }, 3000);
       } catch (err) {
         setError("Errore di connessione. Riprova più tardi.");
