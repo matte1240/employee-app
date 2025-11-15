@@ -24,12 +24,15 @@ echo "🚀 Creating release v$VERSION"
 # Check if on main branch
 CURRENT_BRANCH=$(git branch --show-current)
 if [ "$CURRENT_BRANCH" != "main" ]; then
-    echo "⚠️  Warning: You are on branch '$CURRENT_BRANCH', not 'main'"
-    read -p "Continue anyway? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
+    echo "❌ Error: Releases must be created from 'main' branch"
+    echo "   Current branch: '$CURRENT_BRANCH'"
+    echo ""
+    echo "📋 Correct workflow:"
+    echo "   1. git checkout staging && git merge dev && git push origin staging"
+    echo "   2. Test on staging server"
+    echo "   3. git checkout main && git merge staging && git push origin main"
+    echo "   4. ./release.sh $VERSION"
+    exit 1
 fi
 
 # Check for uncommitted changes
