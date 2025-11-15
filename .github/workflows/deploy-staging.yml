@@ -86,14 +86,26 @@ jobs:
       
       - name: Deploy to Staging with Docker
         run: |
-          ssh staging "DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' NEXTAUTH_SECRET='${{ secrets.STAGING_NEXTAUTH_SECRET }}' NEXTAUTH_URL='${{ secrets.STAGING_NEXTAUTH_URL }}' EMAIL_HOST='${{ secrets.EMAIL_HOST }}' EMAIL_PORT='${{ secrets.EMAIL_PORT }}' EMAIL_USER='${{ secrets.EMAIL_USER }}' EMAIL_PASSWORD='${{ secrets.EMAIL_PASSWORD }}' EMAIL_FROM_NAME='${{ secrets.EMAIL_FROM_NAME }}' GITHUB_TOKEN='${{ secrets.GH_PAT }}' bash -s" << ENDSSH
+          ssh staging "DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' NEXTAUTH_SECRET='${{ secrets.STAGING_NEXTAUTH_SECRET }}' NEXTAUTH_URL='${{ secrets.STAGING_NEXTAUTH_URL }}' EMAIL_HOST='${{ secrets.EMAIL_HOST }}' EMAIL_PORT='${{ secrets.EMAIL_PORT }}' EMAIL_USER='${{ secrets.EMAIL_USER }}' EMAIL_PASSWORD='${{ secrets.EMAIL_PASSWORD }}' EMAIL_FROM_NAME='${{ secrets.EMAIL_FROM_NAME }}' GITHUB_TOKEN='${{ secrets.GH_PAT }}' bash -s" <<'ENDSSH'
             set -e
             
             echo "🚀 Starting Docker deployment to STAGING..."
             echo "Current user: $(whoami)"
+            HOME_DIR="${HOME:-/home/${USER:-runner}}"
+            if [ -z "$HOME_DIR" ] || [ "$HOME_DIR" = "/" ]; then
+              derived_home="$(getent passwd "$(whoami)" | cut -d: -f6)"
+              if [ -n "$derived_home" ]; then
+                HOME_DIR="$derived_home"
+              fi
+            fi
+            REPO_DIR="${HOME_DIR%/}/development-webapp"
+            if [ -z "$REPO_DIR" ] || [ "$REPO_DIR" = "/development-webapp" ]; then
+              echo "Unable to determine repository directory path." >&2
+              exit 1
+            fi
+            echo "📂 Using repo directory: $REPO_DIR"
             
             # Verifica se la directory esiste e ha un repo git
-            REPO_DIR="$HOME/development-webapp"
             if [ ! -d "$REPO_DIR/.git" ]; then
               echo "📁 Git repository not found. Cloning..."
               rm -rf "$REPO_DIR"
