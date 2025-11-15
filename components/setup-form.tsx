@@ -15,6 +15,53 @@ export default function SetupForm() {
   const [formState, setFormState] = useState(initialState);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [showRestore, setShowRestore] = useState(false);
+  const [restoreFile, setRestoreFile] = useState<File | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreSuccess, setRestoreSuccess] = useState(false);
+
+  const handleRestore = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+
+    if (!restoreFile) {
+      setError("Please select a backup file");
+      return;
+    }
+
+    setIsRestoring(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", restoreFile);
+
+      const response = await fetch("/api/db/restore", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Restore failed");
+        setIsRestoring(false);
+        return;
+      }
+
+      // Restore successful
+      setRestoreSuccess(true);
+      setIsRestoring(false);
+      
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        router.push("/?restored=true");
+      }, 2000);
+    } catch (err) {
+      setError("An unexpected error occurred during restore");
+      console.error(err);
+      setIsRestoring(false);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,6 +100,91 @@ export default function SetupForm() {
       }
     });
   };
+
+  if (showRestore) {
+    return (
+      <div className="mt-8 space-y-6">
+        <form
+          onSubmit={handleRestore}
+          className="rounded-xl border border-zinc-200 bg-white/80 p-8 shadow-lg backdrop-blur-sm"
+        >
+          <h3 className="mb-4 text-lg font-semibold text-zinc-900">
+            Restore from Backup
+          </h3>
+          <p className="mb-6 text-sm text-zinc-600">
+            Upload a backup file (.sql) to restore your database. This will replace all current data.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="backup-file" className="block text-sm font-medium text-zinc-700">
+                Backup File
+              </label>
+              <input
+                id="backup-file"
+                name="backup-file"
+                type="file"
+                accept=".sql"
+                required
+                onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
+                className="mt-1 block w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-black file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+              />
+            </div>
+          </div>
+
+          {restoreSuccess && (
+            <div className="mt-4 rounded-md bg-green-50 p-4">
+              <p className="text-sm text-green-800">
+                ✓ Database restored successfully! Redirecting...
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-4 rounded-md bg-red-50 p-4">
+              <p className="text-sm text-red-800" role="alert">
+                {error}
+              </p>
+            </div>
+          )}
+
+          <div className="mt-6 flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setShowRestore(false);
+                setError(null);
+                setRestoreFile(null);
+              }}
+              className="flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50"
+              disabled={isRestoring}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isRestoring || !restoreFile}
+              className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-zinc-300"
+            >
+              {isRestoring ? "Restoring..." : "Restore Database"}
+            </button>
+          </div>
+        </form>
+
+        <div className="text-center">
+          <button
+            onClick={() => {
+              setShowRestore(false);
+              setError(null);
+            }}
+            className="text-sm text-blue-600 hover:text-blue-500"
+          >
+            ← Back to Setup
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -151,6 +283,23 @@ export default function SetupForm() {
         className="flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:bg-zinc-300"
       >
         {isPending ? "Creating account..." : "Create Administrator Account"}
+      </button>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-zinc-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-white px-2 text-zinc-500">Or</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setShowRestore(true)}
+        className="flex w-full justify-center rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50"
+      >
+        Restore from Backup
       </button>
     </form>
   );
