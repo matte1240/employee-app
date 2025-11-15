@@ -120,10 +120,6 @@ EMAIL_PORT=${EMAIL_PORT}
 EMAIL_USER=${EMAIL_USER}
 EMAIL_PASSWORD=${EMAIL_PASSWORD}
 EMAIL_FROM_NAME=${EMAIL_FROM_NAME}
-POSTGRES_USER=app
-POSTGRES_PASSWORD=SecureDockerPassword123
-POSTGRES_DB=employee_tracker
-DB_PORT=5433
 APP_PORT=3001
 EOF
             
@@ -137,30 +133,24 @@ EOF
             sed -i 's|ghcr.io/matte1240/employee-app:latest|ghcr.io/matte1240/employee-app:staging|g' docker-compose.yml
             
             echo "🛑 Stopping existing containers..."
-            docker-compose down || true
+            docker compose down || true
             
-            echo "🗄️ Starting PostgreSQL and applying migrations..."
-            docker-compose up -d postgres
-            
-            echo "⏳ Waiting for PostgreSQL to be ready..."
-            sleep 10
-            
-            echo "🚀 Starting application container..."
-            docker-compose up -d app
+            echo "🚀 Starting application container (database esterno)..."
+            docker compose up -d app
             
             echo "⏳ Waiting for application to start..."
             sleep 5
             
             echo "📊 Checking container status..."
-            docker-compose ps
+            docker compose ps
             
             echo "📋 Application logs (last 20 lines)..."
-            docker-compose logs --tail=20 app
+            docker compose logs --tail=20 app
             
             echo "✅ Docker deployment completed!"
           ENDSSH
       
       - name: Verify Deployment
         run: |
-          ssh staging "cd ~/development-webapp && docker-compose ps | grep employee-tracker-app | grep Up || exit 1"
+          ssh staging "cd ~/development-webapp && docker compose ps | grep employee-tracker-app | grep Up || exit 1"
           echo "✅ Staging is running!"
