@@ -34,7 +34,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/employee-app:staging
+            ghcr.io/${{ github.repository_owner }}/employee-app:latest
             ghcr.io/${{ github.repository_owner }}/employee-app:staging-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -111,15 +111,15 @@ jobs:
             git reset --hard origin/dev
             
             echo "🔐 Creating .env file for Docker Compose..."
-            cat > .env << EOF
-DATABASE_URL=${DATABASE_URL}
-NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-NEXTAUTH_URL=${NEXTAUTH_URL}
-EMAIL_HOST=${EMAIL_HOST}
-EMAIL_PORT=${EMAIL_PORT}
-EMAIL_USER=${EMAIL_USER}
-EMAIL_PASSWORD=${EMAIL_PASSWORD}
-EMAIL_FROM_NAME=${EMAIL_FROM_NAME}
+            cat > .env << 'EOF'
+DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
+NEXTAUTH_SECRET=${{ secrets.STAGING_NEXTAUTH_SECRET }}
+NEXTAUTH_URL=${{ secrets.STAGING_NEXTAUTH_URL }}
+EMAIL_HOST=${{ secrets.STAGING_EMAIL_HOST }}
+EMAIL_PORT=${{ secrets.STAGING_EMAIL_PORT }}
+EMAIL_USER=${{ secrets.STAGING_EMAIL_USER }}
+EMAIL_PASSWORD=${{ secrets.STAGING_EMAIL_PASSWORD }}
+EMAIL_FROM_NAME=${{ secrets.STAGING_EMAIL_FROM_NAME }}
 APP_PORT=3001
 EOF
             
@@ -127,10 +127,7 @@ EOF
             echo "${GITHUB_TOKEN}" | docker login ghcr.io -u matte1240 --password-stdin
             
             echo "📥 Pulling latest Docker image..."
-            docker pull ghcr.io/matte1240/employee-app:staging
-            
-            echo "🔄 Updating docker-compose.yml to use staging tag..."
-            sed -i 's|ghcr.io/matte1240/employee-app:latest|ghcr.io/matte1240/employee-app:staging|g' docker-compose.yml
+            docker pull ghcr.io/matte1240/employee-app:latest
             
             echo "🛑 Stopping existing containers..."
             docker compose down || true

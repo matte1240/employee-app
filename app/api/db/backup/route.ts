@@ -41,7 +41,9 @@ export async function POST(req: NextRequest) {
     const cleanUrl = databaseUrl.split('?')[0];
 
     // Use pg_dump with connection string (format: plain SQL)
-    const command = `pg_dump "${cleanUrl}" -F p -b -v -f "${backupPath}"`;
+    // --clean adds DROP commands before CREATE to allow clean restore
+    // --if-exists prevents errors if objects don't exist during DROP
+    const command = `pg_dump "${cleanUrl}" -F p -b -v --clean --if-exists -f "${backupPath}"`;
 
     console.log("Executing backup command");
     const { stdout, stderr } = await execAsync(command);    if (stderr && !stderr.includes("successfully")) {

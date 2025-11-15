@@ -5,18 +5,25 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { writeFile, unlink } from "fs/promises";
 import path from "path";
+import { prisma } from "@/lib/prisma";
 
 const execAsync = promisify(exec);
 
 export async function POST(req: NextRequest) {
   try {
-    // Check authentication and admin role
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized - Admin access required" },
-        { status: 401 }
-      );
+    // Check if this is during initial setup (no users exist)
+    const userCount = await prisma.user.count().catch(() => 0);
+    const isSetup = userCount === 0;
+
+    // If not setup mode, require admin authentication
+    if (!isSetup) {
+      const session = await getServerSession(authOptions);
+      if (!session?.user || session.user.role !== "ADMIN") {
+        return NextResponse.json(
+          { error: "Unauthorized - Admin access required" },
+          { status: 401 }
+        );
+      }
     }
 
     const formData = await req.formData();
@@ -67,20 +74,12 @@ export async function POST(req: NextRequest) {
       const urlParts = cleanUrl.split('//')[1]?.split('@');
       const username = urlParts?.[0]?.split(':')[0] || 'postgres';
 
-      // First, drop all tables to ensure clean restore
-      console.log("Dropping existing tables...");
-      const dropCommand = `psql "${cleanUrl}" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO ${username}; GRANT ALL ON SCHEMA public TO public;"`;
+      // Don't drop schema - let the backup SQL handle table drops
+      // The pg_dump backup already contains proper DROP/CREATE commands
       
-      try {
-        await execAsync(dropCommand);
-      } catch (dropError) {
-        console.error("Error dropping schema:", dropError);
-        // Continue anyway, the restore might still work
-      }
-
       // Execute psql to restore the SQL dump (plain format)
-      // Using --single-transaction for safety (rollback on error)
-      const command = `psql "${cleanUrl}" -f "${tempPath}" --single-transaction`;
+      // Remove --single-transaction to allow partial restore on errors
+      const command = `psql "${cleanUrl}" -f "${tempPath}"`;
 
       console.log("Executing restore command");
       const { stdout, stderr } = await execAsync(command, {
