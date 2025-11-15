@@ -1,35 +1,80 @@
 # 📚 Documentation
 
-Questa cartella contiene tutta la documentazione aggiuntiva del progetto Employee Work Hours Tracker.
+This directory contains detailed documentation for the Employee Work Hours Tracker application.
 
-## 📋 File Disponibili
+## 📋 Available Documentation
 
-### 🚀 Deployment & Setup
-- **[DOCKER.md](./DOCKER.md)** - Guida completa al deployment Docker con container PostgreSQL
-- **[DOCKER_SETUP.md](./DOCKER_SETUP.md)** - Riepilogo del setup Docker completato
-- **[EMAIL_SETUP.md](./EMAIL_SETUP.md)** - Configurazione email SMTP per notifiche
+### 🚀 Deployment & Infrastructure
+- **[DOCKER.md](./DOCKER.md)** - Complete Docker deployment guide with production best practices
+- **[DOCKER_SETUP.md](./DOCKER_SETUP.md)** - Quick reference for Docker setup and configuration
 
-### 💾 Database & Backup
-- **[BACKUP_STRATEGY.md](./BACKUP_STRATEGY.md)** - Strategia di backup del database
-- **[CHANGELOG.md](./CHANGELOG.md)** - Cronologia versioni e modifiche
+### 💾 Data & Backup
+- **[BACKUP_STRATEGY.md](./BACKUP_STRATEGY.md)** - Database backup and restore strategy
+  - Automated backup scripts
+  - Retention policies
+  - Restore procedures
 
-### 🔧 Configurazione & Sicurezza
-- **[INACTIVITY_TIMEOUT.md](./INACTIVITY_TIMEOUT.md)** - Implementazione timeout sessione automatico
-- **[GITHUB_SECRETS_EMAIL.md](./GITHUB_SECRETS_EMAIL.md)** - Configurazione segreti GitHub per email
+### 🔒 Security & Authentication
+- **[INACTIVITY_TIMEOUT.md](./INACTIVITY_TIMEOUT.md)** - Automatic session timeout implementation
+  - Activity tracking system
+  - Session renewal logic
+  - Configuration options
 
-### 🤖 AI & Tools
-- **[CLAUDE.md](./CLAUDE.md)** - Note sull'integrazione con assistente AI
+### 📧 Email Configuration
+- **[EMAIL_SETUP.md](./EMAIL_SETUP.md)** - Email system configuration guide
+  - SMTP setup (Gmail and others)
+  - Welcome email templates
+  - Password reset flow
+- **[GITHUB_SECRETS_EMAIL.md](./GITHUB_SECRETS_EMAIL.md)** - GitHub Actions secrets for email
 
-## 📖 Come Leggere la Documentazione
+### 📝 Project Information
+- **[CHANGELOG.md](./CHANGELOG.md)** - Version history and changes
+  - New features
+  - Bug fixes
+  - Breaking changes
 
-1. **Inizia dal README.md** nella root del progetto per una panoramica generale
-2. **DOCKER.md** per il deployment in produzione
-3. **BACKUP_STRATEGY.md** per la gestione dei backup
-4. I file rimanenti sono specifici per funzionalità particolari
+### 🤖 Development Tools
+- **[CLAUDE.md](./CLAUDE.md)** - AI assistant integration and development notes
 
-## 🔗 Link Rapidi
+---
 
-- [🏠 Torna al README principale](../README.md)
-- [🐳 Docker Deployment](./DOCKER.md)
-- [📧 Email Setup](./EMAIL_SETUP.md)
-- [💾 Backup Strategy](./BACKUP_STRATEGY.md)
+## 📖 Quick Navigation
+
+### Getting Started
+1. Start with the [main README](../README.md) for project overview
+2. Follow [DOCKER.md](./DOCKER.md) for deployment
+3. Configure email with [EMAIL_SETUP.md](./EMAIL_SETUP.md)
+4. Set up backups using [BACKUP_STRATEGY.md](./BACKUP_STRATEGY.md)
+
+### Common Tasks
+- **Deploy to production** → [DOCKER.md](./DOCKER.md)
+- **Configure email notifications** → [EMAIL_SETUP.md](./EMAIL_SETUP.md)
+- **Set up backups** → [BACKUP_STRATEGY.md](./BACKUP_STRATEGY.md)
+- **Understand session timeout** → [INACTIVITY_TIMEOUT.md](./INACTIVITY_TIMEOUT.md)
+- **See what's new** → [CHANGELOG.md](./CHANGELOG.md)
+
+---
+
+## 🔗 External Resources
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [NextAuth.js Documentation](https://next-auth.js.org/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [Docker Documentation](https://docs.docker.com/)
+
+---
+
+## 💡 Need Help?
+
+If you can't find what you're looking for:
+
+1. Check the [main README](../README.md) troubleshooting section
+2. Review the specific documentation file for your topic
+3. Check application logs for error messages
+4. Contact the project maintainer
+
+---
+
+[🏠 Back to Main README](../README.md)
