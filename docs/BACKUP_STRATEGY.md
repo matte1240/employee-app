@@ -1,11 +1,11 @@
 # Strategia di Backup del Database
 
 ## Panoramica
-Il sistema implementa una strategia completa di backup automatico per il database PostgreSQL con:
-- **Backup giornalieri automatici** (ogni notte alle 2:00)
-- **Cleanup automatico settimanale** (domenica alle 3:00)
+Il sistema fornisce script per backup e restore del database PostgreSQL con:
+- **Backup manuali on-demand** via npm scripts
 - **Compressione gzip** per ridurre lo spazio su disco
 - **Retention policy configurabile** (default: 30 giorni, minimo 7 backup)
+- **Supporto per schedulazione esterna** (cron, systemd timer, etc.)
 
 ## Comandi Disponibili
 
@@ -51,63 +51,52 @@ bash scripts/cleanup-backups.sh 60 14
 
 Rimuove i backup vecchi secondo la retention policy, mantenendo sempre un numero minimo di backup recenti per sicurezza.
 
-## Backup Automatici con PM2
+## Backup Automatici (Opzionale)
 
-### Configurazione Cron Jobs
-Il file `ecosystem.config.js` include due cron job PM2:
-
-#### 1. Backup Giornaliero
-- **Schedule:** Ogni giorno alle 2:00 AM
-- **App name:** `db-backup-cron`
-- **Logs:** `logs/backup-out.log`, `logs/backup-error.log`
-
-#### 2. Cleanup Settimanale
-- **Schedule:** Ogni domenica alle 3:00 AM
-- **App name:** `backup-cleanup-cron`
-- **Policy:** 30 giorni retention, minimo 7 backup
-- **Logs:** `logs/cleanup-out.log`, `logs/cleanup-error.log`
-
-### Gestione Cron Jobs
+### Con Docker e Cron Host
+Per schedulare backup automatici con Docker:
 
 ```bash
-# Avvia tutti i processi PM2 (app + cron jobs)
-npm run pm2:start
+# Aggiungi al crontab dell'host
+crontab -e
 
-# Verifica stato
-pm2 list
+# Backup giornaliero alle 2:00
+0 2 * * * cd /path/to/employee-app && docker compose exec -T postgres pg_dump -U app employee_tracker | gzip > backups/database/backup_$(date +\%Y\%m\%d_\%H\%M\%S).sql.gz
 
-# Visualizza logs backup
-pm2 logs db-backup-cron
-
-# Visualizza logs cleanup
-pm2 logs backup-cleanup-cron
-
-# Forza backup manuale (test)
-pm2 trigger db-backup-cron restart
-
-# Stop cron job backup
-pm2 stop db-backup-cron
-
-# Restart cron job backup
-pm2 restart db-backup-cron
+# Cleanup settimanale (domenica alle 3:00)
+0 3 * * 0 cd /path/to/employee-app && bash scripts/cleanup-backups.sh 30 7
 ```
 
-### Modificare Schedule Cron
-Modifica `ecosystem.config.js`:
+### Con Systemd Timer (Alternativa)
+Crea service + timer systemd per backup periodici:
 
-```javascript
-{
-  name: 'db-backup-cron',
-  cron_restart: '0 2 * * *', // Formato cron standard
-  // Minuto Ora GiornoMese Mese GiornoSettimana
-}
+```bash
+# /etc/systemd/system/employee-backup.service
+[Unit]
+Description=Employee App Database Backup
+
+[Service]
+Type=oneshot
+WorkingDirectory=/path/to/employee-app
+ExecStart=/usr/bin/docker compose exec -T postgres pg_dump -U app employee_tracker | gzip > backups/database/backup_$(date +\%Y\%m\%d_\%H\%M\%S).sql.gz
+
+# /etc/systemd/system/employee-backup.timer
+[Unit]
+Description=Daily Employee App Backup
+
+[Timer]
+OnCalendar=daily
+OnCalendar=02:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
 ```
 
-**Esempi:**
-- `0 2 * * *` - Ogni giorno alle 2:00
-- `0 */6 * * *` - Ogni 6 ore
-- `0 3 * * 0` - Ogni domenica alle 3:00
-- `30 1 1 * *` - Primo giorno del mese alle 1:30
+Abilita con:
+```bash
+sudo systemctl enable --now employee-backup.timer
+```
 
 ## Struttura File
 
@@ -117,16 +106,11 @@ employee-app/
 │   ├── backup-db.sh          # Script backup principale
 │   ├── restore-db.sh         # Script restore con safety checks
 │   └── cleanup-backups.sh    # Script retention policy
-├── backups/
-│   └── database/
-│       ├── backup_20241112_020000.sql.gz
-│       ├── backup_20241111_020000.sql.gz
-│       └── ...
-└── logs/
-    ├── backup-out.log        # Log output backup cron
-    ├── backup-error.log      # Log errori backup cron
-    ├── cleanup-out.log       # Log output cleanup cron
-    └── cleanup-error.log     # Log errori cleanup cron
+└── backups/
+    └── database/
+        ├── backup_20241112_020000.sql.gz
+        ├── backup_20241111_020000.sql.gz
+        └── ...
 ```
 
 ## Requisiti di Sistema
@@ -181,17 +165,17 @@ npm run restore:db backup_XXXXXXXX_XXXXXX.sql.gz
 ```
 
 ### 2. Monitoraggio
-Controlla regolarmente i log dei cron job:
+Controlla regolarmente i backup:
 
 ```bash
-# Verifica ultimo backup
-tail -50 logs/backup-out.log
+# Lista backup esistenti
+ls -lth backups/database/ | head -10
 
-# Controlla errori
-tail -50 logs/backup-error.log
+# Verifica ultimo backup (con Docker)
+docker compose exec postgres pg_dump -U app employee_tracker > /dev/null && echo "OK" || echo "ERRORE"
 
-# Stato PM2 dei cron
-pm2 list | grep cron
+# Controlla log Docker
+docker compose logs app | tail -50
 ```
 
 ### 3. Spazio Disco
