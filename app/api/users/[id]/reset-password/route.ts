@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { sendPasswordResetLinkEmail } from "@/lib/email";
 
 export async function POST(
   request: Request,
@@ -31,37 +30,53 @@ export async function POST(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Generate a temporary password (8 characters with uppercase, lowercase, and numbers)
-    const tempPassword = crypto.randomBytes(4).toString('hex') + 
-                         String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Add uppercase letter
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    
+    // Token expires in 24 hours (admin reset has longer expiry)
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // Hash new password
-    const passwordHash = await bcrypt.hash(tempPassword, 10);
-
-    // Update user password
-    await prisma.user.update({
-      where: { id: userId },
-      data: { passwordHash },
+    // Delete any existing reset tokens for this user
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: existingUser.email },
     });
 
-    // Send email notification with temporary password
+    // Create new reset token
+    await prisma.verificationToken.create({
+      data: {
+        identifier: existingUser.email,
+        token: hashedToken,
+        expires,
+      },
+    });
+
+    // Send email with reset link
     try {
-      await sendPasswordResetEmail(
+      const resetUrl = `${process.env.APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000"}/reset-password?token=${resetToken}&email=${encodeURIComponent(existingUser.email)}`;
+      
+      await sendPasswordResetLinkEmail(
         existingUser.email,
         existingUser.name || existingUser.email,
-        tempPassword
+        resetUrl
       );
+      
       console.log(`✅ Password reset email sent to ${existingUser.email}`);
     } catch (emailError) {
       console.error("⚠️ Failed to send password reset email:", emailError);
-      // Rollback password change if email fails
+      
+      // Cleanup token if email fails
+      await prisma.verificationToken.deleteMany({
+        where: { identifier: existingUser.email },
+      });
+      
       return NextResponse.json({
-        error: "Failed to send email notification. Password not changed.",
+        error: "Failed to send email notification. Password reset not initiated.",
       }, { status: 500 });
     }
 
     return NextResponse.json({ 
-      message: "Password reset successfully. User will receive an email with temporary password." 
+      message: "Email di reset password inviata con successo all'utente." 
     });
   } catch (error) {
     console.error("Error resetting password:", error);
