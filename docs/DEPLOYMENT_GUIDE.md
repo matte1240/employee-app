@@ -119,25 +119,31 @@ git checkout staging
 # Crea directory per backups
 mkdir -p backups/database
 
-# Crea file .env.docker
-cat > .env.docker << 'EOF'
+# Crea file .env
+cat > .env << 'EOF'
 # Database
-DB_PASSWORD=strong_staging_password_here
+POSTGRES_USER=app
+POSTGRES_PASSWORD=strong_staging_password_here
+POSTGRES_DB=employee_tracker
+DB_PORT=5433
 
 # NextAuth
 NEXTAUTH_URL=https://staging.example.com
 NEXTAUTH_SECRET=generate-with-openssl-rand-base64-32
 
+# App
+APP_PORT=3001
+APP_URL=https://staging.example.com
+
 # Email (opzionale per staging)
-EMAIL_SERVER_HOST=smtp.gmail.com
-EMAIL_SERVER_PORT=587
-EMAIL_SERVER_USER=your-email@gmail.com
-EMAIL_SERVER_PASSWORD=your-app-password
-EMAIL_FROM=noreply@staging.example.com
+EMAIL_HOST=smtp.gmail.com
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+EMAIL_FROM_NAME=Time Tracker
 EOF
 
 # Imposta permessi
-chmod 600 .env.docker
+chmod 600 .env
 ```
 
 #### Su Production Server
@@ -155,25 +161,31 @@ git checkout main
 # Crea directory per backups
 mkdir -p backups/database
 
-# Crea file .env.docker (con credenziali production!)
-cat > .env.docker << 'EOF'
+# Crea file .env (con credenziali production!)
+cat > .env << 'EOF'
 # Database
-DB_PASSWORD=very_strong_production_password_here
+POSTGRES_USER=app
+POSTGRES_PASSWORD=very_strong_production_password_here
+POSTGRES_DB=employee_tracker
+DB_PORT=5433
 
 # NextAuth
 NEXTAUTH_URL=https://production.example.com
 NEXTAUTH_SECRET=generate-with-openssl-rand-base64-32-different-from-staging
 
+# App
+APP_PORT=3000
+APP_URL=https://production.example.com
+
 # Email
-EMAIL_SERVER_HOST=smtp.gmail.com
-EMAIL_SERVER_PORT=587
-EMAIL_SERVER_USER=your-email@gmail.com
-EMAIL_SERVER_PASSWORD=your-app-password
-EMAIL_FROM=noreply@production.example.com
+EMAIL_HOST=smtp.gmail.com
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+EMAIL_FROM_NAME=Time Tracker Production
 EOF
 
 # Imposta permessi
-chmod 600 .env.docker
+chmod 600 .env
 ```
 
 ### 4. Genera Chiavi SSH per Deployment
@@ -417,7 +429,7 @@ echo "YOUR_GITHUB_TOKEN" | docker login ghcr.io -u your-username --password-stdi
 docker compose logs app --tail=100
 
 # Problemi comuni:
-# - DATABASE_URL errato in .env.docker
+# - DATABASE_URL errato in .env
 # - NEXTAUTH_SECRET mancante
 # - Porta 3000 già occupata
 ```
@@ -433,7 +445,7 @@ docker compose logs db --tail=50
 docker compose exec db psql -U employee_user -d employee_db
 
 # Se fallisce:
-# - Verifica DB_PASSWORD in .env.docker
+# - Verifica POSTGRES_PASSWORD in .env
 # - Verifica che il container db sia in stato "Up (healthy)"
 ```
 
@@ -636,7 +648,7 @@ curl https://production.example.com/api/health
    - Mai committare secrets nel repo
    - Usa chiavi SSH dedicate per deploy
    - Ruota passwords regolarmente
-   - Mantieni .env.docker fuori da git
+   - Mantieni .env fuori da git (già in .gitignore)
 
 ---
 
