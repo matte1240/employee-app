@@ -84,6 +84,18 @@ jobs:
           echo "Testing connection to staging through bastion..."
           ssh staging "echo 'Connection successful!'"
       
+      - name: Prepare remote directory
+        run: |
+          ssh staging "mkdir -p ~/development-webapp"
+
+      - name: Copy docker-compose file
+        run: |
+          scp docker-compose.yml staging:~/development-webapp/docker-compose.yml
+
+      - name: Ensure log/backup directories
+        run: |
+          ssh staging "mkdir -p ~/development-webapp/logs ~/development-webapp/backups/database && chmod 775 ~/development-webapp/logs ~/development-webapp/backups ~/development-webapp/backups/database"
+      
       - name: Deploy to Staging with Docker
         run: |
           ssh staging "DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' NEXTAUTH_SECRET='${{ secrets.STAGING_NEXTAUTH_SECRET }}' NEXTAUTH_URL='${{ secrets.STAGING_NEXTAUTH_URL }}' EMAIL_HOST='${{ secrets.EMAIL_HOST }}' EMAIL_PORT='${{ secrets.EMAIL_PORT }}' EMAIL_USER='${{ secrets.EMAIL_USER }}' EMAIL_PASSWORD='${{ secrets.EMAIL_PASSWORD }}' EMAIL_FROM_NAME='${{ secrets.EMAIL_FROM_NAME }}' GITHUB_TOKEN='${{ secrets.GH_PAT }}' bash -s" <<'ENDSSH'
@@ -98,29 +110,18 @@ jobs:
                 HOME_DIR="$derived_home"
               fi
             fi
-            REPO_DIR="${HOME_DIR%/}/development-webapp"
-            if [ -z "$REPO_DIR" ] || [ "$REPO_DIR" = "/development-webapp" ]; then
-              echo "Unable to determine repository directory path." >&2
+            APP_DIR="${HOME_DIR%/}/development-webapp"
+            if [ -z "$APP_DIR" ] || [ "$APP_DIR" = "/development-webapp" ]; then
+              echo "Unable to determine application directory path." >&2
               exit 1
             fi
-            echo "📂 Using repo directory: $REPO_DIR"
-            
-            # Verifica se la directory esiste e ha un repo git
-            if [ ! -d "$REPO_DIR/.git" ]; then
-              echo "📁 Git repository not found. Cloning..."
-              rm -rf "$REPO_DIR"
-              git clone https://github.com/matte1240/employee-app.git "$REPO_DIR"
-              cd "$REPO_DIR" || { echo "Failed to cd to $REPO_DIR after clone"; exit 1; }
-              git checkout dev || true
-            else
-              cd "$REPO_DIR" || { echo "Failed to cd to $REPO_DIR"; exit 1; }
+            if [ ! -f "$APP_DIR/docker-compose.yml" ]; then
+              echo "docker-compose.yml not found in $APP_DIR" >&2
+              exit 1
             fi
+            cd "$APP_DIR" || { echo "Failed to cd to $APP_DIR"; exit 1; }
             
-            echo "Current directory: $(pwd)"
-            
-            echo "📦 Pulling latest code from dev branch..."
-            git fetch origin
-            git reset --hard origin/dev
+            echo "📂 Using directory: $(pwd)"
             
             echo "🔐 Creating .env file for Docker Compose..."
             {

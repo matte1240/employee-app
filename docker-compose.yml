@@ -11,16 +11,12 @@ services:
     ports:
       - "${DB_PORT:-5433}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backups/database:/backups
+        - postgres_data:/var/lib/postgresql/data
+        # - ./backups/database:/backups  # Obsolete backup bind mount removed
     networks:
       - employee-tracker-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-employee_tracker}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # Next.js Application
   app:
     build:
