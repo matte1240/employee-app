@@ -62,6 +62,13 @@ export const authOptions: NextAuthOptions = {
         token.id = credentialsUser.id;
         token.role = credentialsUser.role;
         token.lastActivity = Date.now();
+        
+        // Salva la tokenVersion al login
+        const dbUser = await prisma.user.findUnique({
+          where: { id: credentialsUser.id },
+          select: { tokenVersion: true },
+        });
+        token.tokenVersion = dbUser?.tokenVersion || 0;
       } else if (token.email) {
         // Check if session is expired (30 minutes of inactivity)
         const lastActivity = (token.lastActivity as number) || 0;
@@ -80,10 +87,17 @@ export const authOptions: NextAuthOptions = {
         
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
-          select: { id: true, role: true },
+          select: { id: true, role: true, tokenVersion: true },
         });
 
         if (dbUser) {
+          // Verifica che la tokenVersion corrisponda
+          const tokenVersionInToken = (token.tokenVersion as number) || 0;
+          if (dbUser.tokenVersion !== tokenVersionInToken) {
+            console.log(`🔒 Token invalidated for ${token.email} - password changed`);
+            return {}; // Invalida il token
+          }
+          
           token.id = dbUser.id;
           token.role = dbUser.role;
         }
