@@ -78,11 +78,14 @@ export async function POST(request: Request) {
     // Hash new password
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
-    // Update password and delete token
+    // Update password, increment tokenVersion, delete token, and invalidate all sessions
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { passwordHash },
+        data: { 
+          passwordHash,
+          tokenVersion: { increment: 1 },
+        },
       }),
       prisma.verificationToken.delete({
         where: {
@@ -92,9 +95,13 @@ export async function POST(request: Request) {
           },
         },
       }),
+      // Delete all active sessions for this user
+      prisma.session.deleteMany({
+        where: { userId: user.id },
+      }),
     ]);
 
-    console.log(`✅ Password reset successfully for ${email}`);
+    console.log(`✅ Password reset successfully for ${email} - all sessions invalidated`);
 
     return NextResponse.json({
       message: "Password aggiornata con successo. Ora puoi effettuare il login.",

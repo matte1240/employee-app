@@ -10,7 +10,7 @@ This is a **Next.js 16 + Prisma + NextAuth + PostgreSQL** time tracking applicat
 - **Auth**: NextAuth v4 with JWT sessions, credentials provider, Prisma adapter
 - **Database**: PostgreSQL (external service) with Prisma ORM (migrations in `prisma/migrations/`)
 - **Validation**: Zod for runtime schema validation on API routes
-- **Process Manager**: PM2 for production deployment with automatic restart and monitoring
+- **Deployment**: Docker Compose for containerized production deployment
 
 ### Key Components
 - **`lib/auth.ts`**: NextAuth configuration, JWT callbacks, session/user enrichment with `role` field
@@ -57,18 +57,18 @@ if (!parsed.success) return NextResponse.json({ error: "Invalid query" }, { stat
 ## Critical Commands
 
 | Command | Purpose |
-|---------|---------|
+|---------|---------||
 | `npm run dev` | Start dev server (port 3000) + watch mode |
 | `npm run build` | Production build (validates TS) |
 | `npm run prisma:migrate` | Create/apply dev migrations |
 | `npm run prisma:deploy` | Apply migrations in production |
 | `npm run prisma:seed` | Populate test data (admin + employee users) |
 | `npm run lint` | Run ESLint |
-| `npm run pm2:start` | Start app with PM2 in production |
-| `npm run pm2:logs` | View PM2 application logs |
-| `npm run pm2:monit` | Monitor PM2 resources in real-time |
-| `npm run pm2:restart` | Restart the PM2 process |
-| `npm run pm2:stop` | Stop the PM2 process |
+| `npm run docker:build` | Build Docker images |
+| `npm run docker:up` | Start containers |
+| `npm run docker:down` | Stop containers |
+| `npm run docker:logs` | View container logs |
+| `npm run docker:deploy` | Full deployment (build + start) |
 
 ### Database Workflows
 - **New migration**: `npm run prisma:migrate` → enter name → Prisma creates SQL
@@ -76,10 +76,11 @@ if (!parsed.success) return NextResponse.json({ error: "Invalid query" }, { stat
 - **Production deployment**: `npm run prisma:deploy` to apply migrations without prompts
 
 ### Production Deployment
-- **Build**: `npm run build` → creates `.next/` optimized bundle
-- **Deploy**: `npm run pm2:start` → starts app with PM2 (auto-restart on crash)
-- **Monitor**: `npm run pm2:monit` or `npm run pm2:logs` for real-time monitoring
-- **Configuration**: Edit `ecosystem.config.js` for PM2 settings (port, instances, memory limit)
+- **Configure**: Copy `.env.docker.example` to `.env.docker` and set variables
+- **Deploy**: `npm run docker:deploy` → builds images and starts containers
+- **Monitor**: `npm run docker:logs` for real-time container logs
+- **Manage**: Use `docker:restart`, `docker:down`, `docker:up` for container management
+- **Migrations**: Applied automatically on container startup via `prisma migrate deploy`
 
 ## Project Conventions
 
@@ -118,8 +119,10 @@ components/
 lib/
   ├── auth.ts                     # NextAuth + JWT callbacks
   └── prisma.ts                   # Prisma singleton
-ecosystem.config.js               # PM2 configuration
-logs/                             # PM2 logs (gitignored)
+prisma/
+  └── schema.prisma               # Data models
+scripts/
+  └── backup-db.sh                # Database backup utilities
 ```
 
 ## Debugging Tips

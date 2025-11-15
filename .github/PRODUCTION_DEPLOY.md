@@ -98,25 +98,25 @@ Sul server di produzione verrà creata questa struttura:
   └── ...
 ```
 
-## 6. Comandi PM2 sul server di produzione
+## 6. Comandi Docker sul server di produzione
 
 Connettiti al server e usa questi comandi:
 
 ```bash
-# Stato processi
-npx pm2 list
+# Stato containers
+docker compose ps
 
 # Logs in tempo reale
-npx pm2 logs app-production
+docker compose logs -f app
 
 # Restart manuale
-npx pm2 restart app-production
+docker compose restart app
 
 # Stop
-npx pm2 stop app-production
+docker compose down
 
-# Monitoring
-npx pm2 monit
+# Rebuild e restart
+docker compose up -d --build
 ```
 
 ## 7. Checklist pre-deployment
@@ -140,10 +140,9 @@ Se il deploy fallisce o ci sono problemi:
 cd ~/production-webapp
 git log --oneline  # Trova il commit precedente
 git reset --hard <commit-hash>
-npm ci
-npm run build
-npm run prisma:deploy
-npx pm2 restart app-production
+docker compose down
+docker compose build
+docker compose up -d
 ```
 
 ## 9. Monitoraggio
@@ -151,10 +150,11 @@ npx pm2 restart app-production
 Dopo il deploy, verifica:
 
 1. **GitHub Actions**: Check che il workflow sia completato con successo
-2. **PM2 Status**: `npx pm2 list` deve mostrare `app-production` in stato `online`
-3. **Logs**: `npx pm2 logs app-production --lines 50` per vedere eventuali errori
-4. **URL Pubblico**: Testa l'applicazione all'URL di produzione
-5. **Database**: Verifica che le migrations siano applicate correttamente
+2. **Docker Status**: `docker compose ps` deve mostrare containers `Up`
+3. **Logs**: `docker compose logs app --tail 50` per vedere eventuali errori
+4. **Health Check**: `docker compose ps` verifica status `healthy` per postgres
+5. **URL Pubblico**: Testa l'applicazione all'URL di produzione
+6. **Database**: Verifica che le migrations siano applicate correttamente
 
 ## 10. Sicurezza
 

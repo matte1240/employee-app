@@ -22,6 +22,12 @@ CREATE TABLE "TimeEntry" (
     "userId" TEXT NOT NULL,
     "workDate" TIMESTAMP(3) NOT NULL,
     "hoursWorked" DECIMAL(65,30) NOT NULL,
+    "overtimeHours" DECIMAL(65,30) NOT NULL DEFAULT 0,
+    "permessoHours" DECIMAL(65,30) NOT NULL DEFAULT 0,
+    "morningStart" TEXT,
+    "morningEnd" TEXT,
+    "afternoonStart" TEXT,
+    "afternoonEnd" TEXT,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -91,3 +97,4 @@ ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId"
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

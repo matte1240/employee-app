@@ -10,23 +10,31 @@ Full stack time tracking portal built with Next.js App Router, Prisma, NextAuth,
 - Admin dashboard summarising total hours, last activity date, and join date for every user.
 - REST API routes for logging hours and managing users, secured by session and role checks.
 - Prisma schema with seed script that provisions sample admin and employee accounts.
-- PM2 process manager for production deployment with automatic restart and monitoring.
+- Docker deployment with PostgreSQL container and automated migrations.
 
 ### Prerequisites
 
 - Node.js 20+
 - npm 10+
-- PostgreSQL 14+ (running as a service)
+- Docker and Docker Compose for deployment
 
-### Environment Variables
+### Quick Start
 
-Copy `.env` and update values as needed. At minimum set:
+#### Option 1: Docker Deployment (Recommended)
 
-- `DATABASE_URL` (PostgreSQL connection string)
-- `NEXTAUTH_SECRET` (random 32 byte string)
-- `NEXTAUTH_URL` (base URL of the app)
+```bash
+# 1. Configure environment
+cp .env.docker.example .env.docker
+# Edit .env.docker with your settings
 
-### Local Development
+# 2. Deploy
+npm run docker:deploy
+
+# 3. Access the app
+open http://localhost:3000
+```
+
+#### Option 2: Local Development
 
 1. **Install dependencies and generate the Prisma client:**
 
@@ -55,35 +63,29 @@ Sample credentials provided by the seed script:
 
 ### Production Deployment
 
-1. **Build the application:**
+The application is deployed using Docker Compose:
 
 ```bash
-npm run build
+# 1. Configure environment
+cp .env.docker.example .env.docker
+# Edit .env.docker with your database credentials and secrets
+
+# 2. Build and start containers
+npm run docker:deploy
+
+# 3. View logs
+npm run docker:logs
+
+# 4. Manage containers
+npm run docker:restart  # Restart containers
+npm run docker:down     # Stop containers
 ```
 
-2. **Apply database migrations:**
-
-```bash
-npm run prisma:deploy
-```
-
-3. **Start with PM2:**
-
-```bash
-npm run pm2:start
-```
-
-4. **Manage the application:**
-
-```bash
-npm run pm2:logs      # View application logs
-npm run pm2:monit     # Monitor resources in real-time
-npm run pm2:restart   # Restart the application
-npm run pm2:stop      # Stop the application
-npm run pm2:delete    # Remove from PM2
-```
-
-PM2 configuration is in `ecosystem.config.js`. The app runs on port 3000 by default with automatic restart on crashes and memory limit of 1GB.
+Docker automatically handles:
+- Database initialization and migrations
+- Application restart on crashes
+- Health checks and dependency management
+- Volume persistence for data and logs
 
 ### Useful Scripts
 
@@ -112,16 +114,7 @@ See [BACKUP_STRATEGY.md](./BACKUP_STRATEGY.md) for complete backup documentation
 - Session automatically renewed every 5 minutes if user is active.
 - Server-side and client-side validation for session expiration.
 
-See [INACTIVITY_TIMEOUT.md](./INACTIVITY_TIMEOUT.md) for detailed implementation and configuration.
-
-**Production:**
-- `npm run build` - create an optimised production build.
-- `npm run pm2:start` - start application with PM2.
-- `npm run pm2:stop` - stop the PM2 process.
-- `npm run pm2:restart` - restart the application.
-- `npm run pm2:logs` - view application logs.
-- `npm run pm2:monit` - monitor resources in real-time.
-- `npm run pm2:delete` - remove application from PM2.
+See [docs/INACTIVITY_TIMEOUT.md](./docs/INACTIVITY_TIMEOUT.md) for detailed implementation and configuration.
 
 ### Project Structure
 
@@ -131,5 +124,39 @@ See [INACTIVITY_TIMEOUT.md](./INACTIVITY_TIMEOUT.md) for detailed implementation
 - `prisma/` - Database schema and seed script.
 - `scripts/` - Backup and maintenance scripts for database management.
 - `backups/` - Database backups directory (gitignored).
-- `ecosystem.config.js` - PM2 configuration for production deployment.
-- `logs/` - PM2 application logs (gitignored).
+
+## 📚 Documentation
+
+Additional documentation is available in the [`docs/`](./docs/) directory:
+
+- **[DOCKER.md](./docs/DOCKER.md)** - Complete Docker deployment guide
+- **[DOCKER_SETUP.md](./docs/DOCKER_SETUP.md)** - Docker setup summary
+- **[BACKUP_STRATEGY.md](./docs/BACKUP_STRATEGY.md)** - Database backup strategy
+- **[EMAIL_SETUP.md](./docs/EMAIL_SETUP.md)** - Email configuration guide
+- **[CHANGELOG.md](./docs/CHANGELOG.md)** - Version history and changes
+- **[INACTIVITY_TIMEOUT.md](./docs/INACTIVITY_TIMEOUT.md)** - Session timeout implementation
+- **[CLAUDE.md](./docs/CLAUDE.md)** - AI assistant integration notes
+- **[GITHUB_SECRETS_EMAIL.md](./docs/GITHUB_SECRETS_EMAIL.md)** - GitHub secrets configuration
+
+## 📋 Available Scripts
+
+### Development
+- `npm run dev` - Start development server
+- `npm run build` - Create production build
+- `npm run lint` - Run ESLint
+
+### Database
+- `npm run prisma:migrate` - Run database migrations
+- `npm run prisma:deploy` - Deploy migrations in production
+- `npm run prisma:seed` - Seed database with test data
+- `npm run backup:db` - Create database backup
+- `npm run restore:db` - Restore database from backup
+- `npm run backup:cleanup` - Clean old backups
+
+### Docker
+- `npm run docker:build` - Build Docker images
+- `npm run docker:up` - Start containers
+- `npm run docker:down` - Stop containers
+- `npm run docker:logs` - View container logs
+- `npm run docker:restart` - Restart containers
+- `npm run docker:deploy` - Full deployment (build + start)

@@ -54,16 +54,23 @@ export async function POST(
     // Hash della nuova password
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
-    // Aggiorna la password nel database
-    await prisma.user.update({
-      where: { id },
-      data: {
-        passwordHash,
-        updatedAt: new Date(),
-      },
-    });
+    // Aggiorna la password, incrementa tokenVersion e invalida tutte le sessioni
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id },
+        data: {
+          passwordHash,
+          tokenVersion: { increment: 1 },
+          updatedAt: new Date(),
+        },
+      }),
+      // Delete all active sessions for this user
+      prisma.session.deleteMany({
+        where: { userId: id },
+      }),
+    ]);
 
-    console.log(`✅ Password reimpostata in modalità DEV per: ${user.email}`);
+    console.log(`✅ Password reimpostata in modalità DEV per: ${user.email} - sessioni invalidate`);
 
     return NextResponse.json({
       message: "Password reimpostata con successo",
