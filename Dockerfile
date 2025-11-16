@@ -6,6 +6,9 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
+# Update npm to latest version
+RUN npm install -g npm@latest
+
 # Copy package files and Prisma schema (needed for postinstall)
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
@@ -13,7 +16,36 @@ COPY prisma ./prisma
 # Install ALL dependencies (including Prisma for migrations)
 RUN npm install && npm cache clean --force
 
-# Stage 2: Builder
+# Stage 2: Development
+FROM node:20-alpine AS dev
+WORKDIR /app
+
+# Update npm to latest version
+RUN npm install -g npm@latest
+
+# Install PostgreSQL client tools for migrations
+RUN apk add --no-cache postgresql16-client curl
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json* ./
+
+# Copy Prisma schema
+COPY prisma ./prisma
+
+# Expose port
+EXPOSE 3000
+
+# Set development environment
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV HOSTNAME="0.0.0.0"
+ENV PORT=3000
+
+# Default command (can be overridden in docker-compose)
+CMD ["npm", "run", "dev"]
+
+# Stage 3: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
 
@@ -32,9 +64,12 @@ RUN npx prisma generate
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# Stage 3: Runner
+# Stage 4: Runner
 FROM node:20-alpine AS runner
 WORKDIR /app
+
+# Update npm to latest version
+RUN npm install -g npm@latest
 
 # Install PostgreSQL client tools for backup/restore
 RUN apk add --no-cache postgresql16-client
