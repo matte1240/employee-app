@@ -6,6 +6,9 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
+# Update npm to latest version
+RUN npm install -g npm@latest
+
 # Copy package files and Prisma schema (needed for postinstall)
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
@@ -16,6 +19,9 @@ RUN npm install && npm cache clean --force
 # Stage 2: Development
 FROM node:20-alpine AS dev
 WORKDIR /app
+
+# Update npm to latest version
+RUN npm install -g npm@latest
 
 # Install PostgreSQL client tools for migrations
 RUN apk add --no-cache postgresql16-client curl
@@ -61,6 +67,9 @@ RUN npm run build
 # Stage 4: Runner
 FROM node:20-alpine AS runner
 WORKDIR /app
+
+# Update npm to latest version
+RUN npm install -g npm@latest
 
 # Install PostgreSQL client tools for backup/restore
 RUN apk add --no-cache postgresql16-client
