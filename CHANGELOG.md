@@ -1,3 +1,19 @@
+# [0.3.0](https://github.com/matte1240/employee-app/compare/v0.2.0...v0.3.0) (2025-11-16)
+
+
+### Bug Fixes
+
+* improve cache cleanup workflow to find and filter caches properly ([2238b00](https://github.com/matte1240/employee-app/commit/2238b0036037f5c54bff56c5a5788545d787dda4))
+* update GitHub token secret reference in cache cleanup workflow ([bc41bf2](https://github.com/matte1240/employee-app/commit/bc41bf2b7a722d41fda11c8951b2fbd376c1084c))
+
+
+### Features
+
+* enhance database backup process with improved options and scheduling ([ce26f66](https://github.com/matte1240/employee-app/commit/ce26f6627052cb84c2aefd84f8f5ef6eda77bab6))
+* enhance database backup workflow with production and staging jobs ([5f88302](https://github.com/matte1240/employee-app/commit/5f883025d9ef83d908b56e469b1843df277ddf97))
+* refactor backup download step to use scp-action for improved reliability ([7f82ca6](https://github.com/matte1240/employee-app/commit/7f82ca6df5bd20d3b876ae4d21a9ab9538c9ecbe))
+* update backup download step to use SCP for enhanced security and reliability ([5c9a9a7](https://github.com/matte1240/employee-app/commit/5c9a9a7a847cdf84529176e57ac48d1a32927016))
+
 # [0.2.0](https://github.com/matte1240/employee-app/compare/v0.1.1...v0.2.0) (2025-11-16)
 
 
