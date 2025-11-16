@@ -18,6 +18,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ./backups/database:/app/backups/database
     networks:
       - app-network-staging
     command: >
