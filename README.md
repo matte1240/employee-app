@@ -86,15 +86,48 @@ User (id, email, passwordHash, role, name, image, tokenVersion, createdAt, updat
 
 ---
 
-## 🚀 Quick Start (Docker Compose)
+## 🚀 Quick Start
 
 ### Prerequisites
-- Docker (20.10+)
-- Docker Compose (2.0+)
+- **Development**: Node.js 20+ OR Docker
+- **Production**: Docker (20.10+) + Docker Compose (2.0+)
 - 2GB+ free RAM
-- Internet connection (for pulling images)
+- Internet connection
 
-### 1. Initial Setup
+### Development Setup
+
+**Option 1: Local Development (Recommended)**
+
+```bash
+# Clone and setup
+git clone https://github.com/yourusername/employee-app.git
+cd employee-app
+cp .env.example .env
+
+# Install and run
+npm install
+npm run dev
+
+# Open http://localhost:3000
+```
+
+**Option 2: Docker Development (with hot reload)**
+
+```bash
+# Clone and setup
+git clone https://github.com/yourusername/employee-app.git
+cd employee-app
+cp .env.example .env
+
+# Run with Docker (hot reload enabled!)
+npm run docker:dev
+
+# Open http://localhost:3000
+```
+
+📖 **Full development guide**: See [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md)
+
+### Production Setup (Docker Compose)
 
 ```bash
 # Clone the repository
@@ -102,7 +135,7 @@ git clone https://github.com/yourusername/employee-app.git
 cd employee-app
 
 # Copy environment template
-cp .env.example .env
+cp .env.production.example .env
 
 # Edit configuration (secrets, database credentials)
 nano .env
