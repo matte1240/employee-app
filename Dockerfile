@@ -18,7 +18,7 @@ FROM node:25-alpine AS dev
 WORKDIR /app
 
 # Install PostgreSQL client tools for migrations
-RUN apk add --no-cache postgresql17-client curl
+RUN apk add --no-cache postgresql16-client curl
 
 # Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
@@ -63,7 +63,7 @@ FROM node:25-alpine AS runner
 WORKDIR /app
 
 # Install PostgreSQL client tools for backup/restore
-RUN apk add --no-cache postgresql17-client
+RUN apk add --no-cache postgresql16-client
 
 # Set to production environment
 ENV NODE_ENV=production
