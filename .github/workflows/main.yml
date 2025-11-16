@@ -6,6 +6,8 @@ on:
       - main
     tags:
       - 'v*.*.*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+    # Note: when pushing a tag, both branch and tag triggers activate
+    # Use if conditions in jobs to separate behavior
   workflow_dispatch:
     inputs:
       skip_backup:
@@ -22,9 +24,9 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Job 1: Build - sempre su push a main
+  # Job 1: Build - solo su push a main (non tag)
   build:
-    if: github.ref_type != 'tag'
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
