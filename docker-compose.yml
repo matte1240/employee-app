@@ -12,7 +12,7 @@ services:
       - "${DB_PORT:-5433}:5432"
     volumes:
         - postgres_data:/var/lib/postgresql/data
-        # - ./backups/database:/backups  # Obsolete backup bind mount removed
+        - ./backups/database:/backups
     networks:
       - employee-tracker-network
     healthcheck:
@@ -53,7 +53,7 @@ services:
       - "${APP_PORT:-3001}:3000"
     volumes:
       - ./logs:/app/logs
-      - ./backups:/app/backups/database
+      - ./backups/database:/app/backups/database
     networks:
       - employee-tracker-network
     command: >

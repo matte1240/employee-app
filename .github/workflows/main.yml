@@ -1,17 +1,13 @@
-name: Main - Build, Release & Deploy
+name: Main - Build & Deploy
 
 on:
   push:
     branches:
       - main
-    tags:
-      - 'v*.*.*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
-    # Note: when pushing a tag, both branch and tag triggers activate
-    # Use if conditions in jobs to separate behavior
   workflow_dispatch:
     inputs:
       skip_backup:
-        description: 'Skip database backup before deployment (only for tag releases)'
+        description: 'Skip database backup before deployment'
         required: false
         default: 'false'
         type: choice
@@ -24,9 +20,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Job 1: Build - solo su push a main (non tag)
+  # Job 1: Build - Build and push Docker image
   build:
-    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -52,8 +47,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=main
-            type=sha,prefix=main-
+            type=raw,value=latest
+            type=raw,value=production
+            type=sha,prefix=prod-
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -77,138 +73,9 @@ jobs:
           echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
-  # Job 2: Release - solo con tag v*.*.*
-  build-and-release:
-    if: github.ref_type == 'tag'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-      
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Full history for changelog
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Extract version from tag
-        id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-      
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable={{is_default_branch}}
-      
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
-      
-      - name: Generate changelog
-        id: changelog
-        run: |
-          # Get previous tag
-          PREV_TAG=$(git tag --sort=-version:refname | sed -n '2p')
-          if [ -z "$PREV_TAG" ]; then
-            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
-          fi
-          
-          # Generate changelog
-          echo "## 🚀 What's Changed" > CHANGELOG.txt
-          echo "" >> CHANGELOG.txt
-          
-          # Features
-          FEATURES=$(git log $PREV_TAG..${{ steps.version.outputs.tag }} --pretty=format:"- %s (%h)" --grep="^feat" --no-merges)
-          if [ ! -z "$FEATURES" ]; then
-            echo "### ✨ New Features" >> CHANGELOG.txt
-            echo "$FEATURES" >> CHANGELOG.txt
-            echo "" >> CHANGELOG.txt
-          fi
-          
-          # Fixes
-          FIXES=$(git log $PREV_TAG..${{ steps.version.outputs.tag }} --pretty=format:"- %s (%h)" --grep="^fix" --no-merges)
-          if [ ! -z "$FIXES" ]; then
-            echo "### 🐛 Bug Fixes" >> CHANGELOG.txt
-            echo "$FIXES" >> CHANGELOG.txt
-            echo "" >> CHANGELOG.txt
-          fi
-          
-          # Other changes
-          OTHERS=$(git log $PREV_TAG..${{ steps.version.outputs.tag }} --pretty=format:"- %s (%h)" --grep="^feat\|^fix" --invert-grep --no-merges)
-          if [ ! -z "$OTHERS" ]; then
-            echo "### 🔧 Other Changes" >> CHANGELOG.txt
-            echo "$OTHERS" >> CHANGELOG.txt
-            echo "" >> CHANGELOG.txt
-          fi
-          
-          echo "---" >> CHANGELOG.txt
-          echo "" >> CHANGELOG.txt
-          echo "## 🐳 Docker Images" >> CHANGELOG.txt
-          echo "" >> CHANGELOG.txt
-          echo "\`\`\`bash" >> CHANGELOG.txt
-          echo "# Pull the image" >> CHANGELOG.txt
-          echo "docker pull ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}" >> CHANGELOG.txt
-          echo "" >> CHANGELOG.txt
-          echo "# Or use in docker-compose.yml" >> CHANGELOG.txt
-          echo "image: ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}" >> CHANGELOG.txt
-          echo "\`\`\`" >> CHANGELOG.txt
-          echo "" >> CHANGELOG.txt
-          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREV_TAG...${{ steps.version.outputs.tag }}" >> CHANGELOG.txt
-          
-          cat CHANGELOG.txt
-      
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: Release ${{ steps.version.outputs.tag }}
-          body_path: CHANGELOG.txt
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Summary
-        run: |
-          echo "### 🎉 Release ${{ steps.version.outputs.tag }} Published!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Docker Images:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "ghcr.io/${{ github.repository }}:latest" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-  # Job 3: Deploy - solo con tag v*.*.* (dopo release)
+  # Job 2: Deploy to Production
   deploy-production:
-    if: github.ref_type == 'tag'
-    needs: build-and-release
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -217,13 +84,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Extract version from tag
-        id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       
       - name: Deploy to production server
         uses: appleboy/ssh-action@v1.0.3
@@ -234,7 +94,7 @@ jobs:
           port: ${{ secrets.PRODUCTION_PORT || 22 }}
           script: |
             set -e
-            echo "🚀 Starting deployment to PRODUCTION (Release ${{ steps.version.outputs.tag }})..."
+            echo "🚀 Starting deployment to PRODUCTION..."
             
             # Navigate to app directory
             cd ${{ secrets.PRODUCTION_APP_DIR || '/opt/employee-app' }}
@@ -242,7 +102,7 @@ jobs:
             # Backup database (unless skipped)
             if [ "${{ github.event.inputs.skip_backup }}" != "true" ]; then
               echo "💾 Creating database backup..."
-              docker compose exec -T db pg_dump -U employee_user employee_db > "backups/database/backup-$(date +%Y-%m-%dT%H-%M-%S).sql" || echo "⚠️  Backup warning (non-critical)"
+              docker compose exec -T db pg_dump -U employee_user employee_db > "/backups/backup-$(date +%Y-%m-%dT%H-%M-%S).sql" || echo "⚠️  Backup warning (non-critical)"
             else
               echo "⏭️  Skipping database backup (manual trigger)"
             fi
@@ -255,19 +115,12 @@ jobs:
             # Log in to GitHub Container Registry
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Update docker-compose to use the release version
-            sed -i 's|image: ghcr.io/${{ github.repository }}:.*|image: ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}|g' docker-compose.yml
-            
             # Pull latest image
             docker compose pull
             
-            # Apply database migrations (if any)
-            echo "🔄 Applying database migrations..."
-            docker compose run --rm app npx prisma migrate deploy || echo "⚠️  No migrations to apply"
-            
             # Rolling update: zero-downtime deployment
             echo "🔄 Performing rolling update..."
-            docker compose up -d --no-deps --build app
+            docker compose up -d --no-deps app
             
             # Wait for health check
             echo "⏳ Waiting for services to be healthy..."
@@ -288,7 +141,7 @@ jobs:
             # Cleanup old images
             docker image prune -f
             
-            echo "🎉 Production deployment completed (Release ${{ steps.version.outputs.tag }})!"
+            echo "🎉 Production deployment completed!"
       
       - name: Deployment Summary
         if: success()
@@ -296,15 +149,10 @@ jobs:
           echo "### ✅ Production Deployment Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
-          echo "**Release:** \`${{ steps.version.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Server:** \`${{ secrets.PRODUCTION_HOST }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Backup:** ${{ github.event.inputs.skip_backup != 'true' && 'Created ✅' || 'Skipped ⏭️' }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image deployed:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [View Application](https://${{ secrets.PRODUCTION_HOST }})" >> $GITHUB_STEP_SUMMARY
       
