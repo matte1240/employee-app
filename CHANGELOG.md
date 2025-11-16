@@ -1,3 +1,16 @@
+## [0.3.1](https://github.com/matte1240/employee-app/compare/v0.3.0...v0.3.1) (2025-11-16)
+
+
+### Bug Fixes
+
+* add missing volume mapping for application backups in staging configuration ([b59bcb9](https://github.com/matte1240/employee-app/commit/b59bcb93f9f2ca1bf1c50d541d63ab06f93d9caa))
+* correct PostgreSQL volume path in staging configuration and add backup volume ([d487fb9](https://github.com/matte1240/employee-app/commit/d487fb93310c3e1acd2a9cbc4c54bab7690bbec7))
+* downgrade PostgreSQL image from 17 to 16 and update volume paths in Docker configurations ([fa883d6](https://github.com/matte1240/employee-app/commit/fa883d6d578d2e8f3937df9c73faa8855dedc6ad))
+* update database backup script to use correct service name in Docker commands ([5de228b](https://github.com/matte1240/employee-app/commit/5de228b02aa1c0e09cef922fcd7a295d1e2ffa43))
+* update deployment process to stop old containers before starting new ones ([caa7937](https://github.com/matte1240/employee-app/commit/caa79376960accf7eaaca64df045637019312756))
+* update git command in staging workflow to use pull instead of reset for better handling of changes ([189bab3](https://github.com/matte1240/employee-app/commit/189bab322c1a6915d9660942f9953fd62e045872))
+* update PostgreSQL volume path in staging configuration ([429432a](https://github.com/matte1240/employee-app/commit/429432a9974debd0b853a5cb405cb20716c44373))
+
 # [0.3.0](https://github.com/matte1240/employee-app/compare/v0.2.0...v0.3.0) (2025-11-16)
 
 
