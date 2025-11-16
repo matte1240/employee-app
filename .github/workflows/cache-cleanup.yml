@@ -29,16 +29,31 @@ jobs:
         run: |
           echo "Cleaning up GitHub Actions caches..."
           
-          # Get all cache keys matching the pattern
-          CACHE_KEYS=$(gh cache list --repo ${{ github.repository }} --key "${{ inputs.cache_key_pattern }}" --json key,createdAt --jq '.[].key')
+          # Get all cache keys
+          CACHE_DATA=$(gh cache list --repo ${{ github.repository }} --json id,key,createdAt)
           
-          if [ -z "$CACHE_KEYS" ]; then
-            echo "No caches found matching pattern: ${{ inputs.cache_key_pattern }}"
+          if [ -z "$CACHE_DATA" ]; then
+            echo "No caches found in repository"
             exit 0
           fi
           
           echo "Found caches:"
-          echo "$CACHE_KEYS"
+          echo "$CACHE_DATA" | jq -r '.[] | "\(.key) - \(.createdAt)"'
+          
+          # Filter caches matching the pattern
+          if [ "${{ inputs.cache_key_pattern }}" = "*" ]; then
+            FILTERED_CACHES=$CACHE_DATA
+          else
+            FILTERED_CACHES=$(echo "$CACHE_DATA" | jq "[.[] | select(.key | contains(\"${{ inputs.cache_key_pattern }}\"))]")
+          fi
+          
+          if [ "$(echo "$FILTERED_CACHES" | jq length)" = "0" ]; then
+            echo "No caches found matching pattern: ${{ inputs.cache_key_pattern }}"
+            exit 0
+          fi
+          
+          echo "Filtered caches:"
+          echo "$FILTERED_CACHES" | jq -r '.[] | "\(.key) - \(.createdAt)"'
           
           # Calculate cutoff date
           if [ "${{ inputs.older_than_days }}" != "0" ]; then
@@ -46,10 +61,10 @@ jobs:
             echo "Deleting caches older than: $CUTOFF_DATE"
             
             # Get cache IDs to delete
-            CACHE_IDS=$(gh cache list --repo ${{ github.repository }} --key "${{ inputs.cache_key_pattern }}" --json id,createdAt --jq ".[] | select(.createdAt < \"$CUTOFF_DATE\") | .id")
+            CACHE_IDS=$(echo "$FILTERED_CACHES" | jq -r ".[] | select(.createdAt < \"$CUTOFF_DATE\") | .id")
           else
             # Delete all matching caches
-            CACHE_IDS=$(gh cache list --repo ${{ github.repository }} --key "${{ inputs.cache_key_pattern }}" --json id --jq '.[].id')
+            CACHE_IDS=$(echo "$FILTERED_CACHES" | jq -r '.[].id')
           fi
           
           if [ -z "$CACHE_IDS" ]; then
@@ -69,7 +84,7 @@ jobs:
           
           echo "Cache cleanup completed!"
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
           
       - name: Summary
         run: |
