@@ -39,7 +39,7 @@ services:
       start_period: 40s
 
   db:
-    image: postgres:17-alpine
+    image: postgres:16-alpine
     container_name: employee-db-staging
     restart: unless-stopped
     environment:
@@ -47,7 +47,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-employee_password_staging}
       - POSTGRES_DB=${POSTGRES_DB:-employee_tracker}
     volumes:
-      - postgres-data-staging:/var/lib/postgresql
+      - postgres-data-staging:/var/lib/postgresql/data
       - ./backups/database:/backups
     networks:
       - app-network-staging

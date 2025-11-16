@@ -1,7 +1,7 @@
 services:
   # PostgreSQL Database
   db:
-    image: postgres:17-alpine
+    image: postgres:16-alpine
     container_name: employee-app-db-dev
     restart: unless-stopped
     environment:
@@ -12,7 +12,7 @@ services:
     ports:
       - "${DB_PORT:-5433}:5432"
     volumes:
-      - postgres-data-dev:/var/lib/postgresql
+      - postgres-data-dev:/var/lib/postgresql/data
     networks:
       - app-network-dev
     healthcheck:
