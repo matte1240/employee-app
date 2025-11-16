@@ -116,8 +116,11 @@ cd /opt/employee-app
 git clone https://github.com/matte1240/employee-app.git .
 git checkout staging
 
-# Crea directory per backups
+# Crea directory per backups con permessi corretti
 mkdir -p backups/database
+# Il container app gira come UID 1001 (utente nextjs)
+sudo chown -R 1001:1001 backups/database
+chmod -R 755 backups/database
 
 # Crea file .env
 cat > .env << 'EOF'
@@ -158,8 +161,11 @@ cd /opt/employee-app
 git clone https://github.com/matte1240/employee-app.git .
 git checkout main
 
-# Crea directory per backups
+# Crea directory per backups con permessi corretti
 mkdir -p backups/database
+# Il container app gira come UID 1001 (utente nextjs)
+sudo chown -R 1001:1001 backups/database
+chmod -R 755 backups/database
 
 # Crea file .env (con credenziali production!)
 cat > .env << 'EOF'
