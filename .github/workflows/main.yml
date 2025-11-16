@@ -130,9 +130,14 @@ jobs:
             echo "✅ Image pulled"
             echo ""
             
-            # Rolling update: zero-downtime deployment
-            echo "🔄 Performing rolling update..."
-            docker compose up -d --no-deps app
+            # Stop and remove old containers
+            echo "🔄 Stopping containers..."
+            docker compose down
+            echo ""
+            
+            # Start new containers
+            echo "🚀 Starting new containers..."
+            docker compose up -d
             echo ""
             
             # Wait for health check
