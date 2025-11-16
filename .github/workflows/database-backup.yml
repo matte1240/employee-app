@@ -175,11 +175,11 @@ jobs:
 
             # Create backup in /backups/ bind mount (persistent storage)
             echo "📦 Creating backup: ${{ steps.backup.outputs.filename }}"
-            docker compose -f docker-compose.staging.yml exec -T postgres sh -c "pg_dump -U \${POSTGRES_USER:-app} \${POSTGRES_DB:-employee_tracker} --clean --if-exists -F p -b > /backups/${{ steps.backup.outputs.filename }}"
+            docker compose -f docker-compose.staging.yml exec -T db sh -c "pg_dump -U \${POSTGRES_USER:-app} \${POSTGRES_DB:-employee_tracker} --clean --if-exists -F p -b > /backups/${{ steps.backup.outputs.filename }}"
 
             # Copy to /tmp for download
             echo "📋 Copying backup to /tmp for download..."
-            docker compose -f docker-compose.staging.yml exec -T postgres sh -c "cat /backups/${{ steps.backup.outputs.filename }}" > /tmp/${{ steps.backup.outputs.filename }}
+            docker compose -f docker-compose.staging.yml exec -T db sh -c "cat /backups/${{ steps.backup.outputs.filename }}" > /tmp/${{ steps.backup.outputs.filename }}
 
             # Check if backup was created successfully
             if [ -f "/tmp/${{ steps.backup.outputs.filename }}" ]; then
