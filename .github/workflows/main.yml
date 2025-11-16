@@ -99,6 +99,10 @@ jobs:
             # Navigate to app directory
             cd ${{ secrets.PRODUCTION_APP_DIR || '/opt/employee-app' }}
             
+            # Ensure backups directory exists with correct permissions
+            mkdir -p backups/database
+            chmod -R 777 backups/database
+            
             # Backup database (unless skipped)
             if [ "${{ github.event.inputs.skip_backup }}" != "true" ]; then
               echo "💾 Creating database backup..."
