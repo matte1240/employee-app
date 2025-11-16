@@ -3,11 +3,8 @@
 # ========================================
 
 # Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM node:25-alpine AS deps
 WORKDIR /app
-
-# Update npm to latest version
-RUN npm install -g npm@latest
 
 # Copy package files and Prisma schema (needed for postinstall)
 COPY package.json package-lock.json* ./
@@ -17,14 +14,11 @@ COPY prisma ./prisma
 RUN npm install && npm cache clean --force
 
 # Stage 2: Development
-FROM node:20-alpine AS dev
+FROM node:25-alpine AS dev
 WORKDIR /app
 
-# Update npm to latest version
-RUN npm install -g npm@latest
-
 # Install PostgreSQL client tools for migrations
-RUN apk add --no-cache postgresql16-client curl
+RUN apk add --no-cache postgresql17-client curl
 
 # Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
@@ -46,7 +40,7 @@ ENV PORT=3000
 CMD ["npm", "run", "dev"]
 
 # Stage 3: Builder
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 WORKDIR /app
 
 # Copy all dependencies from deps stage (including Prisma)
@@ -65,14 +59,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # Stage 4: Runner
-FROM node:20-alpine AS runner
+FROM node:25-alpine AS runner
 WORKDIR /app
 
-# Update npm to latest version
-RUN npm install -g npm@latest
-
 # Install PostgreSQL client tools for backup/restore
-RUN apk add --no-cache postgresql16-client
+RUN apk add --no-cache postgresql17-client
 
 # Set to production environment
 ENV NODE_ENV=production

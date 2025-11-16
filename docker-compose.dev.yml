@@ -1,17 +1,18 @@
 services:
   # PostgreSQL Database
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: employee-app-db-dev
     restart: unless-stopped
     environment:
+      - TZ=Europe/Rome
       - POSTGRES_USER=${POSTGRES_USER:-app}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-DevPassword123}
       - POSTGRES_DB=${POSTGRES_DB:-employee_tracker}
     ports:
       - "${DB_PORT:-5433}:5432"
     volumes:
-      - postgres-data-dev:/var/lib/postgresql/data
+      - postgres-data-dev:/var/lib/postgresql
     networks:
       - app-network-dev
     healthcheck:
@@ -31,6 +32,7 @@ services:
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
+      - TZ=Europe/Rome
       - NODE_ENV=development
       - DATABASE_URL=postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-DevPassword123}@db:5432/${POSTGRES_DB:-employee_tracker}?schema=public
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
@@ -48,6 +50,7 @@ services:
       - .:/app
       - /app/node_modules
       - /app/.next
+      - ./backups/database:/app/backups/database
     networks:
       - app-network-dev
     command: >

@@ -37,7 +37,7 @@ services:
       start_period: 40s
 
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: employee-db-staging
     restart: unless-stopped
     environment:
