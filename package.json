@@ -40,6 +40,8 @@
     "lodash.isequal": "^4.5.0"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.3",
@@ -47,6 +49,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
+    "semantic-release": "^24.2.9",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"

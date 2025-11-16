@@ -45,7 +45,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-employee_password_staging}
       - POSTGRES_DB=${POSTGRES_DB:-employee_tracker}
     volumes:
-      - postgres-data-staging:/var/lib/postgresql/data
+      - postgres-data-staging:/var/lib/postgresql
     networks:
       - app-network-staging
     healthcheck:

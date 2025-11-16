@@ -11,7 +11,7 @@ services:
     ports:
       - "${DB_PORT:-5433}:5432"
     volumes:
-        - postgres_data:/var/lib/postgresql/data
+        - postgres_data:/var/lib/postgresql
         - ./backups/database:/backups
     networks:
       - employee-tracker-network

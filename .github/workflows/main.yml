@@ -171,23 +171,33 @@ jobs:
             echo "🎉 Production deployment completed!"
             echo "=========================================="
       
-      - name: Deployment Summary
-        if: success()
-        run: |
-          echo "### ✅ Production Deployment Successful!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Server:** \`${{ secrets.PRODUCTION_HOST }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Backup:** ${{ github.event.inputs.skip_backup != 'true' && 'Created ✅' || 'Skipped ⏭️' }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 [View Application](https://${{ secrets.PRODUCTION_HOST }})" >> $GITHUB_STEP_SUMMARY
+  # Job 3: Release - Create semantic release
+  release:
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
       
-      - name: Notify on failure
-        if: failure()
-        run: |
-          echo "### ❌ Production Deployment Failed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "⚠️ **CRITICAL**: Production deployment encountered errors." >> $GITHUB_STEP_SUMMARY
-          echo "Check the logs above and verify server status immediately." >> $GITHUB_STEP_SUMMARY
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run semantic-release
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
