@@ -66,17 +66,18 @@ jobs:
             echo "=========================================="
 
       - name: Download backup from production server
-        run: |
-          echo "📥 Downloading backup from server..."
-          sshpass -p "${{ secrets.PRODUCTION_SSH_KEY }}" scp -o StrictHostKeyChecking=no \
-            -P ${{ secrets.PRODUCTION_PORT || 22 }} \
-            ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }}:/tmp/${{ steps.backup.outputs.filename }} \
-            ./${{ steps.backup.outputs.filename }} || \
-          scp -i <(echo "${{ secrets.PRODUCTION_SSH_KEY }}") -o StrictHostKeyChecking=no \
-            -P ${{ secrets.PRODUCTION_PORT || 22 }} \
-            ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }}:/tmp/${{ steps.backup.outputs.filename }} \
-            ./${{ steps.backup.outputs.filename }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          port: ${{ secrets.PRODUCTION_PORT || 22 }}
+          source: /tmp/${{ steps.backup.outputs.filename }}
+          target: .
+          strip_components: 2  # Remove /tmp/ from the path
 
+      - name: Verify download
+        run: |
           echo "✅ Backup downloaded"
           ls -lh ${{ steps.backup.outputs.filename }}
 
