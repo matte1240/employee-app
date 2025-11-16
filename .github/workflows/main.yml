@@ -107,7 +107,7 @@ jobs:
               echo "⏭️  Skipping database backup (manual trigger with skip_backup=true)"
             else
               echo "💾 Creating database backup..."
-              docker compose exec -T postgres pg_dump -U ${POSTGRES_USER:-app} ${POSTGRES_DB:-employee_tracker} > "backups/database/backup-$(date +%Y-%m-%dT%H-%M-%S).sql" || echo "⚠️  Backup warning (non-critical)"
+              sudo docker compose exec -T postgres pg_dump -U ${POSTGRES_USER:-app} ${POSTGRES_DB:-employee_tracker} > "backups/database/backup-$(date +%Y-%m-%dT%H-%M-%S).sql" || echo "⚠️  Backup warning (non-critical)"
               echo "✅ Backup completed"
             fi
             echo ""
