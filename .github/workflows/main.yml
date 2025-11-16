@@ -94,53 +94,82 @@ jobs:
           port: ${{ secrets.PRODUCTION_PORT || 22 }}
           script: |
             set -e
+            echo "=========================================="
             echo "🚀 Starting deployment to PRODUCTION..."
+            echo "=========================================="
+            echo ""
             
             # Navigate to app directory
             cd ${{ secrets.PRODUCTION_APP_DIR || '/opt/employee-app' }}
             
-            # Backup database (unless skipped)
-            if [ "${{ github.event.inputs.skip_backup }}" != "true" ]; then
+            # Backup database (skip only if manually triggered with skip_backup=true)
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.skip_backup }}" = "true" ]; then
+              echo "⏭️  Skipping database backup (manual trigger with skip_backup=true)"
+            else
               echo "💾 Creating database backup..."
               docker compose exec -T postgres pg_dump -U ${POSTGRES_USER:-app} ${POSTGRES_DB:-employee_tracker} > "backups/database/backup-$(date +%Y-%m-%dT%H-%M-%S).sql" || echo "⚠️  Backup warning (non-critical)"
-            else
-              echo "⏭️  Skipping database backup (manual trigger)"
+              echo "✅ Backup completed"
             fi
+            echo ""
             
             # Pull latest changes (force update)
+            echo "📥 Pulling latest changes from Git..."
             git fetch origin main
             git reset --hard origin/main
+            echo "✅ Code updated"
+            echo ""
             
             # Log in to GitHub Container Registry
+            echo "🔐 Logging in to GitHub Container Registry..."
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo ""
             
             # Pull latest image
+            echo "📦 Pulling latest Docker image..."
             docker compose pull
+            echo "✅ Image pulled"
+            echo ""
             
             # Rolling update: zero-downtime deployment
             echo "🔄 Performing rolling update..."
             docker compose up -d --no-deps app
+            echo ""
             
             # Wait for health check
             echo "⏳ Waiting for services to be healthy..."
             sleep 15
+            echo ""
             
             # Check if app is running
+            echo "🔍 Checking deployment status..."
+            # Check if app is running
+            echo "🔍 Checking deployment status..."
             if docker compose ps | grep -q "Up"; then
+              echo ""
+              echo "=========================================="
               echo "✅ Deployment successful!"
+              echo "=========================================="
               docker compose ps
             else
+              echo ""
+              echo "=========================================="
               echo "❌ Deployment failed! Rolling back..."
+              echo "=========================================="
               docker compose logs --tail=50 app
               # Attempt rollback (restart with previous image)
               docker compose restart app
               exit 1
             fi
+            echo ""
             
             # Cleanup old images
+            echo "🧹 Cleaning up old images..."
             docker image prune -f
+            echo ""
             
+            echo "=========================================="
             echo "🎉 Production deployment completed!"
+            echo "=========================================="
       
       - name: Deployment Summary
         if: success()
