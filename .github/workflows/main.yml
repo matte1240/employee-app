@@ -102,14 +102,13 @@ jobs:
             # Backup database (unless skipped)
             if [ "${{ github.event.inputs.skip_backup }}" != "true" ]; then
               echo "💾 Creating database backup..."
-              docker compose exec -T db pg_dump -U employee_user employee_db > "/backups/backup-$(date +%Y-%m-%dT%H-%M-%S).sql" || echo "⚠️  Backup warning (non-critical)"
+              docker compose exec -T postgres pg_dump -U ${POSTGRES_USER:-app} ${POSTGRES_DB:-employee_tracker} > "backups/database/backup-$(date +%Y-%m-%dT%H-%M-%S).sql" || echo "⚠️  Backup warning (non-critical)"
             else
               echo "⏭️  Skipping database backup (manual trigger)"
             fi
             
-            # Pull latest changes
-            git fetch origin
-            git checkout main
+            # Pull latest changes (force update)
+            git fetch origin main
             git reset --hard origin/main
             
             # Log in to GitHub Container Registry
