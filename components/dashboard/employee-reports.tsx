@@ -308,41 +308,9 @@ export default function EmployeeReports({
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Ore di Permesso</p>
+              <p className="text-sm text-gray-600">Ore Perm/Ferie</p>
               <p className="text-2xl font-bold text-gray-900">
-                {isLoading ? "..." : `${monthStats.permessoHours.toFixed(1)}h`}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-              <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Ore di Malattia</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {isLoading ? "..." : `${monthStats.sicknessHours.toFixed(1)}h`}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-green-100 bg-green-50 p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Ore di Ferie</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {isLoading ? "..." : `${monthStats.vacationHours.toFixed(1)}h`}
+                {isLoading ? "..." : `${(monthStats.permessoHours + monthStats.vacationHours).toFixed(1)}h`}
               </p>
             </div>
           </div>

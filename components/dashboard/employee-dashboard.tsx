@@ -35,8 +35,9 @@ type EmployeeDashboardProps = {
   initialEntries: TimeEntryDTO[];
   userName: string;
   hideHeader?: boolean; // If true, hide the header (for embedded views)
+  hideStats?: boolean; // If true, hide the stats cards (for admin views with separate totals)
   targetUserId?: string; // If set, admin is editing this user's calendar
-  onEntrySaved?: () => void; // Callback when entry is saved/deleted (for admin refetch)
+  onEntrySaved?: (updatedEntries: TimeEntryDTO[]) => void; // Callback when entry is saved/deleted (for admin refetch)
   isAdmin?: boolean; // If true, bypass Sunday restriction
 };
 
@@ -80,6 +81,7 @@ export default function EmployeeDashboard({
   initialEntries,
   userName,
   hideHeader = false,
+  hideStats = false,
   targetUserId,
   onEntrySaved,
   isAdmin = false,
@@ -207,6 +209,7 @@ export default function EmployeeDashboard({
         }
 
         setEntries(payload as TimeEntryDTO[]);
+        onEntrySaved?.(payload as TimeEntryDTO[]);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setError("Unexpected error while loading entries.");
@@ -255,6 +258,7 @@ export default function EmployeeDashboard({
         }
 
         setEntries(payload as TimeEntryDTO[]);
+        onEntrySaved?.(payload as TimeEntryDTO[]);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setError("Unexpected error while loading entries.");
@@ -479,15 +483,17 @@ export default function EmployeeDashboard({
           return;
         }
 
-        setEntries((current) => {
-          // Remove existing entry for this date if any
-          const filtered = current.filter(e => e.workDate !== selectedDate);
+        // Calculate new entries
+        const newEntries = (() => {
+          const filtered = entries.filter(e => e.workDate !== selectedDate);
           return [...filtered, data as TimeEntryDTO];
-        });
+        })();
+
+        onEntrySaved?.(newEntries); // Trigger refetch in admin dashboard
+        setEntries(newEntries);
 
         setIsModalOpen(false);
         setIsRefetching(true);
-        onEntrySaved?.(); // Trigger refetch in admin dashboard
       } catch {
         setModalError("Errore imprevisto durante il salvataggio.");
       }
@@ -516,10 +522,15 @@ export default function EmployeeDashboard({
           return;
         }
 
-        setEntries((current) => current.filter(e => e.id !== entry.id));
+        // Use functional updater to ensure we operate on latest state
+        setEntries((prev) => {
+          const newEntries = prev.filter((e) => e.id !== entry.id);
+          onEntrySaved?.(newEntries); // Trigger refetch in admin dashboard with latest entries
+          return newEntries;
+        });
+
         setIsModalOpen(false);
         setIsRefetching(true);
-        onEntrySaved?.(); // Trigger refetch in admin dashboard
       } catch {
         setModalError("Errore imprevisto durante l'eliminazione.");
       }
@@ -554,13 +565,16 @@ export default function EmployeeDashboard({
         return;
       }
 
-      setEntries((current) => {
-        const filtered = current.filter(e => e.workDate !== date);
+      // Calculate new entries
+      const newEntries = (() => {
+        const filtered = entries.filter(e => e.workDate !== date);
         return [...filtered, data as TimeEntryDTO];
-      });
+      })();
+
+      onEntrySaved?.(newEntries);
+      setEntries(newEntries);
 
       router.refresh();
-      onEntrySaved?.();
     } catch {
       setError("Errore imprevisto durante il salvataggio delle ferie.");
     }
@@ -594,7 +608,8 @@ export default function EmployeeDashboard({
 
       <div className={hideHeader ? "w-full py-8 flex flex-col" : "mx-auto max-w-7xl px-3 sm:px-6 py-8 flex flex-col"}>
         {/* Stats cards */}
-        <div className="order-2 md:order-1 mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        {!hideStats && (
+          <div className="order-2 md:order-1 mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
           <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
@@ -676,6 +691,7 @@ export default function EmployeeDashboard({
             </div>
           )}
         </div>
+        )}
 
         {error && (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">

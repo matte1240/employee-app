@@ -34,7 +34,7 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-6 mb-8">
+      <div className="grid gap-6 md:grid-cols-5 mb-8">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
@@ -85,8 +85,8 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Ore di Permesso</p>
-              <p className="text-2xl font-bold text-gray-900">{totalPermessoHours.toFixed(1)}h</p>
+              <p className="text-sm text-gray-600">Ore Perm/Ferie</p>
+              <p className="text-2xl font-bold text-gray-900">{(totalPermessoHours + totalVacationHours).toFixed(1)}h</p>
             </div>
           </div>
         </div>
@@ -95,26 +95,12 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Ore di Malattia</p>
+              <p className="text-sm text-gray-600">Ore Malattia</p>
               <p className="text-2xl font-bold text-gray-900">{totalSicknessHours.toFixed(1)}h</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-green-100 bg-green-50 p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Ore di Ferie</p>
-              <p className="text-2xl font-bold text-gray-900">{totalVacationHours.toFixed(1)}h</p>
             </div>
           </div>
         </div>
@@ -144,10 +130,10 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Utente
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                   Email
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                   Ruolo
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -157,13 +143,10 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
                   Ore Straordinarie
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ore Permesso
+                  Ore Perm/Ferie
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ore Malattia
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ore Ferie
                 </th>
                 <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Azioni
@@ -189,10 +172,10 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                       <div className="text-sm text-gray-900">{user.email}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         user.role === "ADMIN"
                           ? "bg-purple-100 text-purple-700"
@@ -213,17 +196,12 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="text-sm text-purple-600 font-medium">
-                        {user.permessoHours.toFixed(1)}h
+                        {(user.permessoHours + user.vacationHours).toFixed(1)}h
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="text-sm text-red-600 font-medium">
                         {user.sicknessHours.toFixed(1)}h
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm text-green-600 font-medium">
-                        {user.vacationHours.toFixed(1)}h
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
