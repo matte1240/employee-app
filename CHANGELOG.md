@@ -1,3 +1,15 @@
+# [0.5.0](https://github.com/matte1240/employee-app/compare/v0.4.0...v0.5.0) (2025-11-17)
+
+
+### Features
+
+* add sickness hours tracking to time entries and update related logic ([a75f50c](https://github.com/matte1240/employee-app/commit/a75f50c964b8370e18c960b34944c7cbda459843))
+* add vacation hours tracking across dashboard components ([c970d3c](https://github.com/matte1240/employee-app/commit/c970d3c7cb8ce4bb675d825ebfbfc0e8cf7f0be5))
+* refactor admin dashboard to use AdminOverview component and add leaderboard functionality ([7de5753](https://github.com/matte1240/employee-app/commit/7de5753bb2f4329ffb948bbb9ca655517b818e98))
+* remove top stats cards and update related text to Italian ([6676639](https://github.com/matte1240/employee-app/commit/667663950e990695a6bba62579577879953773fe))
+* update dashboard layout to include an additional column for stats cards ([6dfa79d](https://github.com/matte1240/employee-app/commit/6dfa79d7bd3ec99dde653dbcf8548e60707d182e))
+* update time tracking to consolidate vacation and permission hours, and enhance dashboard statistics ([976baf8](https://github.com/matte1240/employee-app/commit/976baf88488ca3eeba9d6e5641b98fe517619bfd))
+
 # [0.4.0](https://github.com/matte1240/employee-app/compare/v0.3.0...v0.4.0) (2025-11-17)
 
 
