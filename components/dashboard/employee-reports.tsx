@@ -13,6 +13,7 @@ type MonthStats = {
   regularHours: number;
   overtimeHours: number;
   permessoHours: number;
+  sicknessHours: number;
   totalHours: number;
   workingDays: number;
 };
@@ -31,6 +32,7 @@ export default function EmployeeReports({
     regularHours: 0,
     overtimeHours: 0,
     permessoHours: 0,
+    sicknessHours: 0,
     totalHours: 0,
     workingDays: 0,
   });
@@ -56,12 +58,14 @@ export default function EmployeeReports({
           let regularHours = 0;
           let overtimeHours = 0;
           let permessoHours = 0;
+          let sicknessHours = 0;
           const workingDays = new Set<string>();
 
           entries.forEach((entry: any) => {
             regularHours += entry.hoursWorked || 0;
             overtimeHours += entry.overtimeHours || 0;
             permessoHours += entry.permessoHours || 0;
+            sicknessHours += entry.sicknessHours || 0;
             workingDays.add(entry.workDate);
           });
 
@@ -69,6 +73,7 @@ export default function EmployeeReports({
             regularHours,
             overtimeHours,
             permessoHours,
+            sicknessHours,
             totalHours: regularHours + overtimeHours,
             workingDays: workingDays.size,
           });
@@ -241,7 +246,7 @@ export default function EmployeeReports({
       )}
 
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5 mb-8">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
@@ -301,6 +306,22 @@ export default function EmployeeReports({
               <p className="text-sm text-gray-600">Ore di Permesso</p>
               <p className="text-2xl font-bold text-gray-900">
                 {isLoading ? "..." : `${monthStats.permessoHours.toFixed(1)}h`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Ore di Malattia</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {isLoading ? "..." : `${monthStats.sicknessHours.toFixed(1)}h`}
               </p>
             </div>
           </div>

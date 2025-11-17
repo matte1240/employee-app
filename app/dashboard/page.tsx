@@ -14,6 +14,7 @@ type PrismaEntry = {
   hoursWorked: Decimal;
   overtimeHours: Decimal;
   permessoHours: Decimal;
+  sicknessHours: Decimal;
   morningStart: string | null;
   morningEnd: string | null;
   afternoonStart: string | null;
@@ -30,6 +31,7 @@ type UserAggregate = {
   regularHours: number;
   overtimeHours: number;
   permessoHours: number;
+  sicknessHours: number;
 };
 
 type UserRow = {
@@ -46,6 +48,7 @@ const toDto = (entry: PrismaEntry): TimeEntryDTO => ({
   hoursWorked: parseFloat(entry.hoursWorked.toString()),
   overtimeHours: parseFloat(entry.overtimeHours.toString()),
   permessoHours: parseFloat(entry.permessoHours.toString()),
+  sicknessHours: parseFloat(entry.sicknessHours.toString()),
   morningStart: entry.morningStart,
   morningEnd: entry.morningEnd,
   afternoonStart: entry.afternoonStart,
@@ -83,7 +86,7 @@ export default async function DashboardPage() {
 
     const totals = await prisma.timeEntry.groupBy({
       by: ["userId"],
-      _sum: { hoursWorked: true, overtimeHours: true, permessoHours: true },
+      _sum: { hoursWorked: true, overtimeHours: true, permessoHours: true, sicknessHours: true },
       where: {
         workDate: {
           gte: firstDay,
@@ -95,16 +98,19 @@ export default async function DashboardPage() {
     const regularHoursMap = new Map<string, number>();
     const overtimeHoursMap = new Map<string, number>();
     const permessoHoursMap = new Map<string, number>();
+    const sicknessHoursMap = new Map<string, number>();
 
     for (const row of totals) {
       const hoursWorked = row._sum.hoursWorked ? parseFloat(row._sum.hoursWorked.toString()) : 0;
       const overtimeHours = row._sum.overtimeHours ? parseFloat(row._sum.overtimeHours.toString()) : 0;
       const permessoHours = row._sum.permessoHours ? parseFloat(row._sum.permessoHours.toString()) : 0;
+      const sicknessHours = row._sum.sicknessHours ? parseFloat(row._sum.sicknessHours.toString()) : 0;
       const regularHours = hoursWorked - overtimeHours;
 
       regularHoursMap.set(row.userId, regularHours);
       overtimeHoursMap.set(row.userId, overtimeHours);
       permessoHoursMap.set(row.userId, permessoHours);
+      sicknessHoursMap.set(row.userId, sicknessHours);
     }
 
     const rows: UserAggregate[] = users.map((user) => ({
@@ -112,6 +118,7 @@ export default async function DashboardPage() {
       regularHours: regularHoursMap.get(user.id) ?? 0,
       overtimeHours: overtimeHoursMap.get(user.id) ?? 0,
       permessoHours: permessoHoursMap.get(user.id) ?? 0,
+      sicknessHours: sicknessHoursMap.get(user.id) ?? 0,
     }));
 
     return <AdminOverview users={rows} />;
@@ -133,6 +140,7 @@ export default async function DashboardPage() {
       hoursWorked: true,
       overtimeHours: true,
       permessoHours: true,
+      sicknessHours: true,
       morningStart: true,
       morningEnd: true,
       afternoonStart: true,

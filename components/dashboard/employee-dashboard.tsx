@@ -21,6 +21,7 @@ export type TimeEntryDTO = {
   hoursWorked: number;
   overtimeHours?: number;
   permessoHours?: number;
+  sicknessHours?: number;
   morningStart?: string | null;
   morningEnd?: string | null;
   afternoonStart?: string | null;
@@ -296,6 +297,11 @@ export default function EmployeeDashboard({
 
   const totalPermesso = useMemo(
     () => entries.reduce((sum, entry) => sum + (entry.permessoHours ?? 0), 0),
+    [entries]
+  );
+
+  const totalSickness = useMemo(
+    () => entries.reduce((sum, entry) => sum + (entry.sicknessHours ?? 0), 0),
     [entries]
   );
 
@@ -623,6 +629,23 @@ export default function EmployeeDashboard({
               </div>
             </div>
           </div>
+
+          {totalSickness > 0 && (
+            <div className="rounded-xl border border-red-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Malattia</p>
+                  <p className="mt-2 text-3xl font-bold text-red-600">{totalSickness.toFixed(1)}</p>
+                  <p className="text-xs text-gray-500">ore malattia</p>
+                </div>
+                <div className="rounded-full bg-red-50 p-3">
+                  <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {error && (
