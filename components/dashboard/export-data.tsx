@@ -88,8 +88,8 @@ export default function ExportData({ users }: ExportDataProps) {
           setUsersWithMonthHours(updatedUsers);
         }
       } catch (err) {
-        console.error("Error fetching month hours:", err);
-        setError("Failed to load hours for selected month");
+        console.error("Errore durante il caricamento delle ore:", err);
+        setError("Errore nel caricamento delle ore per il mese selezionato");
       } finally {
         setIsLoadingMonthHours(false);
       }
@@ -112,7 +112,7 @@ export default function ExportData({ users }: ExportDataProps) {
         });
 
         if (!response.ok) {
-          throw new Error('Export failed');
+          throw new Error('Esportazione fallita');
         }
 
         const blob = await response.blob();
@@ -125,7 +125,8 @@ export default function ExportData({ users }: ExportDataProps) {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } catch (err) {
-        setError('Failed to export data. Please try again.');
+        console.error('Errore durante l\'esportazione:', err);
+        setError('Errore durante l\'esportazione. Riprova per favore.');
       }
     });
   };
@@ -148,127 +149,24 @@ export default function ExportData({ users }: ExportDataProps) {
     setSelectedUserIds(newSet);
   };
 
-  // Calculate totals for stats cards
-  const totalHours = usersWithMonthHours.reduce((sum, u) => sum + u.regularHours + u.overtimeHours, 0);
-  const totalRegularHours = usersWithMonthHours.reduce((sum, u) => sum + u.regularHours, 0);
-  const totalOvertimeHours = usersWithMonthHours.reduce((sum, u) => sum + u.overtimeHours, 0);
-  const totalPermessoHours = usersWithMonthHours.reduce((sum, u) => sum + u.permessoHours, 0);
-  const totalSicknessHours = usersWithMonthHours.reduce((sum, u) => sum + u.sicknessHours, 0);
-  const totalVacationHours = usersWithMonthHours.reduce((sum, u) => sum + u.vacationHours, 0);
+  // Totali rimossi perché le card riepilogative sono state eliminate
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Export Employee Data</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Esporta dati dipendenti</h2>
         <p className="mt-2 text-sm text-gray-600">
-          Select employees and a month to export their work hours data. Multiple employees will be downloaded as a ZIP file.
+          Seleziona i dipendenti e un mese per esportare le loro ore di lavoro. Verrà esportato in Excel.
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Hours</p>
-              <p className="mt-2 text-3xl font-bold text-blue-600">
-                {totalHours.toFixed(0)}
-              </p>
-            </div>
-            <div className="rounded-full bg-blue-50 p-3">
-              <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-green-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Regular Hours</p>
-              <p className="mt-2 text-3xl font-bold text-green-600">
-                {totalRegularHours.toFixed(0)}
-              </p>
-            </div>
-            <div className="rounded-full bg-green-50 p-3">
-              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-orange-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Overtime Hours</p>
-              <p className="mt-2 text-3xl font-bold text-orange-600">
-                {totalOvertimeHours.toFixed(0)}
-              </p>
-            </div>
-            <div className="rounded-full bg-orange-50 p-3">
-              <svg className="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-purple-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Permesso Hours</p>
-              <p className="mt-2 text-3xl font-bold text-purple-600">
-                {totalPermessoHours.toFixed(0)}
-              </p>
-            </div>
-            <div className="rounded-full bg-purple-50 p-3">
-              <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-red-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Sickness Hours</p>
-              <p className="mt-2 text-3xl font-bold text-red-600">
-                {totalSicknessHours.toFixed(0)}
-              </p>
-            </div>
-            <div className="rounded-full bg-red-50 p-3">
-              <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-green-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Vacation Hours</p>
-              <p className="mt-2 text-3xl font-bold text-green-600">
-                {totalVacationHours.toFixed(0)}
-              </p>
-            </div>
-            <div className="rounded-full bg-green-50 p-3">
-              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Top stats cards removed as requested */}
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        {/* Month selector */}
+        {/* Selettore mese */}
         <div className="mb-6">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Select Month
+            Seleziona mese
           </label>
           <div className="relative w-full max-w-xs">
             <button
@@ -277,7 +175,7 @@ export default function ExportData({ users }: ExportDataProps) {
               className="w-full cursor-pointer rounded-lg border border-gray-300 px-4 py-3 text-left text-sm text-gray-900 font-medium outline-none transition hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex items-center justify-between"
             >
               <span>
-                {selectedMonth ? new Date(selectedMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Select a month'}
+                {selectedMonth ? new Date(selectedMonth + '-01').toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }) : 'Seleziona un mese'}
               </span>
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -287,7 +185,7 @@ export default function ExportData({ users }: ExportDataProps) {
             {isMonthPickerOpen && (
               <div className="absolute z-10 mt-2 w-full bg-white border border-gray-300 rounded-lg shadow-lg p-4">
                 <div className="mb-3">
-                  <label className="block text-xs font-semibold text-gray-800 mb-1">Year</label>
+                  <label className="block text-xs font-semibold text-gray-800 mb-1">Anno</label>
                   <select
                     value={selectedMonth.split('-')[0] || new Date().getFullYear()}
                     onChange={(e) => {
@@ -303,9 +201,9 @@ export default function ExportData({ users }: ExportDataProps) {
                   </select>
                 </div>
                 <div className="mb-3">
-                  <label className="block text-xs font-semibold text-gray-800 mb-1">Month</label>
+                  <label className="block text-xs font-semibold text-gray-800 mb-1">Mese</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((monthName, idx) => {
+                    {['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'].map((monthName, idx) => {
                       const monthNum = String(idx + 1).padStart(2, '0');
                       const year = selectedMonth.split('-')[0] || new Date().getFullYear();
                       const isSelected = selectedMonth === `${year}-${monthNum}`;
@@ -334,7 +232,7 @@ export default function ExportData({ users }: ExportDataProps) {
                   onClick={() => setIsMonthPickerOpen(false)}
                   className="w-full mt-2 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 hover:bg-gray-200 rounded transition"
                 >
-                  Close
+                  Chiudi
                 </button>
               </div>
             )}
@@ -344,14 +242,14 @@ export default function ExportData({ users }: ExportDataProps) {
         {/* User selection */}
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Select Employees</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Seleziona dipendenti</h3>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={handleSelectAll}
                 className="text-sm font-medium text-blue-600 hover:text-blue-700 transition"
               >
-                Select All
+                Seleziona tutti
               </button>
               <span className="text-gray-300">|</span>
               <button
@@ -359,7 +257,7 @@ export default function ExportData({ users }: ExportDataProps) {
                 onClick={handleClearAll}
                 className="text-sm font-medium text-gray-600 hover:text-gray-700 transition"
               >
-                Clear All
+                Deseleziona tutti
               </button>
             </div>
           </div>
@@ -368,58 +266,56 @@ export default function ExportData({ users }: ExportDataProps) {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-                <p className="mt-4 text-sm text-gray-600">Loading hours...</p>
+                <p className="mt-4 text-sm text-gray-600">Caricamento ore...</p>
               </div>
             </div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {usersWithMonthHours.map((user) => (
-                <label
-                  key={user.id}
-                  className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer transition hover:bg-blue-50 hover:border-blue-300"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedUserIds.has(user.id)}
-                    onChange={() => handleToggleUser(user.id)}
-                    className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200 cursor-pointer"
-                  />
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">{user.name || user.email}</div>
-                    {user.name && (
-                      <div className="text-sm text-gray-500">{user.email}</div>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900">
-                      {(user.regularHours + user.overtimeHours).toFixed(1)}h
+              {usersWithMonthHours.map((user) => {
+                const permessoVacation = user.permessoHours + user.vacationHours;
+                return (
+                  <label
+                    key={user.id}
+                    className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer transition hover:bg-blue-50 hover:border-blue-300"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedUserIds.has(user.id)}
+                      onChange={() => handleToggleUser(user.id)}
+                      className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <div className="font-semibold text-gray-900">{user.name || user.email}</div>
+                      {user.name && (
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      )}
                     </div>
-                    {user.overtimeHours > 0 && (
-                      <div className="text-xs text-orange-600">
-                        +{user.overtimeHours.toFixed(1)}h overtime
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-gray-900">
+                        {(user.regularHours + user.overtimeHours).toFixed(1)}h
                       </div>
-                    )}
-                    {user.permessoHours > 0 && (
-                      <div className="text-xs text-purple-600">
-                        {user.permessoHours.toFixed(1)}h permesso
-                      </div>
-                    )}
-                    {user.sicknessHours > 0 && (
-                      <div className="text-xs text-red-600">
-                        {user.sicknessHours.toFixed(1)}h sickness
-                      </div>
-                    )}
-                    {user.vacationHours > 0 && (
-                      <div className="text-xs text-green-600">
-                        {user.vacationHours.toFixed(1)}h vacation
-                      </div>
-                    )}
-                  </div>
-                </label>
-              ))}
+                      {user.overtimeHours > 0 && (
+                        <div className="text-xs text-orange-600">
+                          +{user.overtimeHours.toFixed(1)}h straordinarie
+                        </div>
+                      )}
+                      {permessoVacation > 0 && (
+                        <div className="text-xs text-purple-600">
+                          {permessoVacation.toFixed(1)}h permesso/ferie
+                        </div>
+                      )}
+                      {user.sicknessHours > 0 && (
+                        <div className="text-xs text-red-600">
+                          {user.sicknessHours.toFixed(1)}h malattia
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                );
+              })}
               {usersWithMonthHours.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  No employees found
+                  Nessun dipendente trovato
                 </div>
               )}
             </div>
@@ -428,7 +324,7 @@ export default function ExportData({ users }: ExportDataProps) {
           {selectedUserIds.size > 0 && (
             <div className="mt-6 flex items-center justify-between rounded-lg bg-blue-50 p-4 border border-blue-200">
               <div className="text-sm font-medium text-blue-900">
-                {selectedUserIds.size} employee{selectedUserIds.size > 1 ? 's' : ''} selected
+                {selectedUserIds.size} dipendente{selectedUserIds.size > 1 ? 'i' : ''} selezionat{selectedUserIds.size > 1 ? 'i' : 'o'}
               </div>
               <button
                 type="button"
@@ -439,7 +335,7 @@ export default function ExportData({ users }: ExportDataProps) {
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                {isExporting ? 'Exporting...' : 'Export to Excel'}
+                {isExporting ? 'Esportazione...' : 'Esporta in Excel'}
               </button>
             </div>
           )}
