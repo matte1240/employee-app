@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import AdminDashboard from "@/components/dashboard/admin-dashboard";
+import AdminOverview from "@/components/dashboard/admin-overview";
 
 type UserAggregate = {
   id: string;
@@ -111,12 +111,5 @@ export default async function AdminDashboardPage() {
     lastEntry: lastEntryMap.get(user.id) ?? null,
   }));
 
-  const currentUser = {
-    id: session.user.id,
-    name: session.user.name,
-    email: session.user.email,
-    role: session.user.role,
-  };
-
-  return <AdminDashboard users={rows} currentUser={currentUser} />;
+  return <AdminOverview users={rows} />;
 }
