@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import AdminDashboard from "@/components/dashboard/admin-dashboard";
+import AdminOverview from "@/components/dashboard/admin-overview";
 
 type UserAggregate = {
   id: string;
@@ -12,6 +12,8 @@ type UserAggregate = {
   regularHours: number;
   overtimeHours: number;
   permessoHours: number;
+  sicknessHours: number;
+  vacationHours: number;
   lastEntry?: string | null;
 };
 
@@ -55,7 +57,7 @@ export default async function AdminDashboardPage() {
 
   const totals = await prisma.timeEntry.groupBy({
     by: ["userId"],
-    _sum: { hoursWorked: true, overtimeHours: true, permessoHours: true },
+    _sum: { hoursWorked: true, overtimeHours: true, permessoHours: true, sicknessHours: true, vacationHours: true },
     where: {
       workDate: {
         gte: firstDay,
@@ -72,19 +74,25 @@ export default async function AdminDashboardPage() {
   const regularHoursMap = new Map<string, number>();
   const overtimeHoursMap = new Map<string, number>();
   const permessoHoursMap = new Map<string, number>();
-  
+  const sicknessHoursMap = new Map<string, number>();
+  const vacationHoursMap = new Map<string, number>();
+
   for (const row of totals) {
     if (row._sum) {
       const regularHours = row._sum.hoursWorked ? parseFloat(row._sum.hoursWorked.toString()) : 0;
       const overtimeHours = row._sum.overtimeHours ? parseFloat(row._sum.overtimeHours.toString()) : 0;
       const permessoHours = row._sum.permessoHours ? parseFloat(row._sum.permessoHours.toString()) : 0;
+      const sicknessHours = row._sum.sicknessHours ? parseFloat(row._sum.sicknessHours.toString()) : 0;
+      const vacationHours = row._sum.vacationHours ? parseFloat(row._sum.vacationHours.toString()) : 0;
 
-      console.log(`[SERVER] userId: ${row.userId}, hoursWorked: ${regularHours}, overtime: ${overtimeHours}, permesso: ${permessoHours}`);
+      console.log(`[SERVER] userId: ${row.userId}, hoursWorked: ${regularHours}, overtime: ${overtimeHours}, permesso: ${permessoHours}, sickness: ${sicknessHours}, vacation: ${vacationHours}`);
 
       // hoursWorked already contains only regular hours (max 8 per day)
       regularHoursMap.set(row.userId, regularHours);
       overtimeHoursMap.set(row.userId, overtimeHours);
       permessoHoursMap.set(row.userId, permessoHours);
+      sicknessHoursMap.set(row.userId, sicknessHours);
+      vacationHoursMap.set(row.userId, vacationHours);
     }
   }
 
@@ -98,15 +106,10 @@ export default async function AdminDashboardPage() {
     regularHours: regularHoursMap.get(user.id) ?? 0,
     overtimeHours: overtimeHoursMap.get(user.id) ?? 0,
     permessoHours: permessoHoursMap.get(user.id) ?? 0,
+    sicknessHours: sicknessHoursMap.get(user.id) ?? 0,
+    vacationHours: vacationHoursMap.get(user.id) ?? 0,
     lastEntry: lastEntryMap.get(user.id) ?? null,
   }));
 
-  const currentUser = {
-    id: session.user.id,
-    name: session.user.name,
-    email: session.user.email,
-    role: session.user.role,
-  };
-
-  return <AdminDashboard users={rows} currentUser={currentUser} />;
+  return <AdminOverview users={rows} />;
 }

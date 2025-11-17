@@ -9,6 +9,8 @@ const createHoursSchema = z.object({
   hoursWorked: z.number().min(0).max(24),
   overtimeHours: z.number().min(0).optional(),
   permessoHours: z.number().min(0).optional(),
+  sicknessHours: z.number().min(0).optional(),
+  vacationHours: z.number().min(0).optional(),
   morningStart: z.string().nullable().optional(),
   morningEnd: z.string().nullable().optional(),
   afternoonStart: z.string().nullable().optional(),
@@ -31,6 +33,8 @@ type RawEntry = {
   hoursWorked: Decimal;
   overtimeHours: Decimal;
   permessoHours: Decimal;
+  sicknessHours: Decimal;
+  vacationHours: Decimal;
   morningStart: string | null;
   morningEnd: string | null;
   afternoonStart: string | null;
@@ -48,6 +52,8 @@ const toPlainEntry = (entry: RawEntry) => ({
   hoursWorked: parseFloat(entry.hoursWorked.toString()),
   overtimeHours: parseFloat(entry.overtimeHours.toString()),
   permessoHours: parseFloat(entry.permessoHours.toString()),
+  sicknessHours: parseFloat(entry.sicknessHours.toString()),
+  vacationHours: parseFloat(entry.vacationHours.toString()),
   morningStart: entry.morningStart,
   morningEnd: entry.morningEnd,
   afternoonStart: entry.afternoonStart,
@@ -163,14 +169,20 @@ export async function POST(request: Request) {
     }
   }
 
-  // Calculate permessoHours (only for weekdays when hours < 8)
+  // Calculate permessoHours only for weekdays when hours < 8 AND not vacation/sickness
   const entryDate = new Date(`${workDate}T00:00:00.000Z`);
   const dayOfWeek = entryDate.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
 
-  let permessoHours = 0;
-  if (isWeekday && hoursWorked < 8) {
-    permessoHours = 8 - hoursWorked;
+  let permessoHours = parsed.data.permessoHours ?? 0;
+  let sicknessHours = parsed.data.sicknessHours ?? 0;
+  let vacationHours = parsed.data.vacationHours ?? 0;
+
+  // Only auto-calculate permesso if not already provided and not vacation/sickness
+  if (!parsed.data.permessoHours && sicknessHours === 0 && vacationHours === 0) {
+    if (isWeekday && hoursWorked < 8) {
+      permessoHours = 8 - hoursWorked;
+    }
   }
 
   // Check if entry already exists for this date
@@ -191,6 +203,8 @@ export async function POST(request: Request) {
         hoursWorked: hoursWorked.toString(),
         overtimeHours: (overtimeHours ?? 0).toString(),
         permessoHours: permessoHours.toString(),
+        sicknessHours: sicknessHours.toString(),
+        vacationHours: vacationHours.toString(),
         morningStart,
         morningEnd,
         afternoonStart,
@@ -208,6 +222,8 @@ export async function POST(request: Request) {
         hoursWorked: hoursWorked.toString(),
         overtimeHours: (overtimeHours ?? 0).toString(),
         permessoHours: permessoHours.toString(),
+        sicknessHours: sicknessHours.toString(),
+        vacationHours: vacationHours.toString(),
         morningStart,
         morningEnd,
         afternoonStart,

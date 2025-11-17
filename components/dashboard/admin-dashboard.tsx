@@ -14,6 +14,8 @@ type UserAggregate = {
   regularHours: number;
   overtimeHours: number;
   permessoHours: number;
+  sicknessHours: number;
+  vacationHours: number;
   lastEntry?: string | null;
 };
 
@@ -715,7 +717,10 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                         Ore Straordinarie
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
-                        Ore di Permesso
+                        Ore Perm/Ferie
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                        Ore Malattia
                       </th>
                     </tr>
                   </thead>
@@ -762,7 +767,13 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                         </td>
                         <td className="whitespace-nowrap px-6 py-4">
                           <div className="flex items-center">
-                            <span className="text-lg font-bold text-blue-600">{row.permessoHours.toFixed(1)}</span>
+                            <span className="text-lg font-bold text-purple-600">{(row.permessoHours + row.vacationHours).toFixed(1)}</span>
+                            <span className="ml-1 text-sm text-gray-500">hrs</span>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center">
+                            <span className="text-lg font-bold text-red-600">{row.sicknessHours.toFixed(1)}</span>
                             <span className="ml-1 text-sm text-gray-500">hrs</span>
                           </div>
                         </td>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { format, startOfMonth } from "date-fns";
 import { useRouter } from "next/navigation";
 import EmployeeDashboard, { type TimeEntryDTO } from "./employee-dashboard";
 
@@ -15,6 +16,10 @@ type AdminCalendarProps = {
   selectedUserId: string;
   selectedUser: User;
   initialEntries: TimeEntryDTO[];
+  totalHours: number;
+  totalOvertimeHours: number;
+  totalPermFerieHours: number;
+  totalSicknessHours: number;
 };
 
 export default function AdminCalendar({
@@ -22,17 +27,76 @@ export default function AdminCalendar({
   selectedUserId,
   selectedUser,
   initialEntries,
+  totalHours,
+  totalOvertimeHours,
+  totalPermFerieHours,
+  totalSicknessHours,
 }: AdminCalendarProps) {
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [currentTotals, setCurrentTotals] = useState({
+    totalHours,
+    totalOvertimeHours,
+    totalPermFerieHours,
+    totalSicknessHours,
+  });
+
+  // Update totals when props change (e.g., when switching users)
+  useEffect(() => {
+    setCurrentTotals({
+      totalHours,
+      totalOvertimeHours,
+      totalPermFerieHours,
+      totalSicknessHours,
+    });
+  }, [totalHours, totalOvertimeHours, totalPermFerieHours, totalSicknessHours]);
+
+  // Polling for real-time updates from other users
+  useEffect(() => {
+    const fetchLatestEntries = async () => {
+      try {
+        const fromDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+        const response = await fetch(`/api/hours?userId=${selectedUserId}&from=${fromDate}`);
+        if (response.ok) {
+          const data: TimeEntryDTO[] = await response.json();
+          const newTotalHours = data.reduce((sum, entry) => sum + (entry.hoursWorked ?? 0) + (entry.overtimeHours ?? 0), 0);
+          const newTotalOvertimeHours = data.reduce((sum, entry) => sum + (entry.overtimeHours ?? 0), 0);
+          const newTotalPermFerieHours = data.reduce((sum, entry) => sum + (entry.permessoHours ?? 0) + (entry.vacationHours ?? 0), 0);
+          const newTotalSicknessHours = data.reduce((sum, entry) => sum + (entry.sicknessHours ?? 0), 0);
+          setCurrentTotals({
+            totalHours: newTotalHours,
+            totalOvertimeHours: newTotalOvertimeHours,
+            totalPermFerieHours: newTotalPermFerieHours,
+            totalSicknessHours: newTotalSicknessHours,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching latest entries:', error);
+      }
+    };
+
+    const interval = setInterval(fetchLatestEntries, 30000); // Poll every 30 seconds
+    return () => clearInterval(interval);
+  }, [selectedUserId]);
 
   const handleUserChange = (userId: string) => {
     setIsDropdownOpen(false);
     router.push(`/dashboard/calendar?userId=${userId}`);
   };
 
-  const handleEntrySaved = () => {
-    router.refresh();
+  const handleEntrySaved = (updatedEntries: TimeEntryDTO[]) => {
+    // Recalculate totals from updated entries
+    const newTotalHours = updatedEntries.reduce((sum, entry) => sum + (entry.hoursWorked ?? 0) + (entry.overtimeHours ?? 0), 0);
+    const newTotalOvertimeHours = updatedEntries.reduce((sum, entry) => sum + (entry.overtimeHours ?? 0), 0);
+    const newTotalPermFerieHours = updatedEntries.reduce((sum, entry) => sum + (entry.permessoHours ?? 0) + (entry.vacationHours ?? 0), 0);
+    const newTotalSicknessHours = updatedEntries.reduce((sum, entry) => sum + (entry.sicknessHours ?? 0), 0);
+
+    setCurrentTotals({
+      totalHours: newTotalHours,
+      totalOvertimeHours: newTotalOvertimeHours,
+      totalPermFerieHours: newTotalPermFerieHours,
+      totalSicknessHours: newTotalSicknessHours,
+    });
   };
 
   return (
@@ -138,11 +202,71 @@ export default function AdminCalendar({
         </div>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid gap-6 md:grid-cols-4 mb-8">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Totale Ore</p>
+              <p className="text-2xl font-bold text-gray-900">{currentTotals.totalHours.toFixed(1)}h</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
+              <svg className="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Ore Straordinarie</p>
+              <p className="text-2xl font-bold text-gray-900">{currentTotals.totalOvertimeHours.toFixed(1)}h</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
+              <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Ore Perm/Ferie</p>
+              <p className="text-2xl font-bold text-gray-900">{currentTotals.totalPermFerieHours.toFixed(1)}h</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Ore Malattia</p>
+              <p className="text-2xl font-bold text-gray-900">{currentTotals.totalSicknessHours.toFixed(1)}h</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Employee Dashboard (Calendar) */}
       <EmployeeDashboard
         initialEntries={initialEntries}
         userName={selectedUser.name || selectedUser.email}
         hideHeader={true}
+        hideStats={true}
         targetUserId={selectedUserId}
         onEntrySaved={handleEntrySaved}
         isAdmin={true}

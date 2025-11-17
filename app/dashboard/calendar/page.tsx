@@ -14,6 +14,8 @@ type PrismaEntry = {
   hoursWorked: Decimal;
   overtimeHours: Decimal;
   permessoHours: Decimal;
+  vacationHours: Decimal;
+  sicknessHours: Decimal;
   morningStart: string | null;
   morningEnd: string | null;
   afternoonStart: string | null;
@@ -33,6 +35,8 @@ const toDto = (entry: PrismaEntry): TimeEntryDTO => ({
   hoursWorked: parseFloat(entry.hoursWorked.toString()),
   overtimeHours: parseFloat(entry.overtimeHours.toString()),
   permessoHours: parseFloat(entry.permessoHours.toString()),
+  vacationHours: parseFloat(entry.vacationHours.toString()),
+  sicknessHours: parseFloat(entry.sicknessHours.toString()),
   morningStart: entry.morningStart,
   morningEnd: entry.morningEnd,
   afternoonStart: entry.afternoonStart,
@@ -92,6 +96,8 @@ export default async function CalendarPage({
       hoursWorked: true,
       overtimeHours: true,
       permessoHours: true,
+      vacationHours: true,
+      sicknessHours: true,
       morningStart: true,
       morningEnd: true,
       afternoonStart: true,
@@ -103,12 +109,22 @@ export default async function CalendarPage({
 
   const plain = entries.map(toDto);
 
+  // Calculate totals for the selected user
+  const totalHours = entries.reduce((sum, entry) => sum + parseFloat(entry.hoursWorked.toString()) + parseFloat(entry.overtimeHours.toString()), 0);
+  const totalOvertimeHours = entries.reduce((sum, entry) => sum + parseFloat(entry.overtimeHours.toString()), 0);
+  const totalPermFerieHours = entries.reduce((sum, entry) => sum + parseFloat(entry.permessoHours.toString()) + parseFloat(entry.vacationHours.toString()), 0);
+  const totalSicknessHours = entries.reduce((sum, entry) => sum + parseFloat(entry.sicknessHours.toString()), 0);
+
   return (
     <AdminCalendar
       users={users}
       selectedUserId={targetUserId}
       selectedUser={targetUser}
       initialEntries={plain}
+      totalHours={totalHours}
+      totalOvertimeHours={totalOvertimeHours}
+      totalPermFerieHours={totalPermFerieHours}
+      totalSicknessHours={totalSicknessHours}
     />
   );
 }
