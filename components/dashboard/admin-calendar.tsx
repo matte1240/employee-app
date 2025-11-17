@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format, startOfMonth } from "date-fns";
 import { useRouter } from "next/navigation";
 import EmployeeDashboard, { type TimeEntryDTO } from "./employee-dashboard";
@@ -84,7 +84,7 @@ export default function AdminCalendar({
     router.push(`/dashboard/calendar?userId=${userId}`);
   };
 
-  const handleEntrySaved = (updatedEntries: TimeEntryDTO[]) => {
+  const handleEntrySaved = useCallback((updatedEntries: TimeEntryDTO[]) => {
     // Recalculate totals from updated entries
     const newTotalHours = updatedEntries.reduce((sum, entry) => sum + (entry.hoursWorked ?? 0) + (entry.overtimeHours ?? 0), 0);
     const newTotalOvertimeHours = updatedEntries.reduce((sum, entry) => sum + (entry.overtimeHours ?? 0), 0);
@@ -97,7 +97,7 @@ export default function AdminCalendar({
       totalPermFerieHours: newTotalPermFerieHours,
       totalSicknessHours: newTotalSicknessHours,
     });
-  };
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
