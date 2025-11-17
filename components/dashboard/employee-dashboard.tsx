@@ -6,6 +6,7 @@ import {
   eachDayOfInterval,
   endOfMonth,
   format,
+  getDay,
   isSameDay,
   isSameMonth,
   startOfMonth,
@@ -329,11 +330,23 @@ export default function EmployeeDashboard({
     
     const permesso = (modalForm.isMorningPermesso ? 4 : 0) + (modalForm.isAfternoonPermesso ? 4 : 0);
     
-    const regular = Math.min(totalWorked, 8);
-    const overtime = Math.max(0, totalWorked - 8);
+    // Check if selected date is a weekend (Saturday=6, Sunday=0)
+    let regular = Math.min(totalWorked, 8);
+    let overtime = Math.max(0, totalWorked - 8);
+    
+    if (selectedDate && modalForm.dayType === "normal") {
+      const dayOfWeek = getDay(new Date(`${selectedDate}T12:00:00`));
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      
+      if (isWeekend) {
+        // On weekends, all worked hours are overtime
+        regular = 0;
+        overtime = totalWorked;
+      }
+    }
 
     return { morning: modalForm.isMorningPermesso ? 4 : morningWorked, afternoon: modalForm.isAfternoonPermesso ? 4 : afternoonWorked, totalWorked, regular, overtime, permesso };
-  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso]);
+  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso, modalForm.dayType, selectedDate]);
 
   // Check if date is editable
   const isDateEditable = (date: Date): boolean => {
