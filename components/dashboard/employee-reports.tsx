@@ -14,6 +14,7 @@ type MonthStats = {
   overtimeHours: number;
   permessoHours: number;
   sicknessHours: number;
+  vacationHours: number;
   totalHours: number;
   workingDays: number;
 };
@@ -33,6 +34,7 @@ export default function EmployeeReports({
     overtimeHours: 0,
     permessoHours: 0,
     sicknessHours: 0,
+    vacationHours: 0,
     totalHours: 0,
     workingDays: 0,
   });
@@ -59,6 +61,7 @@ export default function EmployeeReports({
           let overtimeHours = 0;
           let permessoHours = 0;
           let sicknessHours = 0;
+          let vacationHours = 0;
           const workingDays = new Set<string>();
 
           entries.forEach((entry: any) => {
@@ -66,6 +69,7 @@ export default function EmployeeReports({
             overtimeHours += entry.overtimeHours || 0;
             permessoHours += entry.permessoHours || 0;
             sicknessHours += entry.sicknessHours || 0;
+            vacationHours += entry.vacationHours || 0;
             workingDays.add(entry.workDate);
           });
 
@@ -74,6 +78,7 @@ export default function EmployeeReports({
             overtimeHours,
             permessoHours,
             sicknessHours,
+            vacationHours,
             totalHours: regularHours + overtimeHours,
             workingDays: workingDays.size,
           });
@@ -246,7 +251,7 @@ export default function EmployeeReports({
       )}
 
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5 mb-8">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-6 mb-8">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
@@ -322,6 +327,22 @@ export default function EmployeeReports({
               <p className="text-sm text-gray-600">Ore di Malattia</p>
               <p className="text-2xl font-bold text-gray-900">
                 {isLoading ? "..." : `${monthStats.sicknessHours.toFixed(1)}h`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-green-100 bg-green-50 p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Ore di Ferie</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {isLoading ? "..." : `${monthStats.vacationHours.toFixed(1)}h`}
               </p>
             </div>
           </div>

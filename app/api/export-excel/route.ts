@@ -85,6 +85,7 @@ export async function POST(request: Request) {
         { key: "overtime", width: 12 },
         { key: "permessoHours", width: 15 },
         { key: "sicknessHours", width: 15 },
+        { key: "vacationHours", width: 15 },
         { key: "totalHours", width: 12 },
       ];
 
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
         `Time Entries - ${user.name || user.email} - ${month}`,
       ]);
       titleRow.font = { size: 14, bold: true };
-      const lastColumn = includeMedicalCertificate ? "L" : "K";
+      const lastColumn = includeMedicalCertificate ? "M" : "L";
       worksheet.mergeCells(`A1:${lastColumn}1`);
       titleRow.alignment = { horizontal: "center", vertical: "middle" };
       titleRow.height = 25;
@@ -116,6 +117,7 @@ export async function POST(request: Request) {
         "Straordinario",
         "Ore Permesso",
         "Ore Malattia",
+        "Ore Ferie",
         "Totale Ore",
       ];
 
@@ -142,6 +144,7 @@ export async function POST(request: Request) {
       let totalOvertimeSum = 0;
       let totalPermessoSum = 0;
       let totalSicknessSum = 0;
+      let totalVacationSum = 0;
 
       entries.forEach((entry) => {
         const hoursWorked = parseFloat(entry.hoursWorked.toString());
@@ -152,6 +155,9 @@ export async function POST(request: Request) {
         const sicknessHours = entry.sicknessHours
           ? parseFloat(entry.sicknessHours.toString())
           : 0;
+        const vacationHours = entry.vacationHours
+          ? parseFloat(entry.vacationHours.toString())
+          : 0;
         const totalHours = hoursWorked + overtime;
 
         // Extract medical certificate from the dedicated field
@@ -161,6 +167,7 @@ export async function POST(request: Request) {
         totalOvertimeSum += overtime;
         totalPermessoSum += permessoHours;
         totalSicknessSum += sicknessHours;
+        totalVacationSum += vacationHours;
 
         const rowData: any = {
           date: entry.workDate,
@@ -172,6 +179,7 @@ export async function POST(request: Request) {
           overtime: overtime,
           permessoHours: permessoHours,
           sicknessHours: sicknessHours,
+          vacationHours: vacationHours,
           totalHours: totalHours,
         };
 
@@ -191,7 +199,8 @@ export async function POST(request: Request) {
         row.getCell(7).numFmt = "0.00"; // Overtime
         row.getCell(8).numFmt = "0.00"; // Permesso Hours
         row.getCell(9).numFmt = "0.00"; // Sickness Hours
-        row.getCell(10).numFmt = "0.00"; // Total Hours
+        row.getCell(10).numFmt = "0.00"; // Vacation Hours
+        row.getCell(11).numFmt = "0.00"; // Total Hours
 
         // Alternate row colors
         if (worksheet.rowCount % 2 === 0) {
@@ -217,6 +226,7 @@ export async function POST(request: Request) {
         totalOvertimeSum,
         totalPermessoSum,
         totalSicknessSum,
+        totalVacationSum,
         totalHoursSum + totalOvertimeSum,
       ];
 
@@ -241,6 +251,7 @@ export async function POST(request: Request) {
       summaryRow.getCell(8).numFmt = "0.00";
       summaryRow.getCell(9).numFmt = "0.00";
       summaryRow.getCell(10).numFmt = "0.00";
+      summaryRow.getCell(11).numFmt = "0.00";
 
       // Add borders to all cells
       worksheet.eachRow((row, rowNumber) => {
@@ -268,6 +279,7 @@ export async function POST(request: Request) {
       worksheet.getColumn(8).alignment = { horizontal: "right" };
       worksheet.getColumn(9).alignment = { horizontal: "right" };
       worksheet.getColumn(10).alignment = { horizontal: "right" };
+      worksheet.getColumn(11).alignment = { horizontal: "right" };
     };
 
     // Add a sheet for each user

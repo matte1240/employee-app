@@ -22,6 +22,7 @@ export type TimeEntryDTO = {
   overtimeHours?: number;
   permessoHours?: number;
   sicknessHours?: number;
+  vacationHours?: number;
   morningStart?: string | null;
   morningEnd?: string | null;
   afternoonStart?: string | null;
@@ -154,7 +155,7 @@ export default function EmployeeDashboard({
     }
   }, [isModalOpen]);
 
-  // Reset times and notes when switching to normal
+  // Reset times and notes when switching to normal, ferie, or malattia
   useEffect(() => {
     if (modalForm.dayType === "normal") {
       setModalForm(f => ({
@@ -166,6 +167,11 @@ export default function EmployeeDashboard({
         notes: "",
         isMorningPermesso: false,
         isAfternoonPermesso: false,
+      }));
+    } else if (modalForm.dayType === "ferie" || modalForm.dayType === "malattia") {
+      setModalForm(f => ({
+        ...f,
+        notes: "",
       }));
     }
   }, [modalForm.dayType]);
@@ -305,6 +311,11 @@ export default function EmployeeDashboard({
     [entries]
   );
 
+  const totalVacation = useMemo(
+    () => entries.reduce((sum, entry) => sum + (entry.vacationHours ?? 0), 0),
+    [entries]
+  );
+
   // Calculate hours from modal form
   const calculatedHours = useMemo(() => {
     const morningWorked = modalForm.isMorningPermesso ? 0 : calculateHours(modalForm.morningStart, modalForm.morningEnd);
@@ -364,9 +375,9 @@ export default function EmployeeDashboard({
     if (existingEntry) {
       let dayType: "normal" | "ferie" | "malattia" = "normal";
       let medicalCertificate = "";
-      if (existingEntry.notes === "Ferie" && existingEntry.hoursWorked === 0) {
+      if ((existingEntry.vacationHours ?? 0) > 0) {
         dayType = "ferie";
-      } else if (existingEntry.notes === "Malattia" && existingEntry.hoursWorked === 0) {
+      } else if ((existingEntry.sicknessHours ?? 0) > 0) {
         dayType = "malattia";
         medicalCertificate = existingEntry.medicalCertificate || "";
       }
@@ -421,7 +432,9 @@ export default function EmployeeDashboard({
         hoursWorked: 0,
         overtimeHours: 0,
         permessoHours: 0,
-        notes: "Ferie",
+        sicknessHours: 0,
+        vacationHours: 8,
+        notes: modalForm.notes.trim() || null,
         ...(targetUserId && { userId: targetUserId }),
       };
     } else if (modalForm.dayType === "malattia") {
@@ -430,8 +443,10 @@ export default function EmployeeDashboard({
         hoursWorked: 0,
         overtimeHours: 0,
         permessoHours: 0,
+        sicknessHours: 8,
+        vacationHours: 0,
         medicalCertificate: modalForm.medicalCertificate || null,
-        notes: "Malattia",
+        notes: modalForm.notes.trim() || null,
         ...(targetUserId && { userId: targetUserId }),
       };
     } else {
@@ -520,11 +535,8 @@ export default function EmployeeDashboard({
       hoursWorked: 0,
       overtimeHours: 0,
       permessoHours: 0,
-      morningStart: "//",
-      morningEnd: "//",
-      afternoonStart: "//",
-      afternoonEnd: "//",
-      notes: "Ferie",
+      sicknessHours: 0,
+      vacationHours: 8,
       ...(targetUserId && { userId: targetUserId }),
     };
 
@@ -582,7 +594,7 @@ export default function EmployeeDashboard({
 
       <div className={hideHeader ? "w-full py-8 flex flex-col" : "mx-auto max-w-7xl px-3 sm:px-6 py-8 flex flex-col"}>
         {/* Stats cards */}
-        <div className="order-2 md:order-1 mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="order-2 md:order-1 mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
           <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
@@ -641,6 +653,23 @@ export default function EmployeeDashboard({
                 <div className="rounded-full bg-red-50 p-3">
                   <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {totalVacation > 0 && (
+            <div className="rounded-xl border border-green-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Ferie</p>
+                  <p className="mt-2 text-3xl font-bold text-green-600">{totalVacation.toFixed(1)}</p>
+                  <p className="text-xs text-gray-500">ore ferie</p>
+                </div>
+                <div className="rounded-full bg-green-50 p-3">
+                  <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
               </div>
@@ -784,33 +813,38 @@ export default function EmployeeDashboard({
                       </div>
                     </div>
                     {hasEntries ? (
-                      dayEntry?.notes === "Ferie" && dayEntry.hoursWorked === 0 ? (
-                        <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
-                          <div className="text-lg font-bold text-green-600">Ferie</div>
-                          <div className="text-xs text-gray-500">Vacanza</div>
-                        </div>
-                      ) : dayEntry?.notes === "Malattia" && dayEntry.hoursWorked === 0 ? (
-                        <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
-                          <div className="text-lg font-bold text-red-600">Malattia</div>
-                          <div className="text-xs text-gray-500">Assenza</div>
-                        </div>
-                      ) : (
-                        <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
-                          <div className="flex flex-col items-center">
-                            <div className="text-2xl sm:text-3xl font-bold text-blue-600 tracking-tight">
-                              {totalHours.toFixed(1)}
+                      <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
+                        {((dayEntry?.vacationHours ?? 0) > 0 || (dayEntry?.sicknessHours ?? 0) > 0) ? (
+                          // Show type and notes for vacation/sickness days
+                          <div className="flex flex-col items-center gap-1">
+                            <div className={`text-lg sm:text-xl font-bold text-center ${(dayEntry?.vacationHours ?? 0) > 0 ? "text-blue-600" : "text-red-600"}`}>
+                              {(dayEntry?.vacationHours ?? 0) > 0 ? "Ferie" : "Malattia"}
                             </div>
-                            <div className="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
-                              ore
-                            </div>
+                            {dayEntry?.notes && (
+                              <div className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2 break-words px-1 text-center">
+                                {dayEntry.notes}
+                              </div>
+                            )}
                           </div>
-                          {dayEntry?.notes && (
-                            <div className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2 break-words px-1 text-center">
-                              {dayEntry.notes}
+                        ) : (
+                          // Show hours for normal working days
+                          <>
+                            <div className="flex flex-col items-center">
+                              <div className="text-2xl sm:text-3xl font-bold text-blue-600 tracking-tight">
+                                {totalHours.toFixed(1)}
+                              </div>
+                              <div className="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                ore
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      )
+                            {dayEntry?.notes && (
+                              <div className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2 break-words px-1 text-center">
+                                {dayEntry.notes}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
                     ) : (
                       <div className="flex-1 flex items-center justify-center">
                         <span className="text-[10px] sm:text-xs text-gray-300">
@@ -876,146 +910,179 @@ export default function EmployeeDashboard({
                     />
                   </label>
                 )}
-                {/* Morning shift */}
-                <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 shadow-sm">
-                  <div className="mb-3 flex items-center gap-2">
-                    <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <h3 className="text-sm font-bold text-blue-900">Turno Mattina</h3>
-                  </div>
-                  <div className="mb-3">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={modalForm.isMorningPermesso}
-                        onChange={(e) => setModalForm(f => ({ ...f, isMorningPermesso: e.target.checked }))}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <span className="text-xs font-medium text-blue-800">Permesso (non conteggiato come lavoro)</span>
-                    </label>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="flex flex-col gap-2">
-                      <span className="text-xs font-semibold text-blue-800">Ora inizio</span>
-                      <select
-                        value={modalForm.morningStart}
-                        onChange={(e) => setModalForm(f => ({ ...f, morningStart: e.target.value }))}
-                        className="rounded-lg border border-blue-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
-                      >
-                        {TIME_OPTIONS.map(time => (
-                          <option key={`morning-start-${time}`} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="flex flex-col gap-2">
-                      <span className="text-xs font-semibold text-blue-800">Ora fine</span>
-                      <select
-                        value={modalForm.morningEnd}
-                        onChange={(e) => setModalForm(f => ({ ...f, morningEnd: e.target.value }))}
-                        className="rounded-lg border border-blue-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
-                      >
-                        {TIME_OPTIONS.map(time => (
-                          <option key={`morning-end-${time}`} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                  <p className="mt-3 flex items-center justify-between text-xs">
-                    <span className="font-medium text-blue-700">Durata:</span>
-                    <span className="font-bold text-blue-900">{calculatedHours.morning.toFixed(2)} ore</span>
-                  </p>
-                  {modalForm.isMorningPermesso && (
-                    <p className="mt-2 text-xs text-blue-700">Queste ore saranno conteggiate come permesso.</p>
-                  )}
-                </div>
-
-                {/* Afternoon shift */}
-                <div className="rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 p-4 shadow-sm">
-                  <div className="mb-3 flex items-center gap-2">
-                    <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                    <h3 className="text-sm font-bold text-orange-900">Turno Pomeriggio</h3>
-                  </div>
-                  <div className="mb-3">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={modalForm.isAfternoonPermesso}
-                        onChange={(e) => setModalForm(f => ({ ...f, isAfternoonPermesso: e.target.checked }))}
-                        className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                      />
-                      <span className="text-xs font-medium text-orange-800">Permesso (non conteggiato come lavoro)</span>
-                    </label>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="flex flex-col gap-2">
-                      <span className="text-xs font-semibold text-orange-800">Ora inizio</span>
-                      <select
-                        value={modalForm.afternoonStart}
-                        onChange={(e) => setModalForm(f => ({ ...f, afternoonStart: e.target.value }))}
-                        className="rounded-lg border border-orange-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200 cursor-pointer"
-                      >
-                        {TIME_OPTIONS.map(time => (
-                          <option key={`afternoon-start-${time}`} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="flex flex-col gap-2">
-                      <span className="text-xs font-semibold text-orange-800">Ora fine</span>
-                      <select
-                        value={modalForm.afternoonEnd}
-                        onChange={(e) => setModalForm(f => ({ ...f, afternoonEnd: e.target.value }))}
-                        className="rounded-lg border border-orange-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200 cursor-pointer"
-                      >
-                        {TIME_OPTIONS.map(time => (
-                          <option key={`afternoon-end-${time}`} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                  <p className="mt-3 flex items-center justify-between text-xs">
-                    <span className="font-medium text-orange-700">Durata:</span>
-                    <span className="font-bold text-orange-900">{calculatedHours.afternoon.toFixed(2)} ore</span>
-                  </p>
-                  {modalForm.isAfternoonPermesso && (
-                    <p className="mt-2 text-xs text-orange-700">Queste ore saranno conteggiate come permesso.</p>
-                  )}
-                </div>
-
-                {/* Summary */}
-                <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm">
-                  {modalForm.dayType !== "normal" && (
-                    <div className="mb-3 p-3 rounded-lg bg-green-50 border border-green-200">
-                      <p className="text-sm font-medium text-green-800">
-                        Questa giornata sarà salvata come {modalForm.dayType === "ferie" ? "ferie" : "malattia"} (0 ore lavorate).
-                      </p>
-                    </div>
-                  )}
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-gray-700">Ore totali:</span>
-                      <span className="text-2xl font-bold text-blue-600">{modalForm.dayType !== "normal" ? "0.00" : calculatedHours.totalWorked.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center border-t border-blue-100 pt-2">
-                      <span className="font-medium text-gray-600">Ore regolari:</span>
-                      <span className="font-bold text-gray-900">{modalForm.dayType !== "normal" ? "0.00" : calculatedHours.regular.toFixed(2)}</span>
-                    </div>
-                    {calculatedHours.overtime > 0 && modalForm.dayType === "normal" && (
-                      <div className="flex justify-between items-center border-t border-orange-100 pt-2">
-                        <span className="font-medium text-orange-700">Straordinario:</span>
-                        <span className="font-bold text-orange-600">{calculatedHours.overtime.toFixed(2)}</span>
+                {modalForm.dayType === "normal" && (
+                  <>
+                    {/* Morning shift */}
+                    <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 shadow-sm">
+                      <div className="mb-3 flex items-center gap-2">
+                        <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <h3 className="text-sm font-bold text-blue-900">Turno Mattina</h3>
                       </div>
-                    )}
-                    {calculatedHours.permesso > 0 && modalForm.dayType === "normal" && (
-                      <div className="flex justify-between items-center border-t border-yellow-100 pt-2">
-                        <span className="font-medium text-yellow-700">Permesso:</span>
-                        <span className="font-bold text-yellow-600">{calculatedHours.permesso.toFixed(2)}</span>
+                      <div className="mb-3">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={modalForm.isMorningPermesso}
+                            onChange={(e) => setModalForm(f => ({ ...f, isMorningPermesso: e.target.checked }))}
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-xs font-medium text-blue-800">Permesso (non conteggiato come lavoro)</span>
+                        </label>
                       </div>
-                    )}
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="flex flex-col gap-2">
+                          <span className="text-xs font-semibold text-blue-800">Ora inizio</span>
+                          <select
+                            value={modalForm.morningStart}
+                            onChange={(e) => setModalForm(f => ({ ...f, morningStart: e.target.value }))}
+                            disabled={modalForm.isMorningPermesso}
+                            className="rounded-lg border border-blue-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {TIME_OPTIONS.map(time => (
+                              <option key={`morning-start-${time}`} value={time}>{time}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="flex flex-col gap-2">
+                          <span className="text-xs font-semibold text-blue-800">Ora fine</span>
+                          <select
+                            value={modalForm.morningEnd}
+                            onChange={(e) => setModalForm(f => ({ ...f, morningEnd: e.target.value }))}
+                            disabled={modalForm.isMorningPermesso}
+                            className="rounded-lg border border-blue-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {TIME_OPTIONS.map(time => (
+                              <option key={`morning-end-${time}`} value={time}>{time}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                      {!modalForm.isMorningPermesso && (
+                        <p className="mt-3 flex items-center justify-between text-xs">
+                          <span className="font-medium text-blue-700">Durata:</span>
+                          <span className="font-bold text-blue-900">{calculatedHours.morning.toFixed(2)} ore</span>
+                        </p>
+                      )}
+                      {modalForm.isMorningPermesso && (
+                        <p className="mt-2 text-xs text-blue-700">Queste ore saranno conteggiate come permesso.</p>
+                      )}
+                    </div>
+
+                    {/* Afternoon shift */}
+                    <div className="rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 p-4 shadow-sm">
+                      <div className="mb-3 flex items-center gap-2">
+                        <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                        <h3 className="text-sm font-bold text-orange-900">Turno Pomeriggio</h3>
+                      </div>
+                      <div className="mb-3">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={modalForm.isAfternoonPermesso}
+                            onChange={(e) => setModalForm(f => ({ ...f, isAfternoonPermesso: e.target.checked }))}
+                            className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                          />
+                          <span className="text-xs font-medium text-orange-800">Permesso (non conteggiato come lavoro)</span>
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="flex flex-col gap-2">
+                          <span className="text-xs font-semibold text-orange-800">Ora inizio</span>
+                          <select
+                            value={modalForm.afternoonStart}
+                            onChange={(e) => setModalForm(f => ({ ...f, afternoonStart: e.target.value }))}
+                            disabled={modalForm.isAfternoonPermesso}
+                            className="rounded-lg border border-orange-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {TIME_OPTIONS.map(time => (
+                              <option key={`afternoon-start-${time}`} value={time}>{time}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="flex flex-col gap-2">
+                          <span className="text-xs font-semibold text-orange-800">Ora fine</span>
+                          <select
+                            value={modalForm.afternoonEnd}
+                            onChange={(e) => setModalForm(f => ({ ...f, afternoonEnd: e.target.value }))}
+                            disabled={modalForm.isAfternoonPermesso}
+                            className="rounded-lg border border-orange-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {TIME_OPTIONS.map(time => (
+                              <option key={`afternoon-end-${time}`} value={time}>{time}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                      {!modalForm.isAfternoonPermesso && (
+                        <p className="mt-3 flex items-center justify-between text-xs">
+                          <span className="font-medium text-orange-700">Durata:</span>
+                          <span className="font-bold text-orange-900">{calculatedHours.afternoon.toFixed(2)} ore</span>
+                        </p>
+                      )}
+                      {modalForm.isAfternoonPermesso && (
+                        <p className="mt-2 text-xs text-orange-700">Queste ore saranno conteggiate come permesso.</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {modalForm.dayType === "ferie" && (
+                  <div className="rounded-xl bg-gradient-to-br from-green-50 to-green-100 p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                      <h3 className="text-sm font-bold text-green-900">Ferie</h3>
+                    </div>
+                    <p className="text-sm text-green-800">Giornata di ferie completa - 8 ore di ferie.</p>
                   </div>
-                </div>
+                )}
+
+                {modalForm.dayType === "malattia" && (
+                  <div className="rounded-xl bg-gradient-to-br from-red-50 to-red-100 p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <h3 className="text-sm font-bold text-red-900">Malattia</h3>
+                    </div>
+                    <p className="text-sm text-red-800">Giornata di malattia - 8 ore di malattia.</p>
+                  </div>
+                )}
+
+                {modalForm.dayType === "normal" && (
+                  <>
+                    {/* Summary */}
+                    <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-gray-700">Ore totali:</span>
+                          <span className="text-2xl font-bold text-blue-600">{calculatedHours.totalWorked.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-blue-100 pt-2">
+                          <span className="font-medium text-gray-600">Ore regolari:</span>
+                          <span className="font-bold text-gray-900">{calculatedHours.regular.toFixed(2)}</span>
+                        </div>
+                        {calculatedHours.overtime > 0 && (
+                          <div className="flex justify-between items-center border-t border-orange-100 pt-2">
+                            <span className="font-medium text-orange-700">Straordinario:</span>
+                            <span className="font-bold text-orange-600">{calculatedHours.overtime.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {calculatedHours.permesso > 0 && (
+                          <div className="flex justify-between items-center border-t border-yellow-100 pt-2">
+                            <span className="font-medium text-yellow-700">Permesso:</span>
+                            <span className="font-bold text-yellow-600">{calculatedHours.permesso.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Notes */}
                 <label className="flex flex-col gap-2">

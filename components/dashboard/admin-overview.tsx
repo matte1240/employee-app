@@ -13,6 +13,7 @@ type UserAggregate = {
   overtimeHours: number;
   permessoHours: number;
   sicknessHours: number;
+  vacationHours: number;
 };
 
 type AdminOverviewProps = {
@@ -24,6 +25,7 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
   const totalOvertimeHours = users.reduce((sum, user) => sum + user.overtimeHours, 0);
   const totalPermessoHours = users.reduce((sum, user) => sum + user.permessoHours, 0);
   const totalSicknessHours = users.reduce((sum, user) => sum + user.sicknessHours, 0);
+  const totalVacationHours = users.reduce((sum, user) => sum + user.vacationHours, 0);
   const totalHours = totalRegularHours + totalOvertimeHours;
 
   const now = new Date();
@@ -32,7 +34,7 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-5 mb-8">
+      <div className="grid gap-6 md:grid-cols-6 mb-8">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
@@ -102,6 +104,20 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
             </div>
           </div>
         </div>
+
+        <div className="rounded-lg border border-green-100 bg-green-50 p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Ore di Ferie</p>
+              <p className="text-2xl font-bold text-gray-900">{totalVacationHours.toFixed(1)}h</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Users Table */}
@@ -145,6 +161,9 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ore Malattia
+                </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ore Ferie
                 </th>
                 <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Azioni
@@ -200,6 +219,11 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="text-sm text-red-600 font-medium">
                         {user.sicknessHours.toFixed(1)}h
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="text-sm text-green-600 font-medium">
+                        {user.vacationHours.toFixed(1)}h
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">

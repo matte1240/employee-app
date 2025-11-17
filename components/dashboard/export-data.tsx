@@ -14,6 +14,7 @@ type UserWithHours = User & {
   overtimeHours: number;
   permessoHours: number;
   sicknessHours: number;
+  vacationHours: number;
 };
 
 type ExportDataProps = {
@@ -51,23 +52,27 @@ export default function ExportData({ users }: ExportDataProps) {
           const overtimeHoursMap = new Map<string, number>();
           const permessoHoursMap = new Map<string, number>();
           const sicknessHoursMap = new Map<string, number>();
+          const vacationHoursMap = new Map<string, number>();
 
           entries.forEach((entry: any) => {
             const regularCurrent = regularHoursMap.get(entry.userId) || 0;
             const overtimeCurrent = overtimeHoursMap.get(entry.userId) || 0;
             const permessoCurrent = permessoHoursMap.get(entry.userId) || 0;
             const sicknessCurrent = sicknessHoursMap.get(entry.userId) || 0;
+            const vacationCurrent = vacationHoursMap.get(entry.userId) || 0;
 
             // hoursWorked already contains only regular hours (max 8 per day)
             const regularHours = entry.hoursWorked || 0;
             const overtimeHours = entry.overtimeHours || 0;
             const permessoHours = entry.permessoHours || 0;
             const sicknessHours = entry.sicknessHours || 0;
+            const vacationHours = entry.vacationHours || 0;
 
             regularHoursMap.set(entry.userId, regularCurrent + regularHours);
             overtimeHoursMap.set(entry.userId, overtimeCurrent + overtimeHours);
             permessoHoursMap.set(entry.userId, permessoCurrent + permessoHours);
             sicknessHoursMap.set(entry.userId, sicknessCurrent + sicknessHours);
+            vacationHoursMap.set(entry.userId, vacationCurrent + vacationHours);
           });
 
           // Update users with month-specific hours
@@ -77,6 +82,7 @@ export default function ExportData({ users }: ExportDataProps) {
             overtimeHours: overtimeHoursMap.get(user.id) || 0,
             permessoHours: permessoHoursMap.get(user.id) || 0,
             sicknessHours: sicknessHoursMap.get(user.id) || 0,
+            vacationHours: vacationHoursMap.get(user.id) || 0,
           }));
 
           setUsersWithMonthHours(updatedUsers);
@@ -148,6 +154,7 @@ export default function ExportData({ users }: ExportDataProps) {
   const totalOvertimeHours = usersWithMonthHours.reduce((sum, u) => sum + u.overtimeHours, 0);
   const totalPermessoHours = usersWithMonthHours.reduce((sum, u) => sum + u.permessoHours, 0);
   const totalSicknessHours = usersWithMonthHours.reduce((sum, u) => sum + u.sicknessHours, 0);
+  const totalVacationHours = usersWithMonthHours.reduce((sum, u) => sum + u.vacationHours, 0);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
@@ -159,7 +166,7 @@ export default function ExportData({ users }: ExportDataProps) {
       </div>
 
       {/* Stats Cards */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
           <div className="flex items-center justify-between">
             <div>
@@ -235,6 +242,22 @@ export default function ExportData({ users }: ExportDataProps) {
             <div className="rounded-full bg-red-50 p-3">
               <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-green-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Vacation Hours</p>
+              <p className="mt-2 text-3xl font-bold text-green-600">
+                {totalVacationHours.toFixed(0)}
+              </p>
+            </div>
+            <div className="rounded-full bg-green-50 p-3">
+              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
           </div>
@@ -384,6 +407,11 @@ export default function ExportData({ users }: ExportDataProps) {
                     {user.sicknessHours > 0 && (
                       <div className="text-xs text-red-600">
                         {user.sicknessHours.toFixed(1)}h sickness
+                      </div>
+                    )}
+                    {user.vacationHours > 0 && (
+                      <div className="text-xs text-green-600">
+                        {user.vacationHours.toFixed(1)}h vacation
                       </div>
                     )}
                   </div>
