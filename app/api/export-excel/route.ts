@@ -12,7 +12,7 @@ const exportSchema = z.object({
 export async function POST(request: Request) {
   const session = await getAuthSession();
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -24,10 +24,29 @@ export async function POST(request: Request) {
   }
 
   const { userIds, month } = parsed.data;
+
+  // Check permissions: admin can export any users, employees can only export themselves
+  if (session.user.role !== "ADMIN") {
+    if (userIds.length !== 1 || userIds[0] !== session.user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+  }
   const [year, monthNum] = month.split("-");
   const startDate = new Date(`${year}-${monthNum}-01T00:00:00.000Z`);
   const endDate = new Date(parseInt(year), parseInt(monthNum), 0); // Last day of month
   endDate.setUTCHours(23, 59, 59, 999);
+
+  // Check if there are any medical certificates in the selected month for the selected users
+  const hasMedicalCertificates = await prisma.timeEntry.findFirst({
+    where: {
+      userId: { in: userIds },
+      workDate: {
+        gte: startDate,
+        lte: endDate,
+      },
+      medicalCertificate: { not: null },
+    },
+  });
 
   try {
     // Create a new workbook
@@ -36,7 +55,7 @@ export async function POST(request: Request) {
     workbook.created = new Date();
 
     // Function to add a worksheet for a user
-    const addUserSheet = async (userId: string) => {
+    const addUserSheet = async (userId: string, includeMedicalCertificate: boolean) => {
       const user = await prisma.user.findUnique({ where: { id: userId } });
       if (!user) throw new Error("User not found");
 
@@ -56,7 +75,7 @@ export async function POST(request: Request) {
       const worksheet = workbook.addWorksheet(sheetName);
 
       // Set column widths
-      worksheet.columns = [
+      const columns = [
         { key: "date", width: 12 },
         { key: "morningStart", width: 14 },
         { key: "morningEnd", width: 14 },
@@ -66,31 +85,45 @@ export async function POST(request: Request) {
         { key: "overtime", width: 12 },
         { key: "permessoHours", width: 15 },
         { key: "totalHours", width: 12 },
-        { key: "notes", width: 40 },
       ];
+
+      if (includeMedicalCertificate) {
+        columns.push({ key: "certificatoMedico", width: 18 });
+      }
+
+      columns.push({ key: "notes", width: 40 });
+      worksheet.columns = columns;
 
       // Add title row
       const titleRow = worksheet.addRow([
         `Time Entries - ${user.name || user.email} - ${month}`,
       ]);
       titleRow.font = { size: 14, bold: true };
-      worksheet.mergeCells("A1:J1");
+      const lastColumn = includeMedicalCertificate ? "K" : "J";
+      worksheet.mergeCells(`A1:${lastColumn}1`);
       titleRow.alignment = { horizontal: "center", vertical: "middle" };
       titleRow.height = 25;
 
       // Add header row
-      const headerRow = worksheet.addRow([
-        "Date",
-        "Morning Start",
-        "Morning End",
-        "Afternoon Start",
-        "Afternoon End",
-        "Hours Worked",
-        "Overtime",
-        "Permesso Hours",
-        "Total Hours",
-        "Notes",
-      ]);
+      const headerColumns = [
+        "Data",
+        "Inizio Mattina",
+        "Fine Mattina",
+        "Inizio Pomeriggio",
+        "Fine Pomeriggio",
+        "Ore Lavorate",
+        "Straordinario",
+        "Ore Permesso",
+        "Totale Ore",
+      ];
+
+      if (includeMedicalCertificate) {
+        headerColumns.push("Certificato Medico");
+      }
+
+      headerColumns.push("Note");
+
+      const headerRow = worksheet.addRow(headerColumns);
 
       // Style header row
       headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
@@ -115,11 +148,14 @@ export async function POST(request: Request) {
           : 0;
         const totalHours = hoursWorked + overtime;
 
+        // Extract medical certificate from the dedicated field
+        let certificatoMedico = entry.medicalCertificate || "";
+
         totalHoursSum += hoursWorked;
         totalOvertimeSum += overtime;
         totalPermessoSum += permessoHours;
 
-        const row = worksheet.addRow({
+        const rowData: any = {
           date: entry.workDate,
           morningStart: entry.morningStart || "",
           morningEnd: entry.morningEnd || "",
@@ -129,8 +165,15 @@ export async function POST(request: Request) {
           overtime: overtime,
           permessoHours: permessoHours,
           totalHours: totalHours,
-          notes: entry.notes || "",
-        });
+        };
+
+        if (includeMedicalCertificate) {
+          rowData.certificatoMedico = certificatoMedico;
+        }
+
+        rowData.notes = entry.notes || "";
+
+        const row = worksheet.addRow(rowData);
 
         // Format date cell
         row.getCell(1).numFmt = "dd/mm/yyyy";
@@ -155,8 +198,8 @@ export async function POST(request: Request) {
       worksheet.addRow([]);
 
       // Add summary row
-      const summaryRow = worksheet.addRow([
-        "TOTAL",
+      const summaryColumns = [
+        "TOTALE",
         "",
         "",
         "",
@@ -165,8 +208,15 @@ export async function POST(request: Request) {
         totalOvertimeSum,
         totalPermessoSum,
         totalHoursSum + totalOvertimeSum,
-        "",
-      ]);
+      ];
+
+      if (includeMedicalCertificate) {
+        summaryColumns.push("");
+      }
+
+      summaryColumns.push("");
+
+      const summaryRow = worksheet.addRow(summaryColumns);
 
       summaryRow.font = { bold: true, size: 12 };
       summaryRow.fill = {
@@ -210,7 +260,7 @@ export async function POST(request: Request) {
 
     // Add a sheet for each user
     for (const userId of userIds) {
-      await addUserSheet(userId);
+      await addUserSheet(userId, !!hasMedicalCertificates);
     }
 
     // Generate Excel file buffer
