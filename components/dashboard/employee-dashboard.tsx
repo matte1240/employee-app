@@ -14,6 +14,7 @@ import {
   endOfWeek,
 } from "date-fns";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import LogoutButton from "@/components/logout-button";
 
 export type TimeEntryDTO = {
@@ -224,7 +225,7 @@ export default function EmployeeDashboard({
     fetchEntries();
 
     return () => controller.abort();
-  }, [isRefetching, currentMonth, router, targetUserId]);
+  }, [isRefetching, currentMonth, router, targetUserId, onEntrySaved]);
 
   useEffect(() => {
     if (!hasFetched.current) {
@@ -272,7 +273,7 @@ export default function EmployeeDashboard({
     fetchEntries();
 
     return () => controller.abort();
-  }, [currentMonth, router, targetUserId]);
+  }, [currentMonth, router, targetUserId, onEntrySaved]);
 
   const entriesByDay = useMemo(() => {
     const map = new Map<string, TimeEntryDTO[]>();
@@ -600,10 +601,13 @@ export default function EmployeeDashboard({
         <header className="border-b border-gray-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 py-4">
             <div className="flex items-center gap-8">
-              <img
+              <Image
                 src="/logo.svg"
                 alt="Ivicolors"
+                width={160}
+                height={40}
                 className="h-10 w-auto"
+                priority
               />
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">
