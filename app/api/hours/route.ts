@@ -8,11 +8,13 @@ const createHoursSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   hoursWorked: z.number().min(0).max(24),
   overtimeHours: z.number().min(0).optional(),
-  morningStart: z.string().optional(),
-  morningEnd: z.string().optional(),
-  afternoonStart: z.string().optional(),
-  afternoonEnd: z.string().optional(),
-  notes: z.string().max(500).optional(),
+  permessoHours: z.number().min(0).optional(),
+  morningStart: z.string().nullable().optional(),
+  morningEnd: z.string().nullable().optional(),
+  afternoonStart: z.string().nullable().optional(),
+  afternoonEnd: z.string().nullable().optional(),
+  medicalCertificate: z.string().max(100).nullable().optional(),
+  notes: z.string().max(500).nullable().optional(),
   userId: z.string().optional(), // Admin can specify userId
 });
 
@@ -33,6 +35,7 @@ type RawEntry = {
   morningEnd: string | null;
   afternoonStart: string | null;
   afternoonEnd: string | null;
+  medicalCertificate: string | null;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -49,6 +52,7 @@ const toPlainEntry = (entry: RawEntry) => ({
   morningEnd: entry.morningEnd,
   afternoonStart: entry.afternoonStart,
   afternoonEnd: entry.afternoonEnd,
+  medicalCertificate: entry.medicalCertificate,
   notes: entry.notes,
   createdAt: entry.createdAt.toISOString(),
   updatedAt: entry.updatedAt.toISOString(),
@@ -123,7 +127,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const { workDate, hoursWorked, overtimeHours, morningStart, morningEnd, afternoonStart, afternoonEnd, notes, userId: requestedUserId } = parsed.data;
+  const { workDate, hoursWorked, overtimeHours, morningStart, morningEnd, afternoonStart, afternoonEnd, medicalCertificate, notes, userId: requestedUserId } = parsed.data;
 
   // Determine which userId to use: admin can specify, employee uses their own
   const targetUserId = session.user.role === "ADMIN" && requestedUserId ? requestedUserId : session.user.id;
@@ -191,6 +195,7 @@ export async function POST(request: Request) {
         morningEnd,
         afternoonStart,
         afternoonEnd,
+        medicalCertificate,
         notes,
       },
     })) as RawEntry;
@@ -207,6 +212,7 @@ export async function POST(request: Request) {
         morningEnd,
         afternoonStart,
         afternoonEnd,
+        medicalCertificate,
         notes,
       },
     })) as RawEntry;

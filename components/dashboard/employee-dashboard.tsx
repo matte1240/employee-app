@@ -25,6 +25,7 @@ export type TimeEntryDTO = {
   morningEnd?: string | null;
   afternoonStart?: string | null;
   afternoonEnd?: string | null;
+  medicalCertificate?: string | null;
   notes?: string | null;
 };
 
@@ -43,6 +44,10 @@ type ModalFormState = {
   afternoonStart: string;
   afternoonEnd: string;
   notes: string;
+  dayType: "normal" | "ferie" | "malattia";
+  medicalCertificate: string;
+  isMorningPermesso: boolean;
+  isAfternoonPermesso: boolean;
 };
 
 // Helper function to calculate hours between two times
@@ -89,13 +94,39 @@ export default function EmployeeDashboard({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [isRefetching, setIsRefetching] = useState(false);
   const [modalForm, setModalForm] = useState<ModalFormState>({
     morningStart: "08:00",
     morningEnd: "12:00",
     afternoonStart: "14:00",
     afternoonEnd: "18:30",
     notes: "",
+    dayType: "normal",
+    medicalCertificate: "",
+    isMorningPermesso: false,
+    isAfternoonPermesso: false,
   });
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{x: number, y: number, date: string, visible: boolean} | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+
+    if (contextMenu?.visible) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [contextMenu?.visible]);
 
   // Block body scroll when modal is open
   useEffect(() => {
@@ -121,6 +152,68 @@ export default function EmployeeDashboard({
       };
     }
   }, [isModalOpen]);
+
+  // Reset times and notes when switching to normal
+  useEffect(() => {
+    if (modalForm.dayType === "normal") {
+      setModalForm(f => ({
+        ...f,
+        morningStart: "08:00",
+        morningEnd: "12:00",
+        afternoonStart: "14:00",
+        afternoonEnd: "18:30",
+        notes: "",
+        isMorningPermesso: false,
+        isAfternoonPermesso: false,
+      }));
+    }
+  }, [modalForm.dayType]);
+
+  // Refetch entries when needed
+  useEffect(() => {
+    if (!isRefetching) return;
+
+    const controller = new AbortController();
+    const fetchEntries = async () => {
+      setIsFetching(true);
+      setError(null);
+      try {
+        const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+        const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+        const url = targetUserId
+          ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
+          : `/api/hours?from=${from}&to=${to}`;
+        const response = await fetch(url, {
+          signal: controller.signal,
+        });
+
+        if (response.status === 401) {
+          router.push("/");
+          return;
+        }
+
+        const payload = await response.json();
+
+        if (!response.ok) {
+          setError(payload?.error ?? "Failed to load entries.");
+          return;
+        }
+
+        setEntries(payload as TimeEntryDTO[]);
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          setError("Unexpected error while loading entries.");
+        }
+      } finally {
+        setIsFetching(false);
+        setIsRefetching(false);
+      }
+    };
+
+    fetchEntries();
+
+    return () => controller.abort();
+  }, [isRefetching, currentMonth, router, targetUserId]);
 
   useEffect(() => {
     if (!hasFetched.current) {
@@ -208,25 +301,18 @@ export default function EmployeeDashboard({
 
   // Calculate hours from modal form
   const calculatedHours = useMemo(() => {
-    const morning = calculateHours(modalForm.morningStart, modalForm.morningEnd);
-    const afternoon = calculateHours(modalForm.afternoonStart, modalForm.afternoonEnd);
-    const total = morning + afternoon;
-    const regular = Math.min(total, 8);
-    const overtime = Math.max(0, total - 8);
+    const morningWorked = modalForm.isMorningPermesso ? 0 : calculateHours(modalForm.morningStart, modalForm.morningEnd);
+    const afternoonWorked = modalForm.isAfternoonPermesso ? 0 : calculateHours(modalForm.afternoonStart, modalForm.afternoonEnd);
+    
+    const totalWorked = morningWorked + afternoonWorked;
+    
+    const permesso = (modalForm.isMorningPermesso ? 4 : 0) + (modalForm.isAfternoonPermesso ? 4 : 0);
+    
+    const regular = Math.min(totalWorked, 8);
+    const overtime = Math.max(0, totalWorked - 8);
 
-    // Calculate permesso hours (only for weekdays when total < 8)
-    let permesso = 0;
-    if (selectedDate) {
-      const date = new Date(`${selectedDate}T12:00:00`);
-      const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-      const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-      if (isWeekday && total < 8) {
-        permesso = 8 - total;
-      }
-    }
-
-    return { morning, afternoon, total, regular, overtime, permesso };
-  }, [modalForm, selectedDate]);
+    return { morning: modalForm.isMorningPermesso ? 4 : morningWorked, afternoon: modalForm.isAfternoonPermesso ? 4 : afternoonWorked, totalWorked, regular, overtime, permesso };
+  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso]);
 
   // Check if date is editable
   const isDateEditable = (date: Date): boolean => {
@@ -270,12 +356,28 @@ export default function EmployeeDashboard({
     // Check if entry exists for this day and pre-fill
     const existingEntry = entries.find(e => e.workDate === dateStr);
     if (existingEntry) {
+      let dayType: "normal" | "ferie" | "malattia" = "normal";
+      let medicalCertificate = "";
+      if (existingEntry.notes === "Ferie" && existingEntry.hoursWorked === 0) {
+        dayType = "ferie";
+      } else if (existingEntry.notes === "Malattia" && existingEntry.hoursWorked === 0) {
+        dayType = "malattia";
+        medicalCertificate = existingEntry.medicalCertificate || "";
+      }
+      
+      const isMorningPermesso = existingEntry.morningStart === "PERM";
+      const isAfternoonPermesso = existingEntry.afternoonStart === "PERM";
+      
       setModalForm({
-        morningStart: existingEntry.morningStart || "08:00",
-        morningEnd: existingEntry.morningEnd || "12:00",
-        afternoonStart: existingEntry.afternoonStart || "14:00",
-        afternoonEnd: existingEntry.afternoonEnd || "18:30",
+        morningStart: isMorningPermesso ? "08:00" : (existingEntry.morningStart || "08:00"),
+        morningEnd: isMorningPermesso ? "12:00" : (existingEntry.morningEnd || "12:00"),
+        afternoonStart: isAfternoonPermesso ? "14:00" : (existingEntry.afternoonStart || "14:00"),
+        afternoonEnd: isAfternoonPermesso ? "18:30" : (existingEntry.afternoonEnd || "18:30"),
         notes: existingEntry.notes || "",
+        dayType,
+        medicalCertificate,
+        isMorningPermesso,
+        isAfternoonPermesso,
       });
     } else {
       setModalForm({
@@ -284,6 +386,10 @@ export default function EmployeeDashboard({
         afternoonStart: "14:00",
         afternoonEnd: "18:30",
         notes: "",
+        dayType: "normal",
+        medicalCertificate: "",
+        isMorningPermesso: false,
+        isAfternoonPermesso: false,
       });
     }
     
@@ -295,24 +401,47 @@ export default function EmployeeDashboard({
     event.preventDefault();
     setModalError(null);
 
-    if (calculatedHours.total === 0) {
+    if (modalForm.dayType === "normal" && calculatedHours.totalWorked === 0) {
       setModalError("Inserisci ore di lavoro valide.");
       return;
     }
 
     if (!selectedDate) return;
 
-    const payload = {
-      workDate: selectedDate,
-      hoursWorked: calculatedHours.regular,
-      overtimeHours: calculatedHours.overtime,
-      morningStart: modalForm.morningStart || undefined,
-      morningEnd: modalForm.morningEnd || undefined,
-      afternoonStart: modalForm.afternoonStart || undefined,
-      afternoonEnd: modalForm.afternoonEnd || undefined,
-      notes: modalForm.notes.trim() || undefined,
-      ...(targetUserId && { userId: targetUserId }), // Add userId if admin is editing another user
-    };
+    let payload: Record<string, unknown>;
+    if (modalForm.dayType === "ferie") {
+      payload = {
+        workDate: selectedDate,
+        hoursWorked: 0,
+        overtimeHours: 0,
+        permessoHours: 0,
+        notes: "Ferie",
+        ...(targetUserId && { userId: targetUserId }),
+      };
+    } else if (modalForm.dayType === "malattia") {
+      payload = {
+        workDate: selectedDate,
+        hoursWorked: 0,
+        overtimeHours: 0,
+        permessoHours: 0,
+        medicalCertificate: modalForm.medicalCertificate || null,
+        notes: "Malattia",
+        ...(targetUserId && { userId: targetUserId }),
+      };
+    } else {
+      payload = {
+        workDate: selectedDate,
+        hoursWorked: calculatedHours.regular,
+        overtimeHours: calculatedHours.overtime,
+        permessoHours: calculatedHours.permesso,
+        morningStart: modalForm.isMorningPermesso ? "PERM" : modalForm.morningStart || undefined,
+        morningEnd: modalForm.isMorningPermesso ? "PERM" : modalForm.morningEnd || undefined,
+        afternoonStart: modalForm.isAfternoonPermesso ? "PERM" : modalForm.afternoonStart || undefined,
+        afternoonEnd: modalForm.isAfternoonPermesso ? "PERM" : modalForm.afternoonEnd || undefined,
+        notes: modalForm.notes.trim() || null,
+        ...(targetUserId && { userId: targetUserId }),
+      };
+    }
 
     startSaving(async () => {
       try {
@@ -336,7 +465,7 @@ export default function EmployeeDashboard({
         });
 
         setIsModalOpen(false);
-        router.refresh();
+        setIsRefetching(true);
         onEntrySaved?.(); // Trigger refetch in admin dashboard
       } catch {
         setModalError("Errore imprevisto durante il salvataggio.");
@@ -368,12 +497,55 @@ export default function EmployeeDashboard({
 
         setEntries((current) => current.filter(e => e.id !== entry.id));
         setIsModalOpen(false);
-        router.refresh();
+        setIsRefetching(true);
         onEntrySaved?.(); // Trigger refetch in admin dashboard
       } catch {
         setModalError("Errore imprevisto durante l'eliminazione.");
       }
     });
+  };
+
+  const handleFerie = async (date: string) => {
+    setContextMenu(null);
+    setError(null);
+
+    const payload = {
+      workDate: date,
+      hoursWorked: 0,
+      overtimeHours: 0,
+      permessoHours: 0,
+      morningStart: "//",
+      morningEnd: "//",
+      afternoonStart: "//",
+      afternoonEnd: "//",
+      notes: "Ferie",
+      ...(targetUserId && { userId: targetUserId }),
+    };
+
+    try {
+      const response = await fetch("/api/hours", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data?.error ?? "Errore nel salvare le ferie.");
+        return;
+      }
+
+      setEntries((current) => {
+        const filtered = current.filter(e => e.workDate !== date);
+        return [...filtered, data as TimeEntryDTO];
+      });
+
+      router.refresh();
+      onEntrySaved?.();
+    } catch {
+      setError("Errore imprevisto durante il salvataggio delle ferie.");
+    }
   };
 
   return (
@@ -564,6 +736,11 @@ export default function EmployeeDashboard({
                   <button
                     key={key}
                     onClick={() => handleDayClick(day)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      if (!editable) return;
+                      setContextMenu({x: e.clientX, y: e.clientY, date: key, visible: true});
+                    }}
                     disabled={!editable}
                     className={`flex min-h-[80px] sm:min-h-[100px] flex-col rounded-md sm:rounded-xl border p-1.5 sm:p-3 text-left transition ${
                       isSameMonth(day, currentMonth)
@@ -584,21 +761,33 @@ export default function EmployeeDashboard({
                       </div>
                     </div>
                     {hasEntries ? (
-                      <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
-                        <div className="flex flex-col items-center">
-                          <div className="text-2xl sm:text-3xl font-bold text-blue-600 tracking-tight">
-                            {totalHours.toFixed(1)}
-                          </div>
-                          <div className="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
-                            ore
-                          </div>
+                      dayEntry?.notes === "Ferie" && dayEntry.hoursWorked === 0 ? (
+                        <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
+                          <div className="text-lg font-bold text-green-600">Ferie</div>
+                          <div className="text-xs text-gray-500">Vacanza</div>
                         </div>
-                        {dayEntry?.notes && (
-                          <div className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2 break-words px-1 text-center">
-                            {dayEntry.notes}
+                      ) : dayEntry?.notes === "Malattia" && dayEntry.hoursWorked === 0 ? (
+                        <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
+                          <div className="text-lg font-bold text-red-600">Malattia</div>
+                          <div className="text-xs text-gray-500">Assenza</div>
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
+                          <div className="flex flex-col items-center">
+                            <div className="text-2xl sm:text-3xl font-bold text-blue-600 tracking-tight">
+                              {totalHours.toFixed(1)}
+                            </div>
+                            <div className="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              ore
+                            </div>
                           </div>
-                        )}
-                      </div>
+                          {dayEntry?.notes && (
+                            <div className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2 break-words px-1 text-center">
+                              {dayEntry.notes}
+                            </div>
+                          )}
+                        </div>
+                      )
                     ) : (
                       <div className="flex-1 flex items-center justify-center">
                         <span className="text-[10px] sm:text-xs text-gray-300">
@@ -637,6 +826,33 @@ export default function EmployeeDashboard({
 
               {/* Modal Body */}
               <div className="space-y-5 p-6 pb-5 overflow-y-auto flex-1">
+                {/* Day type selector */}
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-semibold text-gray-700">Tipo di giornata</span>
+                  <select
+                    value={modalForm.dayType}
+                    onChange={(e) => setModalForm(f => ({ ...f, dayType: e.target.value as "normal" | "ferie" | "malattia" }))}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                  >
+                    <option value="normal">Normale</option>
+                    <option value="ferie">Ferie</option>
+                    <option value="malattia">Malattia</option>
+                  </select>
+                </label>
+
+                {/* Medical certificate input - only show for malattia */}
+                {modalForm.dayType === "malattia" && (
+                  <label className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-gray-700">Numero certificato medico</span>
+                    <input
+                      type="text"
+                      value={modalForm.medicalCertificate}
+                      onChange={(e) => setModalForm(f => ({ ...f, medicalCertificate: e.target.value }))}
+                      placeholder="Inserisci il numero del certificato..."
+                      className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                    />
+                  </label>
+                )}
                 {/* Morning shift */}
                 <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 shadow-sm">
                   <div className="mb-3 flex items-center gap-2">
@@ -644,6 +860,17 @@ export default function EmployeeDashboard({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <h3 className="text-sm font-bold text-blue-900">Turno Mattina</h3>
+                  </div>
+                  <div className="mb-3">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={modalForm.isMorningPermesso}
+                        onChange={(e) => setModalForm(f => ({ ...f, isMorningPermesso: e.target.checked }))}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-xs font-medium text-blue-800">Permesso (non conteggiato come lavoro)</span>
+                    </label>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <label className="flex flex-col gap-2">
@@ -675,6 +902,9 @@ export default function EmployeeDashboard({
                     <span className="font-medium text-blue-700">Durata:</span>
                     <span className="font-bold text-blue-900">{calculatedHours.morning.toFixed(2)} ore</span>
                   </p>
+                  {modalForm.isMorningPermesso && (
+                    <p className="mt-2 text-xs text-blue-700">Queste ore saranno conteggiate come permesso.</p>
+                  )}
                 </div>
 
                 {/* Afternoon shift */}
@@ -684,6 +914,17 @@ export default function EmployeeDashboard({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
                     <h3 className="text-sm font-bold text-orange-900">Turno Pomeriggio</h3>
+                  </div>
+                  <div className="mb-3">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={modalForm.isAfternoonPermesso}
+                        onChange={(e) => setModalForm(f => ({ ...f, isAfternoonPermesso: e.target.checked }))}
+                        className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                      />
+                      <span className="text-xs font-medium text-orange-800">Permesso (non conteggiato come lavoro)</span>
+                    </label>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <label className="flex flex-col gap-2">
@@ -715,26 +956,36 @@ export default function EmployeeDashboard({
                     <span className="font-medium text-orange-700">Durata:</span>
                     <span className="font-bold text-orange-900">{calculatedHours.afternoon.toFixed(2)} ore</span>
                   </p>
+                  {modalForm.isAfternoonPermesso && (
+                    <p className="mt-2 text-xs text-orange-700">Queste ore saranno conteggiate come permesso.</p>
+                  )}
                 </div>
 
                 {/* Summary */}
                 <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm">
+                  {modalForm.dayType !== "normal" && (
+                    <div className="mb-3 p-3 rounded-lg bg-green-50 border border-green-200">
+                      <p className="text-sm font-medium text-green-800">
+                        Questa giornata sarà salvata come {modalForm.dayType === "ferie" ? "ferie" : "malattia"} (0 ore lavorate).
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-gray-700">Ore totali:</span>
-                      <span className="text-2xl font-bold text-blue-600">{calculatedHours.total.toFixed(2)}</span>
+                      <span className="text-2xl font-bold text-blue-600">{modalForm.dayType !== "normal" ? "0.00" : calculatedHours.totalWorked.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center border-t border-blue-100 pt-2">
                       <span className="font-medium text-gray-600">Ore regolari:</span>
-                      <span className="font-bold text-gray-900">{calculatedHours.regular.toFixed(2)}</span>
+                      <span className="font-bold text-gray-900">{modalForm.dayType !== "normal" ? "0.00" : calculatedHours.regular.toFixed(2)}</span>
                     </div>
-                    {calculatedHours.overtime > 0 && (
+                    {calculatedHours.overtime > 0 && modalForm.dayType === "normal" && (
                       <div className="flex justify-between items-center border-t border-orange-100 pt-2">
                         <span className="font-medium text-orange-700">Straordinario:</span>
                         <span className="font-bold text-orange-600">{calculatedHours.overtime.toFixed(2)}</span>
                       </div>
                     )}
-                    {calculatedHours.permesso > 0 && (
+                    {calculatedHours.permesso > 0 && modalForm.dayType === "normal" && (
                       <div className="flex justify-between items-center border-t border-yellow-100 pt-2">
                         <span className="font-medium text-yellow-700">Permesso:</span>
                         <span className="font-bold text-yellow-600">{calculatedHours.permesso.toFixed(2)}</span>
@@ -785,14 +1036,60 @@ export default function EmployeeDashboard({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSaving || calculatedHours.total === 0}
+                  disabled={isSaving || (modalForm.dayType === "normal" && calculatedHours.totalWorked === 0)}
                   className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
                 >
-                  {isSaving ? "Salvataggio..." : "Salva"}
+                  {isSaving ? "Salvataggio..." : modalForm.dayType === "ferie" ? "Salva Ferie" : modalForm.dayType === "malattia" ? "Salva Malattia" : "Salva"}
                 </button>
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Context Menu */}
+      {contextMenu?.visible && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg py-1"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={() => setContextMenu(null)}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setContextMenu(null);
+              // Set selectedDate for delete
+              setSelectedDate(contextMenu.date);
+              handleFerie(contextMenu.date);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Ferie
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setContextMenu(null);
+              const date = contextMenu.date;
+              const entry = entries.find(e => e.workDate === date);
+              if (!entry) return;
+              if (!confirm("Sei sicuro di voler eliminare questo inserimento?")) return;
+              fetch(`/api/hours?id=${entry.id}`, { method: "DELETE" })
+                .then(response => {
+                  if (response.ok) {
+                    setEntries(current => current.filter(e => e.id !== entry.id));
+                    setTimeout(() => setIsRefetching(true), 200);
+                  } else {
+                    alert("Errore nell'eliminazione");
+                  }
+                })
+                .catch(() => alert("Errore nell'eliminazione"));
+            }}
+            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100"
+          >
+            Elimina
+          </button>
         </div>
       )}
     </div>
