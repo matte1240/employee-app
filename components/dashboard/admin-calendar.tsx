@@ -5,6 +5,7 @@ import { format, startOfMonth } from "date-fns";
 import { useRouter } from "next/navigation";
 import Calendar, { type TimeEntryDTO } from "./calendar";
 import type { User } from "@/types/models";
+import { calculateTotalsFromEntries } from "@/lib/calculations";
 
 // Minimal user type for admin calendar (only needs id, name, email)
 type UserMinimal = Pick<User, "id" | "name" | "email">;
@@ -57,16 +58,8 @@ export default function AdminCalendar({
         const response = await fetch(`/api/hours?userId=${selectedUserId}&from=${fromDate}`);
         if (response.ok) {
           const data: TimeEntryDTO[] = await response.json();
-          const newTotalHours = data.reduce((sum, entry) => sum + (entry.hoursWorked ?? 0) + (entry.overtimeHours ?? 0), 0);
-          const newTotalOvertimeHours = data.reduce((sum, entry) => sum + (entry.overtimeHours ?? 0), 0);
-          const newTotalPermFerieHours = data.reduce((sum, entry) => sum + (entry.permessoHours ?? 0) + (entry.vacationHours ?? 0), 0);
-          const newTotalSicknessHours = data.reduce((sum, entry) => sum + (entry.sicknessHours ?? 0), 0);
-          setCurrentTotals({
-            totalHours: newTotalHours,
-            totalOvertimeHours: newTotalOvertimeHours,
-            totalPermFerieHours: newTotalPermFerieHours,
-            totalSicknessHours: newTotalSicknessHours,
-          });
+          const newTotals = calculateTotalsFromEntries(data);
+          setCurrentTotals(newTotals);
         }
       } catch (error) {
         console.error('Error fetching latest entries:', error);
@@ -84,17 +77,8 @@ export default function AdminCalendar({
 
   const handleEntrySaved = useCallback((updatedEntries: TimeEntryDTO[]) => {
     // Recalculate totals from updated entries
-    const newTotalHours = updatedEntries.reduce((sum, entry) => sum + (entry.hoursWorked ?? 0) + (entry.overtimeHours ?? 0), 0);
-    const newTotalOvertimeHours = updatedEntries.reduce((sum, entry) => sum + (entry.overtimeHours ?? 0), 0);
-    const newTotalPermFerieHours = updatedEntries.reduce((sum, entry) => sum + (entry.permessoHours ?? 0) + (entry.vacationHours ?? 0), 0);
-    const newTotalSicknessHours = updatedEntries.reduce((sum, entry) => sum + (entry.sicknessHours ?? 0), 0);
-
-    setCurrentTotals({
-      totalHours: newTotalHours,
-      totalOvertimeHours: newTotalOvertimeHours,
-      totalPermFerieHours: newTotalPermFerieHours,
-      totalSicknessHours: newTotalSicknessHours,
-    });
+    const newTotals = calculateTotalsFromEntries(updatedEntries);
+    setCurrentTotals(newTotals);
   }, []);
 
   return (

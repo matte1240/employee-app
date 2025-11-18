@@ -3,6 +3,7 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { findUserByEmail, isAdmin } from "@/lib/user-utils";
 
 type UserRole = "EMPLOYEE" | "ADMIN";
 
@@ -24,7 +25,7 @@ const createUserSchema = z.object({
 export async function GET() {
   const session = await getAuthSession();
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !isAdmin(session)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -63,7 +64,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await getAuthSession();
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !isAdmin(session)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -74,10 +75,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const existing = await prisma.user.findUnique({
-    where: { email: parsed.data.email },
-    select: { id: true },
-  });
+  const existing = await findUserByEmail(parsed.data.email);
 
   if (existing) {
     return NextResponse.json({ error: "Email already in use" }, { status: 409 });

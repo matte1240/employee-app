@@ -3,6 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { findUserByEmail, isAdmin } from "@/lib/user-utils";
 
 // Schema di validazione per la creazione utente (versione DEV con password manuale)
 const createUserSchema = z.object({
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
 
     // Verifica autenticazione
     const session = await getAuthSession();
-    if (!session || session.user.role !== "ADMIN") {
+    if (!session || !isAdmin(session)) {
       return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
     }
 
@@ -43,9 +44,7 @@ export async function POST(request: Request) {
     const { name, email, password, role } = parsed.data;
 
     // Verifica che l'email non esista già
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    const existingUser = await findUserByEmail(email);
 
     if (existingUser) {
       return NextResponse.json(

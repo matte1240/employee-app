@@ -3,6 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { findUserById, isAdmin } from "@/lib/user-utils";
 
 // Schema di validazione per il reset password (versione DEV con password manuale)
 const resetPasswordSchema = z.object({
@@ -25,7 +26,7 @@ export async function POST(
 
     // Verifica autenticazione
     const session = await getAuthSession();
-    if (!session || session.user.role !== "ADMIN") {
+    if (!session || !isAdmin(session)) {
       return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
     }
 
@@ -45,9 +46,7 @@ export async function POST(
     const { newPassword } = parsed.data;
 
     // Verifica che l'utente esista
-    const user = await prisma.user.findUnique({
-      where: { id },
-    });
+    const user = await findUserById(id);
 
     if (!user) {
       return NextResponse.json(

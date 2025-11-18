@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import LogoutButton from "@/components/logout-button";
 import type { TimeEntryDTO } from "@/types/models";
+import { calculateHours, TIME_OPTIONS } from "@/lib/time-utils";
+import { isDateEditable as isDateEditableUtil } from "@/lib/date-utils";
 
 // Re-export for backward compatibility
 export type { TimeEntryDTO };
@@ -43,29 +45,7 @@ type ModalFormState = {
   isAfternoonPermesso: boolean;
 };
 
-// Helper function to calculate hours between two times
-function calculateHours(start: string, end: string): number {
-  if (!start || !end) return 0;
-  const [startHour, startMin] = start.split(":").map(Number);
-  const [endHour, endMin] = end.split(":").map(Number);
-  const startMinutes = startHour * 60 + startMin;
-  const endMinutes = endHour * 60 + endMin;
-  return Math.max(0, (endMinutes - startMinutes) / 60);
-}
 
-// Generate time options from 06:00 to 21:00 with 30-minute intervals
-function generateTimeOptions(): string[] {
-  const options: string[] = [];
-  for (let hour = 6; hour <= 21; hour++) {
-    options.push(`${hour.toString().padStart(2, "0")}:00`);
-    if (hour < 21) {
-      options.push(`${hour.toString().padStart(2, "0")}:30`);
-    }
-  }
-  return options;
-}
-
-const TIME_OPTIONS = generateTimeOptions();
 
 export default function EmployeeDashboard({
   initialEntries,
@@ -104,6 +84,44 @@ export default function EmployeeDashboard({
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{x: number, y: number, date: string, visible: boolean} | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  // Unified function to fetch entries
+  const fetchEntries = async (signal?: AbortSignal) => {
+    setIsFetching(true);
+    setError(null);
+    try {
+      const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+      const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+      const url = targetUserId
+        ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
+        : `/api/hours?from=${from}&to=${to}`;
+      const response = await fetch(url, {
+        signal,
+      });
+
+      if (response.status === 401) {
+        router.push("/");
+        return;
+      }
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        setError(payload?.error ?? "Failed to load entries.");
+        return;
+      }
+
+      setEntries(payload as TimeEntryDTO[]);
+      onEntrySaved?.(payload as TimeEntryDTO[]);
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setError("Unexpected error while loading entries.");
+      }
+    } finally {
+      setIsFetching(false);
+      setIsRefetching(false);
+    }
+  };
 
   // Close context menu when clicking outside
   useEffect(() => {
@@ -173,44 +191,7 @@ export default function EmployeeDashboard({
     if (!isRefetching) return;
 
     const controller = new AbortController();
-    const fetchEntries = async () => {
-      setIsFetching(true);
-      setError(null);
-      try {
-        const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-        const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-        const url = targetUserId
-          ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
-          : `/api/hours?from=${from}&to=${to}`;
-        const response = await fetch(url, {
-          signal: controller.signal,
-        });
-
-        if (response.status === 401) {
-          router.push("/");
-          return;
-        }
-
-        const payload = await response.json();
-
-        if (!response.ok) {
-          setError(payload?.error ?? "Failed to load entries.");
-          return;
-        }
-
-        setEntries(payload as TimeEntryDTO[]);
-        onEntrySaved?.(payload as TimeEntryDTO[]);
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          setError("Unexpected error while loading entries.");
-        }
-      } finally {
-        setIsFetching(false);
-        setIsRefetching(false);
-      }
-    };
-
-    fetchEntries();
+    fetchEntries(controller.signal);
 
     return () => controller.abort();
   }, [isRefetching, currentMonth, router, targetUserId, onEntrySaved]);
@@ -222,43 +203,7 @@ export default function EmployeeDashboard({
     }
 
     const controller = new AbortController();
-    const fetchEntries = async () => {
-      setIsFetching(true);
-      setError(null);
-      try {
-        const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-        const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-        const url = targetUserId
-          ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
-          : `/api/hours?from=${from}&to=${to}`;
-        const response = await fetch(url, {
-          signal: controller.signal,
-        });
-
-        if (response.status === 401) {
-          router.push("/");
-          return;
-        }
-
-        const payload = await response.json();
-
-        if (!response.ok) {
-          setError(payload?.error ?? "Failed to load entries.");
-          return;
-        }
-
-        setEntries(payload as TimeEntryDTO[]);
-        onEntrySaved?.(payload as TimeEntryDTO[]);
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          setError("Unexpected error while loading entries.");
-        }
-      } finally {
-        setIsFetching(false);
-      }
-    };
-
-    fetchEntries();
+    fetchEntries(controller.signal);
 
     return () => controller.abort();
   }, [currentMonth, router, targetUserId, onEntrySaved]);
@@ -339,21 +284,7 @@ export default function EmployeeDashboard({
 
   // Check if date is editable
   const isDateEditable = (date: Date): boolean => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const checkDate = new Date(date);
-    checkDate.setHours(0, 0, 0, 0);
-    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    
-    // Block Sundays (0 = Sunday) only for employees
-    if (!isAdmin) {
-      const dayOfWeek = checkDate.getDay();
-      if (dayOfWeek === 0) {
-        return false;
-      }
-    }
-    
-    return checkDate >= currentMonthStart && checkDate <= today;
+    return isDateEditableUtil(date, isAdmin);
   };
 
   const handleDayClick = (day: Date) => {

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { sendPasswordResetLinkEmail } from "@/lib/email";
+import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/token-utils";
+import { findUserById, isAdmin } from "@/lib/user-utils";
 
 export async function POST(
   request: Request,
@@ -14,7 +15,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (session.user.role !== "ADMIN") {
+  if (!isAdmin(session)) {
     return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
 
@@ -22,34 +23,17 @@ export async function POST(
     const { id: userId } = await params;
 
     // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const existingUser = await findUserById(userId);
 
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    const { resetToken, hashedToken } = generateResetToken();
     
     // Token expires in 24 hours (admin reset has longer expiry)
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    // Delete any existing reset tokens for this user
-    await prisma.verificationToken.deleteMany({
-      where: { identifier: existingUser.email },
-    });
-
-    // Create new reset token
-    await prisma.verificationToken.create({
-      data: {
-        identifier: existingUser.email,
-        token: hashedToken,
-        expires,
-      },
-    });
+    await createVerificationToken(existingUser.email, hashedToken, 24);
 
     // Send email with reset link
     try {
@@ -66,9 +50,7 @@ export async function POST(
       console.error("⚠️ Failed to send password reset email:", emailError);
       
       // Cleanup token if email fails
-      await prisma.verificationToken.deleteMany({
-        where: { identifier: existingUser.email },
-      });
+      await deleteVerificationTokens(existingUser.email);
       
       return NextResponse.json({
         error: "Failed to send email notification. Password reset not initiated.",
