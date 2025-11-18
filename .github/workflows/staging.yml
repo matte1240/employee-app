@@ -105,8 +105,8 @@ jobs:
               exit 1
             fi
             
-            # Cleanup old images
-            docker image prune -f
+            # Cleanup old images (including unused tagged images)
+            docker image prune -a -f
             
             echo "🎉 Staging deployment completed!"
       

@@ -168,9 +168,9 @@ jobs:
             fi
             echo ""
             
-            # Cleanup old images
+            # Cleanup old images (including unused tagged images)
             echo "🧹 Cleaning up old images..."
-            docker image prune -f
+            docker image prune -a -f
             echo ""
             
             echo "=========================================="
