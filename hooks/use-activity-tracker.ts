@@ -18,6 +18,13 @@ export function useActivityTracker() {
     lastActivityRef.current = Date.now();
   }, []);
 
+  // Redirect to login if session becomes invalid (e.g. password change or server-side expiration)
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/");
+    }
+  }, [status, router]);
+
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
 

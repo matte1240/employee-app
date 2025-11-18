@@ -27,7 +27,7 @@ export function getHolidayName(date: Date | string): string | undefined {
     if (Array.isArray(holiday)) {
         return holiday[0].name;
     }
-    return (holiday as any).name;
+    return (holiday as { name: string }).name;
   }
   return undefined;
 }
