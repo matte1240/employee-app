@@ -8,9 +8,16 @@ import { useRouter } from "next/navigation";
  * Hook to track user activity and auto-logout after 30 minutes of inactivity
  */
 export function useActivityTracker() {
-  const { data: session, update, status } = useSession();
+  const { update, status } = useSession();
   const router = useRouter();
-  const lastActivityRef = useRef<number>(Date.now());
+  // Use a lazy initializer or just a constant if it doesn't need to be the exact mount time
+  // But Date.now() is impure. We can use useEffect to set the initial time.
+  const lastActivityRef = useRef<number>(0);
+  
+  useEffect(() => {
+    lastActivityRef.current = Date.now();
+  }, []);
+
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
 

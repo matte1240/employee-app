@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 interface Backup {
@@ -18,11 +18,7 @@ export function ManageServer() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBackups();
-  }, []);
-
-  const fetchBackups = async () => {
+  const fetchBackups = useCallback(async () => {
     try {
       setError(null);
       const response = await fetch("/api/db/list");
@@ -43,7 +39,11 @@ export function ManageServer() {
       setError(err instanceof Error ? err.message : "Failed to load backups");
       console.error("Error fetching backups:", err);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    fetchBackups();
+  }, [fetchBackups]);
 
   const handleCreateBackup = async () => {
     try {

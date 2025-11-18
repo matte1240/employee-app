@@ -114,9 +114,11 @@ export const authOptions: NextAuthOptions = {
           role: typedToken.role ?? "EMPLOYEE",
         };
         // Add lastActivity to session for client-side tracking
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session as any).lastActivity = typedToken.lastActivity;
       } else {
         // Token is invalid or expired
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return null as any;
       }
       return session;

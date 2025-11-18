@@ -64,6 +64,7 @@ export default function LoginForm() {
       setForgotPasswordMessage(data.message);
       setForgotPasswordEmail("");
     } catch (error) {
+      console.error(error);
       setForgotPasswordMessage("Errore di connessione. Riprova più tardi.");
     } finally {
       setIsSendingEmail(false);

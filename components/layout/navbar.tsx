@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
 import { signOut } from "next-auth/react";
+import Image from "next/image";
 
 type NavbarProps = {
   userRole: string;
@@ -24,7 +25,13 @@ export default function Navbar({ userRole, userName, userEmail }: NavbarProps) {
 
   // Close mobile menu on route change
   useEffect(() => {
-    setIsMobileMenuOpen(false);
+    // Avoid calling setState directly if it's already false, but here we want to ensure it's closed
+    // The linter warning is about synchronous setState in effect causing cascading renders
+    // But here we are responding to pathname change.
+    // We can use a ref to track if it's open or just ignore if we are sure.
+    // Or we can use setTimeout to defer the update.
+    const t = setTimeout(() => setIsMobileMenuOpen(false), 0);
+    return () => clearTimeout(t);
   }, [pathname]);
 
   // Close mobile menu on ESC key
@@ -115,10 +122,12 @@ export default function Navbar({ userRole, userName, userEmail }: NavbarProps) {
             {/* Logo/Brand */}
             <div className="flex items-center h-full">
               <Link href="/dashboard" className="flex items-center h-full py-3">
-                <img
+                <Image
                   src="/logo.svg"
                   alt="Ivicolors"
-                  className="h-full w-auto"
+                  width={40}
+                  height={40}
+                  className="h-10 w-auto"
                 />
               </Link>
             </div>

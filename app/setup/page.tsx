@@ -22,7 +22,7 @@ export default async function SetupPage() {
             Welcome to Work Hours Tracker
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Let's set up your first administrator account to get started.
+            Let&apos;s set up your first administrator account to get started.
           </p>
         </div>
         <SetupForm />

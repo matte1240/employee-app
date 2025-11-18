@@ -128,6 +128,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         setIsCreatingUserModalOpen(false);
         router.refresh();
       } catch (err) {
+        console.error(err);
         setError("Si è verificato un errore imprevisto");
       }
     });
@@ -171,6 +172,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         setEditingUser(null);
         router.refresh();
       } catch (err) {
+        console.error(err);
         setError("Si è verificato un errore imprevisto");
       }
     });
@@ -200,6 +202,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
         setDeletingUser(null);
         router.refresh();
       } catch (err) {
+        console.error(err);
         setError("Si è verificato un errore imprevisto");
       }
     });
@@ -246,6 +249,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
           setResetPasswordForm({ newPassword: "", confirmPassword: "" });
           setManualPasswordReset(false); // Reset toggle
         } catch (err) {
+          console.error(err);
           setError("Si è verificato un errore imprevisto");
         }
       });
@@ -268,6 +272,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
           setSuccess(`Email di reset inviata a ${resettingPasswordUser.email}!`);
           setResettingPasswordUser(null);
         } catch (err) {
+          console.error(err);
           setError("Si è verificato un errore imprevisto");
         }
       });
@@ -289,7 +294,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
             setError(null);
             setSuccess(null);
           }}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 cursor-pointer"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -377,7 +382,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleEditClick(user)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                        className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 cursor-pointer"
                         title="Modifica utente"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -392,7 +397,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                           setError(null);
                           setSuccess(null);
                         }}
-                        className="inline-flex items-center gap-1 rounded-lg bg-yellow-50 px-3 py-2 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-100"
+                        className="inline-flex items-center gap-1 rounded-lg bg-yellow-50 px-3 py-2 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-100 cursor-pointer"
                         title="Reimposta password"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -407,7 +412,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                           setSuccess(null);
                         }}
                         disabled={user.id === currentUserId}
-                        className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                         title={user.id === currentUserId ? "Non puoi eliminare il tuo account" : "Elimina utente"}
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -511,7 +516,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     Imposta password manualmente
                   </span>
                   <p className="text-xs text-blue-700 mt-1">
-                    Quando attivo, puoi impostare la password direttamente senza inviare email all'utente
+                    Quando attivo, puoi impostare la password direttamente senza inviare email all&apos;utente
                   </p>
                 </label>
               </div>
@@ -558,7 +563,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                         Modalità DEV Attiva
                       </p>
                       <p className="text-amber-800">
-                        Imposti manualmente la password. Nessuna email verrà inviata all'utente.
+                        Imposti manualmente la password. Nessuna email verrà inviata all&apos;utente.
                         Questa modalità è da usare solo per test e sviluppo.
                       </p>
                     </div>
@@ -593,14 +598,14 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="flex-1 rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-green-700 hover:to-green-800 disabled:cursor-not-allowed disabled:from-green-300 disabled:to-green-400"
+                  className="flex-1 rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-green-700 hover:to-green-800 disabled:cursor-not-allowed disabled:from-green-300 disabled:to-green-400 cursor-pointer"
                 >
                   {isCreating ? "Creazione..." : "Crea Utente"}
                 </button>
@@ -676,7 +681,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 </select>
                 {editingUser?.id === currentUserId && (
                   <p className="mt-2 text-xs text-amber-600">
-                    Non puoi modificare il tuo ruolo per evitare di perdere l'accesso amministratore
+                    Non puoi modificare il tuo ruolo per evitare di perdere l&apos;accesso amministratore
                   </p>
                 )}
               </div>
@@ -700,14 +705,14 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
+                  className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400 cursor-pointer"
                 >
                   {isUpdating ? "Aggiornamento..." : "Aggiorna Utente"}
                 </button>
@@ -749,7 +754,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900">Sei sicuro?</h3>
                   <p className="mt-1 text-sm text-gray-600">
-                    Questo eliminerà permanentemente l'utente <span className="font-semibold">{deletingUser.email}</span> e tutte le sue registrazioni orarie. Questa azione non può essere annullata.
+                    Questo eliminerà permanentemente l&apos;utente <span className="font-semibold">{deletingUser.email}</span> e tutte le sue registrazioni orarie. Questa azione non può essere annullata.
                   </p>
                 </div>
               </div>
@@ -773,14 +778,14 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
                 >
                   Annulla
                 </button>
                 <button
                   onClick={handleDeleteUser}
                   disabled={isDeleting}
-                  className="flex-1 rounded-lg bg-gradient-to-r from-red-600 to-red-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-red-700 hover:to-red-800 disabled:cursor-not-allowed disabled:from-red-300 disabled:to-red-400"
+                  className="flex-1 rounded-lg bg-gradient-to-r from-red-600 to-red-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-red-700 hover:to-red-800 disabled:cursor-not-allowed disabled:from-red-300 disabled:to-red-400 cursor-pointer"
                 >
                   {isDeleting ? "Eliminazione..." : "Elimina Utente"}
                 </button>
@@ -848,7 +853,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     Imposta password manualmente
                   </span>
                   <p className="text-xs text-blue-700 mt-1">
-                    Quando attivo, puoi impostare la password direttamente senza inviare email all'utente
+                    Quando attivo, puoi impostare la password direttamente senza inviare email all&apos;utente
                   </p>
                 </label>
               </div>
@@ -908,14 +913,14 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isResettingPassword}
-                  className="flex-1 rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-yellow-700 hover:to-yellow-800 disabled:cursor-not-allowed disabled:from-yellow-300 disabled:to-yellow-400"
+                  className="flex-1 rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-yellow-700 hover:to-yellow-800 disabled:cursor-not-allowed disabled:from-yellow-300 disabled:to-yellow-400 cursor-pointer"
                 >
                   {isResettingPassword 
                     ? "Reimpostazione..." 

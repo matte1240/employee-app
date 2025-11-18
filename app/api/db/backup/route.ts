@@ -4,11 +4,12 @@ import { authOptions } from "@/lib/auth";
 import { exec } from "child_process";
 import { promisify } from "util";
 import path from "path";
+import fs from "fs";
 import { isAdmin } from "@/lib/utils/user-utils";
 
 const execAsync = promisify(exec);
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     // Check authentication and admin role
     const session = await getServerSession(authOptions);
@@ -24,7 +25,6 @@ export async function POST(req: NextRequest) {
     const filename = `backup-${timestamp}.sql`;
     
     // Ensure backups directory exists
-    const fs = require("fs");
     const backupsDir = path.join(process.cwd(), "backups", "database");
     if (!fs.existsSync(backupsDir)) {
       fs.mkdirSync(backupsDir, { recursive: true });
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const command = `pg_dump "${cleanUrl}" -F p -b -v --clean --if-exists -f "${backupPath}"`;
 
     console.log("Executing backup command");
-    const { stdout, stderr } = await execAsync(command);    if (stderr && !stderr.includes("successfully")) {
+    const { stderr } = await execAsync(command);    if (stderr && !stderr.includes("successfully")) {
       console.error("Backup stderr:", stderr);
     }
 
@@ -102,8 +102,7 @@ export async function GET(req: NextRequest) {
       sanitizedFilename
     );
 
-    const fs = require("fs").promises;
-    const fileBuffer = await fs.readFile(backupPath);
+    const fileBuffer = await fs.promises.readFile(backupPath);
 
     return new NextResponse(fileBuffer, {
       headers: {

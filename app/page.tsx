@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import LoginForm from "@/components/auth/login-form";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import Image from "next/image";
 
 // Force dynamic rendering to check database at runtime
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ export default async function Home({
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-16">
-            <img src="/logo.svg" alt="Ivicolors" className="h-14" />
+            <Image src="/logo.svg" alt="Ivicolors" width={56} height={56} className="h-14 w-auto" />
           </div>
           <h1 className="text-5xl font-bold text-slate-900 leading-tight mb-6">
             Employee Work Hours Tracker
@@ -93,7 +94,7 @@ export default async function Home({
         <div className="w-full max-w-md relative z-10">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 text-center">
-            <img src="/logo.svg" alt="Ivicolors" className="h-12 mx-auto" />
+            <Image src="/logo.svg" alt="Ivicolors" width={48} height={48} className="h-12 mx-auto w-auto" />
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">

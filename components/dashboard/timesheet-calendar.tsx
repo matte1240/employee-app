@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, useCallback } from "react";
 import {
   addMonths,
   eachDayOfInterval,
@@ -87,7 +87,7 @@ export default function TimesheetCalendar({
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
   // Unified function to fetch entries
-  const fetchEntries = async (signal?: AbortSignal) => {
+  const fetchEntries = useCallback(async (signal?: AbortSignal) => {
     setIsFetching(true);
     setError(null);
     try {
@@ -108,21 +108,20 @@ export default function TimesheetCalendar({
       const payload = await response.json();
 
       if (!response.ok) {
-        setError(payload?.error ?? "Failed to load entries.");
-        return;
+        throw new Error(payload?.error ?? "Failed to load entries.");
       }
 
       setEntries(payload as TimeEntryDTO[]);
       onEntrySaved?.(payload as TimeEntryDTO[]);
     } catch (err) {
-      if ((err as Error).name !== "AbortError") {
-        setError("Unexpected error while loading entries.");
-      }
+      if (err instanceof Error && err.name === 'AbortError') return;
+      console.error("Error fetching entries:", err);
+      setError("Failed to load entries");
     } finally {
       setIsFetching(false);
       setIsRefetching(false);
     }
-  };
+  }, [currentMonth, targetUserId, router, onEntrySaved]);
 
   // Close context menu when clicking outside
   useEffect(() => {
@@ -195,7 +194,7 @@ export default function TimesheetCalendar({
     fetchEntries(controller.signal);
 
     return () => controller.abort();
-  }, [isRefetching, currentMonth, router, targetUserId, onEntrySaved]);
+  }, [isRefetching, fetchEntries, onEntrySaved]);
 
   useEffect(() => {
     if (!hasFetched.current) {
@@ -207,7 +206,7 @@ export default function TimesheetCalendar({
     fetchEntries(controller.signal);
 
     return () => controller.abort();
-  }, [currentMonth, router, targetUserId, onEntrySaved]);
+  }, [fetchEntries, onEntrySaved]);
 
   const entriesByDay = useMemo(() => {
     const map = new Map<string, TimeEntryDTO[]>();
