@@ -15,10 +15,10 @@ import {
 } from "date-fns";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import LogoutButton from "@/components/logout-button";
+import LogoutButton from "@/components/auth/logout-button";
 import type { TimeEntryDTO } from "@/types/models";
-import { calculateHours, TIME_OPTIONS } from "@/lib/time-utils";
-import { isDateEditable as isDateEditableUtil } from "@/lib/date-utils";
+import { calculateHours, TIME_OPTIONS } from "@/lib/utils/time-utils";
+import { isDateEditable as isDateEditableUtil } from "@/lib/utils/date-utils";
 
 // Re-export for backward compatibility
 export type { TimeEntryDTO };

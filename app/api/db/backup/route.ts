@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { exec } from "child_process";
 import { promisify } from "util";
 import path from "path";
-import { isAdmin } from "@/lib/user-utils";
+import { isAdmin } from "@/lib/utils/user-utils";
 
 const execAsync = promisify(exec);
 

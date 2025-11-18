@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
-import { isAdmin } from "@/lib/user-utils";
+import { isAdmin } from "@/lib/utils/user-utils";
 
 export default async function DashboardPage() {
   const session = await getAuthSession();

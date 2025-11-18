@@ -5,7 +5,7 @@ import { format, startOfMonth } from "date-fns";
 import { useRouter } from "next/navigation";
 import Calendar, { type TimeEntryDTO } from "./calendar";
 import type { User } from "@/types/models";
-import { calculateTotalsFromEntries } from "@/lib/calculations";
+import { calculateTotalsFromEntries } from "@/lib/utils/calculations";
 
 // Minimal user type for admin calendar (only needs id, name, email)
 type UserMinimal = Pick<User, "id" | "name" | "email">;

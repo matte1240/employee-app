@@ -5,8 +5,8 @@ import bcrypt from "bcryptjs";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { sendWelcomeSetupEmail } from "@/lib/email";
-import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/token-utils";
-import { findUserByEmail, isAdmin } from "@/lib/user-utils";
+import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/utils/token-utils";
+import { findUserByEmail, isAdmin } from "@/lib/utils/user-utils";
 
 const createUserSchema = z.object({
   name: z.string().min(1, "Name is required"),

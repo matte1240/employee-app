@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import ExcelJS from "exceljs";
-import { isAdmin } from "@/lib/user-utils";
+import { isAdmin } from "@/lib/utils/user-utils";
 
 const exportSchema = z.object({
   userIds: z.array(z.string()),

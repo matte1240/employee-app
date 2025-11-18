@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
-import Navbar from "@/components/navbar";
-import ActivityTracker from "@/components/activity-tracker";
+import Navbar from "@/components/layout/navbar";
+import ActivityTracker from "@/components/features/activity-tracker";
 
 export default async function DashboardLayout({
   children,

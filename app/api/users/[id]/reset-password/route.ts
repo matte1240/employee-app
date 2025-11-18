@@ -4,8 +4,8 @@ import bcrypt from "bcryptjs";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { sendPasswordResetLinkEmail } from "@/lib/email";
-import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/token-utils";
-import { findUserById, isAdmin } from "@/lib/user-utils";
+import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/utils/token-utils";
+import { findUserById, isAdmin } from "@/lib/utils/user-utils";
 
 const resetPasswordSchema = z.object({
   newPassword: z.string().min(8, "Password must be at least 8 characters").optional(),

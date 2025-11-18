@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Roboto, Roboto_Mono } from "next/font/google";
-import AuthSessionProvider from "@/components/session-provider";
+import AuthSessionProvider from "@/components/auth/session-provider";
 import "./globals.css";
 
 const roboto = Roboto({

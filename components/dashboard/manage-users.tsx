@@ -8,7 +8,6 @@ import type { User, UserRole } from "@/types/models";
 type ManageUsersProps = {
   users: User[];
   currentUserId: string;
-  devMode?: boolean; // Controls whether to show DEV features (manual password setting)
 };
 
 type CreateUserForm = {
@@ -25,7 +24,7 @@ type EditUserForm = {
   role: UserRole;
 };
 
-export default function ManageUsers({ users, currentUserId, devMode = false }: ManageUsersProps) {
+export default function ManageUsers({ users, currentUserId }: ManageUsersProps) {
   const router = useRouter();
 
   // Modal states
@@ -72,9 +71,8 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
     setError(null);
     setSuccess(null);
 
-    // Validate password when manual password is enabled (either devMode or manualPasswordCreate)
-    const useManualPassword = devMode || manualPasswordCreate;
-    if (useManualPassword) {
+    // Validate password when manual password is enabled
+    if (manualPasswordCreate) {
       if (createForm.password !== createForm.confirmPassword) {
         setError("Le password non coincidono");
         return;
@@ -87,8 +85,8 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
 
     startCreating(async () => {
       try {
-        const endpoint = devMode ? "/api/users/create-dev" : "/api/users/create";
-        const body = useManualPassword
+        const endpoint = "/api/users/create";
+        const body = manualPasswordCreate
           ? {
               name: createForm.name,
               email: createForm.email,
@@ -114,7 +112,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
           return;
         }
 
-        const successMessage = useManualPassword
+        const successMessage = manualPasswordCreate
           ? `Utente ${createForm.email} creato con successo!`
           : `Utente ${createForm.email} creato! Riceverà un'email per impostare la password.`;
 
@@ -215,9 +213,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
     setError(null);
     setSuccess(null);
 
-    const useManualPassword = devMode || manualPasswordReset;
-
-    if (useManualPassword) {
+    if (manualPasswordReset) {
       // Manual password reset
       if (resetPasswordForm.newPassword !== resetPasswordForm.confirmPassword) {
         setError("Le password non coincidono");
@@ -230,9 +226,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
 
       startResettingPassword(async () => {
         try {
-          const endpoint = devMode 
-            ? `/api/users/${resettingPasswordUser.id}/reset-password-dev`
-            : `/api/users/${resettingPasswordUser.id}/reset-password`;
+          const endpoint = `/api/users/${resettingPasswordUser.id}/reset-password`;
             
           const response = await fetch(endpoint, {
             method: "POST",
@@ -286,13 +280,8 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Gestione Utenti{devMode ? " DEV" : ""}
+            Gestione Utenti
           </h2>
-          {devMode && (
-            <p className="mt-2 text-sm text-gray-600">
-              Modalità sviluppo: imposta le password manualmente (nessuna email verrà inviata)
-            </p>
-          )}
         </div>
         <button
           onClick={() => {
@@ -508,28 +497,26 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                 </select>
               </div>
 
-              {/* Manual Password Toggle (only show in production mode, not in dev mode) */}
-              {!devMode && (
-                <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="manualPasswordCreate"
-                    checked={manualPasswordCreate}
-                    onChange={(e) => setManualPasswordCreate(e.target.checked)}
-                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                  />
-                  <label htmlFor="manualPasswordCreate" className="flex-1 cursor-pointer">
-                    <span className="text-sm font-semibold text-blue-900">
-                      Imposta password manualmente
-                    </span>
-                    <p className="text-xs text-blue-700 mt-1">
-                      Quando attivo, puoi impostare la password direttamente senza inviare email all'utente
-                    </p>
-                  </label>
-                </div>
-              )}
+              {/* Manual Password Toggle */}
+              <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="manualPasswordCreate"
+                  checked={manualPasswordCreate}
+                  onChange={(e) => setManualPasswordCreate(e.target.checked)}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                />
+                <label htmlFor="manualPasswordCreate" className="flex-1 cursor-pointer">
+                  <span className="text-sm font-semibold text-blue-900">
+                    Imposta password manualmente
+                  </span>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Quando attivo, puoi impostare la password direttamente senza inviare email all'utente
+                  </p>
+                </label>
+              </div>
 
-              {(devMode || manualPasswordCreate) && (
+              {manualPasswordCreate && (
                 <>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -839,9 +826,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                     </p>
                     <p className="text-amber-800 font-medium">{resettingPasswordUser.email}</p>
                     <p className="text-amber-700 mt-2">
-                      {devMode
-                        ? "Modalità DEV: imposta manualmente la nuova password. Nessuna email verrà inviata."
-                        : manualPasswordReset
+                      {manualPasswordReset
                           ? "Imposta manualmente la nuova password. Nessuna email verrà inviata."
                           : "Verrà inviata un'email con il link per reimpostare la password."}
                     </p>
@@ -849,28 +834,26 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                 </div>
               </div>
 
-              {/* Manual Password Toggle (only show in production mode, not in dev mode) */}
-              {!devMode && (
-                <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="manualPasswordReset"
-                    checked={manualPasswordReset}
-                    onChange={(e) => setManualPasswordReset(e.target.checked)}
-                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                  />
-                  <label htmlFor="manualPasswordReset" className="flex-1 cursor-pointer">
-                    <span className="text-sm font-semibold text-blue-900">
-                      Imposta password manualmente
-                    </span>
-                    <p className="text-xs text-blue-700 mt-1">
-                      Quando attivo, puoi impostare la password direttamente senza inviare email all'utente
-                    </p>
-                  </label>
-                </div>
-              )}
+              {/* Manual Password Toggle */}
+              <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="manualPasswordReset"
+                  checked={manualPasswordReset}
+                  onChange={(e) => setManualPasswordReset(e.target.checked)}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                />
+                <label htmlFor="manualPasswordReset" className="flex-1 cursor-pointer">
+                  <span className="text-sm font-semibold text-blue-900">
+                    Imposta password manualmente
+                  </span>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Quando attivo, puoi impostare la password direttamente senza inviare email all'utente
+                  </p>
+                </label>
+              </div>
 
-              {(devMode || manualPasswordReset) && (
+              {manualPasswordReset && (
                 <>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -936,7 +919,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                 >
                   {isResettingPassword 
                     ? "Reimpostazione..." 
-                    : (devMode || manualPasswordReset) 
+                    : manualPasswordReset 
                       ? "Reimposta Password" 
                       : "Invia Email"}
                 </button>

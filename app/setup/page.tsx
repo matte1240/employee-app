@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import SetupForm from "@/components/setup-form";
+import SetupForm from "@/components/auth/setup-form";
 
 // Force dynamic rendering to avoid build-time database access
 export const dynamic = "force-dynamic";

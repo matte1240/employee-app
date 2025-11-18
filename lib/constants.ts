@@ -18,7 +18,6 @@ export const ROUTES = {
   DASHBOARD_EMPLOYEE_REPORTS: "/dashboard/employee-reports",
   DASHBOARD_PROFILE: "/dashboard/profile",
   DASHBOARD_USERS: "/dashboard/users",
-  DASHBOARD_USERS_DEV: "/dashboard/users-dev",
   DASHBOARD_CALENDAR: "/dashboard/calendar",
   DASHBOARD_REPORTS: "/dashboard/reports",
   DASHBOARD_MANAGE_SERVER: "/dashboard/manage-server",
@@ -32,7 +31,6 @@ export const API_ENDPOINTS = {
   AUTH_RESET_PASSWORD: "/api/auth/reset-password",
   AUTH_REQUEST_RESET: "/api/auth/request-reset",
   USERS: "/api/users",
-  USERS_CREATE_DEV: "/api/users/create-dev",
   HOURS: "/api/hours",
   ADMIN_STATS: "/api/admin/stats",
 } as const;

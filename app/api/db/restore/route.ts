@@ -6,7 +6,7 @@ import { promisify } from "util";
 import { writeFile, unlink } from "fs/promises";
 import path from "path";
 import prisma from "@/lib/prisma";
-import { isAdmin } from "@/lib/user-utils";
+import { isAdmin } from "@/lib/utils/user-utils";
 
 const execAsync = promisify(exec);
 

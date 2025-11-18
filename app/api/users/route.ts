@@ -3,7 +3,7 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { findUserByEmail, isAdmin } from "@/lib/user-utils";
+import { findUserByEmail, isAdmin } from "@/lib/utils/user-utils";
 
 type UserRole = "EMPLOYEE" | "ADMIN";
 

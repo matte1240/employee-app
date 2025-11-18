@@ -26,5 +26,5 @@ export default async function UsersPage() {
     },
   })) as User[];
 
-  return <ManageUsers users={users} currentUserId={session.user.id} devMode={false} />;
+  return <ManageUsers users={users} currentUserId={session.user.id} />;
 }

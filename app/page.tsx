@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import LoginForm from "@/components/login-form";
+import LoginForm from "@/components/auth/login-form";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
