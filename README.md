@@ -30,6 +30,7 @@ A modern, full-stack time tracking application built with **Next.js 16**, **Reac
 - ⏱️ **Auto Logout** - 30-minute inactivity timeout for security
 - 🎨 **Tailwind CSS v4** - Modern, responsive UI with smooth animations
 - 📱 **Mobile-Friendly** - Works seamlessly on desktop, tablet, and mobile
+- 📲 **Progressive Web App (PWA)** - Install on any device, works offline
 - 🐳 **Docker Ready** - Complete containerization with PostgreSQL and volumes
 
 ---
@@ -93,6 +94,7 @@ Detailed documentation is available in the `docs/` directory:
 - **[🚀 Deployment & Release Guide](docs/DEPLOYMENT.md)**: Docker setup, staging/production deployment, and release process.
 - **[🤝 Contributing Guide](docs/CONTRIBUTING.md)**: Development setup, branching strategy, and how to contribute.
 - **[⚙️ Configuration Guide](docs/CONFIGURATION.md)**: Email setup, environment variables, secrets, and backups.
+- **[📲 PWA Guide](docs/PWA.md)**: Progressive Web App features, installation, and offline capabilities.
 - **[📝 Changelog](docs/CHANGELOG.md)**: History of changes and versions.
 
 ---
