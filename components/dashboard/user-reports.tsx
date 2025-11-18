@@ -59,7 +59,9 @@ export default function UserReports({
 
   // Generate year/month options for picker
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const startYear = currentYear - 3;
+  const endYear = currentYear + 3;
+  const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i).reverse();
   const months = [
     "Gen", "Feb", "Mar", "Apr", "Mag", "Giu",
     "Lug", "Ago", "Set", "Ott", "Nov", "Dic"

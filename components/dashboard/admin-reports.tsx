@@ -192,9 +192,14 @@ export default function AdminReports({ users }: ExportDataProps) {
                     }}
                     className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   >
-                    {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(year => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
+                    {(() => {
+                      const currentYear = new Date().getFullYear();
+                      const startYear = currentYear - 3;
+                      const endYear = currentYear + 3;
+                      return Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i).reverse().map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ));
+                    })()}
                   </select>
                 </div>
                 <div className="mb-3">
