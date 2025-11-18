@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { endOfMonth, startOfMonth } from "date-fns";
 import prisma from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
-import EmployeeDashboard, {
+import Calendar, {
   type TimeEntryDTO,
-} from "@/components/dashboard/employee-dashboard";
+} from "@/components/dashboard/calendar";
 import AdminCalendar from "@/components/dashboard/admin-calendar";
 
 type PrismaEntry = {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { format, startOfMonth } from "date-fns";
 import { useRouter } from "next/navigation";
-import EmployeeDashboard, { type TimeEntryDTO } from "./employee-dashboard";
+import Calendar, { type TimeEntryDTO } from "./calendar";
 
 type User = {
   id: string;
@@ -261,8 +261,8 @@ export default function AdminCalendar({
         </div>
       </div>
 
-      {/* Employee Dashboard (Calendar) */}
-      <EmployeeDashboard
+      {/* Calendar Component */}
+      <Calendar
         initialEntries={initialEntries}
         userName={selectedUser.name || selectedUser.email}
         hideHeader={true}

@@ -3,7 +3,7 @@
 import { format } from "date-fns";
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import EmployeeDashboard, { type TimeEntryDTO } from "./employee-dashboard";
+import Calendar, { type TimeEntryDTO } from "./calendar";
 
 type UserAggregate = {
   id: string;
@@ -1186,7 +1186,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                 </div>
               </div>
             ) : (
-              <EmployeeDashboard
+              <Calendar
                 initialEntries={userEntries}
                 userName={selectedUser.name ?? selectedUser.email}
                 hideHeader={true}
@@ -1219,7 +1219,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                 </div>
               </div>
             ) : (
-              <EmployeeDashboard
+              <Calendar
                 initialEntries={userEntries}
                 userName={currentUser.name ?? currentUser.email}
                 hideHeader={true}
