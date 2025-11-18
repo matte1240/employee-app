@@ -240,18 +240,13 @@ export default function EmployeeDashboard({
     [entries]
   );
 
-  const totalPermesso = useMemo(
-    () => entries.reduce((sum, entry) => sum + (entry.permessoHours ?? 0), 0),
+  const totalPermFerie = useMemo(
+    () => entries.reduce((sum, entry) => sum + (entry.permessoHours ?? 0) + (entry.vacationHours ?? 0), 0),
     [entries]
   );
 
   const totalSickness = useMemo(
     () => entries.reduce((sum, entry) => sum + (entry.sicknessHours ?? 0), 0),
-    [entries]
-  );
-
-  const totalVacation = useMemo(
-    () => entries.reduce((sum, entry) => sum + (entry.vacationHours ?? 0), 0),
     [entries]
   );
 
@@ -300,7 +295,11 @@ export default function EmployeeDashboard({
     }
     
     if (!isDateEditable(day)) {
-      setError("È possibile inserire ore solo per il mese corrente fino ad oggi.");
+      const currentDay = new Date().getDate();
+      const errorMessage = currentDay <= 5
+        ? "È possibile inserire ore per il mese corrente fino ad oggi o per il mese precedente (fino al 5 del mese corrente)."
+        : "È possibile inserire ore solo per il mese corrente fino ad oggi.";
+      setError(errorMessage);
       return;
     }
 
@@ -581,8 +580,8 @@ export default function EmployeeDashboard({
           <div className="rounded-xl border border-purple-100 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Permesso</p>
-                <p className="mt-2 text-3xl font-bold text-purple-600">{totalPermesso.toFixed(1)}</p>
+                <p className="text-sm font-medium text-gray-600">Ore Perm/Ferie</p>
+                <p className="mt-2 text-3xl font-bold text-purple-600">{totalPermFerie.toFixed(1)}</p>
                 <p className="text-xs text-gray-500">ore utilizzate</p>
               </div>
               <div className="rounded-full bg-purple-50 p-3">
@@ -604,23 +603,6 @@ export default function EmployeeDashboard({
                 <div className="rounded-full bg-red-50 p-3">
                   <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {totalVacation > 0 && (
-            <div className="rounded-xl border border-green-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Ferie</p>
-                  <p className="mt-2 text-3xl font-bold text-green-600">{totalVacation.toFixed(1)}</p>
-                  <p className="text-xs text-gray-500">ore ferie</p>
-                </div>
-                <div className="rounded-full bg-green-50 p-3">
-                  <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
               </div>

@@ -139,12 +139,25 @@ export async function POST(request: Request) {
   // Determine which userId to use: admin can specify, employee uses their own
   const targetUserId = isAdmin(session) && requestedUserId ? requestedUserId : session.user.id;
 
-  // Employees can only enter hours for dates up to today in the current month
+  // Employees can only enter hours for dates up to today, and:
+  // - Current month always allowed
+  // - Previous month allowed only if today is on or before the 5th
   if (!isAdmin(session)) {
     const entryDate = new Date(`${workDate}T00:00:00.000Z`);
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-    const currentMonthStart = new Date(today.getUTCFullYear(), today.getUTCMonth(), 1);
+    
+    // Determine the earliest editable date
+    const currentDay = today.getUTCDate();
+    let earliestEditableDate: Date;
+    
+    if (currentDay <= 5) {
+      // If before or on the 5th, allow editing previous month
+      earliestEditableDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+    } else {
+      // Otherwise, only current month
+      earliestEditableDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+    }
 
     // Block Sundays (0 = Sunday)
     const dayOfWeek = entryDate.getUTCDay();
@@ -162,9 +175,12 @@ export async function POST(request: Request) {
       );
     }
 
-    if (entryDate < currentMonthStart) {
+    if (entryDate < earliestEditableDate) {
+      const errorMessage = currentDay <= 5
+        ? "Can only enter hours for the current month or previous month (until the 5th of the current month)"
+        : "Can only enter hours for the current month";
       return NextResponse.json(
-        { error: "Can only enter hours for the current month" },
+        { error: errorMessage },
         { status: 403 }
       );
     }
@@ -176,8 +192,8 @@ export async function POST(request: Request) {
   const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
 
   let permessoHours = parsed.data.permessoHours ?? 0;
-  let sicknessHours = parsed.data.sicknessHours ?? 0;
-  let vacationHours = parsed.data.vacationHours ?? 0;
+  const sicknessHours = parsed.data.sicknessHours ?? 0;
+  const vacationHours = parsed.data.vacationHours ?? 0;
 
   // Only auto-calculate permesso if not already provided and not vacation/sickness
   if (!parsed.data.permessoHours && sicknessHours === 0 && vacationHours === 0) {
