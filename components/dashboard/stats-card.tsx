@@ -8,6 +8,7 @@ type StatsCardProps = {
   icon: ReactNode;
   color: ColorType;
   isLoading?: boolean;
+  className?: string;
 };
 
 const colorMap: Record<ColorType, { bg: string; text: string }> = {
@@ -24,11 +25,12 @@ export default function StatsCard({
   icon,
   color,
   isLoading = false,
+  className = "",
 }: StatsCardProps) {
   const colors = colorMap[color];
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+    <div className={`rounded-lg border border-gray-200 bg-white p-6 shadow-sm ${className}`}>
       <div className="flex items-center gap-3">
         <div className={`flex h-12 w-12 items-center justify-center rounded-full ${colors.bg}`}>
           <div className={`h-6 w-6 ${colors.text}`}>

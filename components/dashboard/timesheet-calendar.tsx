@@ -16,6 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import LogoutButton from "@/components/auth/logout-button";
+import StatsCard from "./stats-card";
 import type { TimeEntryDTO } from "@/types/models";
 import { calculateHours, TIME_OPTIONS } from "@/lib/utils/time-utils";
 import { isDateEditable as isDateEditableUtil } from "@/lib/utils/date-utils";
@@ -541,74 +542,62 @@ export default function TimesheetCalendar({
         </header>
       )}
 
-      <div className={hideHeader ? "w-full py-8 flex flex-col" : "mx-auto max-w-7xl px-3 sm:px-6 py-8 flex flex-col"}>
+      <div className={hideHeader ? "w-full pb-8 flex flex-col" : "mx-auto max-w-7xl px-3 sm:px-6 py-8 flex flex-col"}>
         {/* Stats cards */}
         {!hideStats && (
-          <div className="order-2 md:order-1 mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Totale Mese</p>
-                <p className="mt-2 text-3xl font-bold text-blue-600">{totalHours.toFixed(1)}</p>
-                <p className="text-xs text-gray-500">ore lavorate</p>
-              </div>
-              <div className="rounded-full bg-blue-50 p-3">
-                <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="order-2 md:order-1 mb-8 flex flex-wrap gap-6">
+            <StatsCard
+              className="flex-1 min-w-[200px]"
+              title="Totale Mese"
+              value={totalHours.toFixed(1)}
+              color="blue"
+              icon={
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-              </div>
-            </div>
-          </div>
+              }
+            />
 
-          {totalOvertime > 0 && (
-            <div className="rounded-xl border border-orange-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Straordinario</p>
-                  <p className="mt-2 text-3xl font-bold text-orange-600">{totalOvertime.toFixed(1)}</p>
-                  <p className="text-xs text-gray-500">ore extra</p>
-                </div>
-                <div className="rounded-full bg-orange-50 p-3">
-                  <svg className="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {totalOvertime > 0 && (
+              <StatsCard
+                className="flex-1 min-w-[200px]"
+                title="Straordinario"
+                value={totalOvertime.toFixed(1)}
+                color="orange"
+                icon={
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                </div>
-              </div>
-            </div>
-          )}
+                }
+              />
+            )}
 
-          <div className="rounded-xl border border-purple-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Ore Perm/Ferie</p>
-                <p className="mt-2 text-3xl font-bold text-purple-600">{totalPermFerie.toFixed(1)}</p>
-                <p className="text-xs text-gray-500">ore utilizzate</p>
-              </div>
-              <div className="rounded-full bg-purple-50 p-3">
-                <svg className="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <StatsCard
+              className="flex-1 min-w-[200px]"
+              title="Ore Perm/Ferie"
+              value={totalPermFerie.toFixed(1)}
+              color="purple"
+              icon={
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-              </div>
-            </div>
-          </div>
+              }
+            />
 
-          {totalSickness > 0 && (
-            <div className="rounded-xl border border-red-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Malattia</p>
-                  <p className="mt-2 text-3xl font-bold text-red-600">{totalSickness.toFixed(1)}</p>
-                  <p className="text-xs text-gray-500">ore malattia</p>
-                </div>
-                <div className="rounded-full bg-red-50 p-3">
-                  <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {totalSickness > 0 && (
+              <StatsCard
+                className="flex-1 min-w-[200px]"
+                title="Malattia"
+                value={totalSickness.toFixed(1)}
+                color="red"
+                icon={
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+                }
+              />
+            )}
+          </div>
         )}
 
         {error && (
@@ -751,7 +740,7 @@ export default function TimesheetCalendar({
                         {((dayEntry?.vacationHours ?? 0) > 0 || (dayEntry?.sicknessHours ?? 0) > 0) ? (
                           // Show type and notes for vacation/sickness days
                           <div className="flex flex-col items-center gap-1">
-                            <div className={`text-lg sm:text-xl font-bold text-center ${(dayEntry?.vacationHours ?? 0) > 0 ? "text-blue-600" : "text-red-600"}`}>
+                            <div className={`text-xs sm:text-xl font-bold text-center break-all sm:break-normal ${(dayEntry?.vacationHours ?? 0) > 0 ? "text-blue-600" : "text-red-600"}`}>
                               {(dayEntry?.vacationHours ?? 0) > 0 ? "Ferie" : "Malattia"}
                             </div>
                             {dayEntry?.notes && (

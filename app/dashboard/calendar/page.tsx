@@ -6,7 +6,7 @@ import { getAuthSession } from "@/lib/auth";
 import TimesheetCalendar, {
   type TimeEntryDTO,
 } from "@/components/dashboard/timesheet-calendar";
-import AdminTimesheet from "@/components/dashboard/admin-timesheet";
+import UserSelector from "@/components/dashboard/user-selector";
 
 type PrismaEntry = {
   id: string;
@@ -57,6 +57,7 @@ export default async function CalendarPage({
 
   const now = new Date();
   const params = await searchParams;
+  const isAdmin = session.user.role === "ADMIN";
 
   // Common query selection
   const querySelect = {
@@ -74,9 +75,13 @@ export default async function CalendarPage({
     notes: true,
   };
 
-  if (session.user.role === "ADMIN") {
+  let users: UserRow[] = [];
+  let targetUserId = session.user.id;
+  let targetUserName = session.user.name ?? session.user.email;
+
+  if (isAdmin) {
     // Get all users for the dropdown
-    const users = (await prisma.user.findMany({
+    users = (await prisma.user.findMany({
       orderBy: { name: "asc" },
       select: {
         id: true,
@@ -86,70 +91,43 @@ export default async function CalendarPage({
     })) as UserRow[];
 
     // Determine which user's calendar to show
-    const targetUserId = params.userId || session.user.id;
-    const targetUser = users.find((u) => u.id === targetUserId) || {
-      id: session.user.id,
-      name: session.user.name || null,
-      email: session.user.email,
-    };
-
-    // Fetch entries for the target user
-    const entries = (await prisma.timeEntry.findMany({
-      where: {
-        userId: targetUserId,
-        workDate: {
-          gte: startOfMonth(now),
-          lte: endOfMonth(now),
-        },
-      },
-      select: querySelect,
-      orderBy: { workDate: "asc" },
-    })) as PrismaEntry[];
-
-    const plain = entries.map(toDto);
-
-    // Calculate totals for the selected user
-    const totalHours = entries.reduce((sum, entry) => sum + parseFloat(entry.hoursWorked.toString()) + parseFloat(entry.overtimeHours.toString()), 0);
-    const totalOvertimeHours = entries.reduce((sum, entry) => sum + parseFloat(entry.overtimeHours.toString()), 0);
-    const totalPermFerieHours = entries.reduce((sum, entry) => sum + parseFloat(entry.permessoHours.toString()) + parseFloat(entry.vacationHours.toString()), 0);
-    const totalSicknessHours = entries.reduce((sum, entry) => sum + parseFloat(entry.sicknessHours.toString()), 0);
-
-    return (
-      <AdminTimesheet
-        users={users}
-        selectedUserId={targetUserId}
-        selectedUser={targetUser}
-        initialEntries={plain}
-        totalHours={totalHours}
-        totalOvertimeHours={totalOvertimeHours}
-        totalPermFerieHours={totalPermFerieHours}
-        totalSicknessHours={totalSicknessHours}
-      />
-    );
-  } else {
-    // EMPLOYEE VIEW
-    const entries = (await prisma.timeEntry.findMany({
-      where: {
-        userId: session.user.id,
-        workDate: {
-          gte: startOfMonth(now),
-          lte: endOfMonth(now),
-        },
-      },
-      select: querySelect,
-      orderBy: { workDate: "asc" },
-    })) as PrismaEntry[];
-
-    const plain = entries.map(toDto);
-
-    return (
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <TimesheetCalendar
-          initialEntries={plain}
-          userName={session.user.name ?? session.user.email}
-          hideHeader={true}
-        />
-      </div>
-    );
+    if (params.userId) {
+      targetUserId = params.userId;
+      const targetUser = users.find((u) => u.id === targetUserId);
+      if (targetUser) {
+        targetUserName = targetUser.name ?? targetUser.email;
+      }
+    }
   }
+
+  // Fetch entries for the target user
+  const entries = (await prisma.timeEntry.findMany({
+    where: {
+      userId: targetUserId,
+      workDate: {
+        gte: startOfMonth(now),
+        lte: endOfMonth(now),
+      },
+    },
+    select: querySelect,
+    orderBy: { workDate: "asc" },
+  })) as PrismaEntry[];
+
+  const plain = entries.map(toDto);
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+      {isAdmin && (
+        <UserSelector users={users} selectedUserId={targetUserId} />
+      )}
+      
+      <TimesheetCalendar
+        initialEntries={plain}
+        userName={targetUserName}
+        hideHeader={true}
+        targetUserId={isAdmin ? targetUserId : undefined}
+        isAdmin={isAdmin}
+      />
+    </div>
+  );
 }
