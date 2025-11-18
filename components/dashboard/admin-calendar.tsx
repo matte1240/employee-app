@@ -4,17 +4,15 @@ import { useState, useEffect, useCallback } from "react";
 import { format, startOfMonth } from "date-fns";
 import { useRouter } from "next/navigation";
 import Calendar, { type TimeEntryDTO } from "./calendar";
+import type { User } from "@/types/models";
 
-type User = {
-  id: string;
-  name: string | null;
-  email: string;
-};
+// Minimal user type for admin calendar (only needs id, name, email)
+type UserMinimal = Pick<User, "id" | "name" | "email">;
 
 type AdminCalendarProps = {
-  users: User[];
+  users: UserMinimal[];
   selectedUserId: string;
-  selectedUser: User;
+  selectedUser: UserMinimal;
   initialEntries: TimeEntryDTO[];
   totalHours: number;
   totalOvertimeHours: number;

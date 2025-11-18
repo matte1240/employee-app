@@ -18,6 +18,11 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Guard: DEV endpoint only accessible in development
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     // Verifica autenticazione
     const session = await getAuthSession();
     if (!session || session.user.role !== "ADMIN") {

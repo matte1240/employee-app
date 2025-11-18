@@ -3,14 +3,7 @@
 import { format } from "date-fns";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-
-type User = {
-  id: string;
-  name: string | null;
-  email: string;
-  role: "EMPLOYEE" | "ADMIN";
-  createdAt: Date;
-};
+import type { User, UserRole } from "@/types/models";
 
 type ManageUsersProps = {
   users: User[];
@@ -22,13 +15,13 @@ type CreateUserForm = {
   email: string;
   password: string;
   confirmPassword: string;
-  role: "EMPLOYEE" | "ADMIN";
+  role: UserRole;
 };
 
 type EditUserForm = {
   name: string;
   email: string;
-  role: "EMPLOYEE" | "ADMIN";
+  role: UserRole;
 };
 
 export default function ManageUsers({ users, currentUserId }: ManageUsersProps) {
@@ -421,7 +414,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 </label>
                 <select
                   value={createForm.role}
-                  onChange={(e) => setCreateForm(f => ({ ...f, role: e.target.value as "EMPLOYEE" | "ADMIN" }))}
+                  onChange={(e) => setCreateForm(f => ({ ...f, role: e.target.value as UserRole }))}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
                 >
                   <option value="EMPLOYEE">Dipendente</option>
@@ -545,7 +538,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 </label>
                 <select
                   value={editForm.role}
-                  onChange={(e) => setEditForm(f => ({ ...f, role: e.target.value as "EMPLOYEE" | "ADMIN" }))}
+                  onChange={(e) => setEditForm(f => ({ ...f, role: e.target.value as UserRole }))}
                   disabled={editingUser?.id === currentUserId}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                 >

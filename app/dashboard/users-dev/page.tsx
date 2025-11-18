@@ -4,6 +4,11 @@ import prisma from "@/lib/prisma";
 import ManageUsersDev from "@/components/dashboard/manage-users-dev";
 
 export default async function UsersDevPage() {
+  // Guard: DEV route only accessible in development
+  if (process.env.NODE_ENV === "production") {
+    redirect("/dashboard");
+  }
+
   const session = await getAuthSession();
 
   // Solo gli admin possono accedere

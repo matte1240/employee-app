@@ -4,13 +4,9 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { User } from "@/types/models";
 
-type UserAggregate = {
-  id: string;
-  name: string | null;
-  email: string;
-  role: "EMPLOYEE" | "ADMIN";
-  createdAt: Date;
+type UserAggregate = User & {
   regularHours: number;
   overtimeHours: number;
   permessoHours: number;

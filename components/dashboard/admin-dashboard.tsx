@@ -4,13 +4,9 @@ import { format } from "date-fns";
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Calendar, { type TimeEntryDTO } from "./calendar";
+import type { User, UserRole } from "@/types/models";
 
-type UserAggregate = {
-  id: string;
-  name: string | null;
-  email: string;
-  role: "EMPLOYEE" | "ADMIN";
-  createdAt: Date;
+type UserAggregate = User & {
   regularHours: number;
   overtimeHours: number;
   permessoHours: number;
@@ -36,7 +32,7 @@ type CreateUserForm = {
   email: string;
   password: string;
   confirmPassword: string;
-  role: "EMPLOYEE" | "ADMIN";
+  role: UserRole;
 };
 
 export default function AdminDashboard({ users, currentUser }: AdminDashboardProps) {
@@ -73,7 +69,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
   const [editingUser, setEditingUser] = useState<UserAggregate | null>(null);
   const [deletingUser, setDeletingUser] = useState<UserAggregate | null>(null);
   const [resettingPasswordUser, setResettingPasswordUser] = useState<UserAggregate | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", email: "", role: "EMPLOYEE" as "EMPLOYEE" | "ADMIN" });
+  const [editForm, setEditForm] = useState({ name: "", email: "", role: "EMPLOYEE" as UserRole });
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [isUpdating, startUpdating] = useTransition();
@@ -1556,7 +1552,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                 </label>
                 <select
                   value={form.role}
-                  onChange={(e) => setForm(f => ({ ...f, role: e.target.value as "EMPLOYEE" | "ADMIN" }))}
+                  onChange={(e) => setForm(f => ({ ...f, role: e.target.value as UserRole }))}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
                 >
                   <option value="EMPLOYEE">Employee</option>
@@ -1695,7 +1691,7 @@ export default function AdminDashboard({ users, currentUser }: AdminDashboardPro
                 </label>
                 <select
                   value={editForm.role}
-                  onChange={(e) => setEditForm(f => ({ ...f, role: e.target.value as "EMPLOYEE" | "ADMIN" }))}
+                  onChange={(e) => setEditForm(f => ({ ...f, role: e.target.value as UserRole }))}
                   disabled={editingUser?.id === currentUser.id}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                 >

@@ -2,14 +2,9 @@ import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import ManageUsers from "@/components/dashboard/manage-users";
+import type { User } from "@/types/models";
 
-type UserRow = {
-  id: string;
-  name: string | null;
-  email: string;
-  role: "EMPLOYEE" | "ADMIN";
-  createdAt: Date;
-};
+type UserRow = User;
 
 export default async function UsersPage() {
   const session = await getAuthSession();

@@ -16,22 +16,10 @@ import {
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import LogoutButton from "@/components/logout-button";
+import type { TimeEntryDTO } from "@/types/models";
 
-export type TimeEntryDTO = {
-  id: string;
-  workDate: string;
-  hoursWorked: number;
-  overtimeHours?: number;
-  permessoHours?: number;
-  sicknessHours?: number;
-  vacationHours?: number;
-  morningStart?: string | null;
-  morningEnd?: string | null;
-  afternoonStart?: string | null;
-  afternoonEnd?: string | null;
-  medicalCertificate?: string | null;
-  notes?: string | null;
-};
+// Re-export for backward compatibility
+export type { TimeEntryDTO };
 
 type EmployeeDashboardProps = {
   initialEntries: TimeEntryDTO[];

@@ -5,7 +5,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { writeFile, unlink } from "fs/promises";
 import path from "path";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 const execAsync = promisify(exec);
 
