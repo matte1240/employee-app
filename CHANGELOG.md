@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/matte1240/employee-app/compare/v0.5.0...v0.6.0) (2025-11-18)
+
+
+### Features
+
+* add DEV mode for user management with manual password setting and reset functionality ([e957a3a](https://github.com/matte1240/employee-app/commit/e957a3a38e41e2f90e58a36f9762acff286912e9))
+
 # [0.5.0](https://github.com/matte1240/employee-app/compare/v0.4.0...v0.5.0) (2025-11-17)
 
 
