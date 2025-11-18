@@ -18,6 +18,7 @@ export type User = {
 // Time entry data transfer object
 export type TimeEntryDTO = {
   id: string;
+  userId: string;
   workDate: string;
   hoursWorked: number;
   overtimeHours?: number;

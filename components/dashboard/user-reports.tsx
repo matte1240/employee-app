@@ -1,22 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 
 type EmployeeReportsProps = {
   userId: string;
   userName: string;
   userEmail: string;
-};
-
-type MonthStats = {
-  regularHours: number;
-  overtimeHours: number;
-  permessoHours: number;
-  sicknessHours: number;
-  vacationHours: number;
-  totalHours: number;
-  workingDays: number;
 };
 
 export default function UserReports({
@@ -29,72 +19,8 @@ export default function UserReports({
     return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, "0")}`;
   });
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
-  const [monthStats, setMonthStats] = useState<MonthStats>({
-    regularHours: 0,
-    overtimeHours: 0,
-    permessoHours: 0,
-    sicknessHours: 0,
-    vacationHours: 0,
-    totalHours: 0,
-    workingDays: 0,
-  });
-  const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Fetch stats for selected month
-  useEffect(() => {
-    const fetchMonthStats = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const [year, month] = selectedMonth.split("-");
-        const from = `${year}-${month}-01`;
-        const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-        const to = `${year}-${month}-${String(lastDay).padStart(2, "0")}`;
-
-        const response = await fetch(`/api/hours?userId=${userId}&from=${from}&to=${to}`);
-        if (response.ok) {
-          const entries = await response.json();
-
-          let regularHours = 0;
-          let overtimeHours = 0;
-          let permessoHours = 0;
-          let sicknessHours = 0;
-          let vacationHours = 0;
-          const workingDays = new Set<string>();
-
-          entries.forEach((entry: any) => {
-            regularHours += entry.hoursWorked || 0;
-            overtimeHours += entry.overtimeHours || 0;
-            permessoHours += entry.permessoHours || 0;
-            sicknessHours += entry.sicknessHours || 0;
-            vacationHours += entry.vacationHours || 0;
-            workingDays.add(entry.workDate);
-          });
-
-          setMonthStats({
-            regularHours,
-            overtimeHours,
-            permessoHours,
-            sicknessHours,
-            vacationHours,
-            totalHours: regularHours + overtimeHours,
-            workingDays: workingDays.size,
-          });
-        } else {
-          setError("Errore nel caricamento dei dati");
-        }
-      } catch (err) {
-        console.error("Error fetching month stats:", err);
-        setError("Errore nel caricamento dei dati");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMonthStats();
-  }, [selectedMonth, userId]);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -263,7 +189,7 @@ export default function UserReports({
           </div>
           <button
             onClick={handleExport}
-            disabled={isExporting || isLoading}
+            disabled={isExporting}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isExporting ? (

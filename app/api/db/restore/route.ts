@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { writeFile, unlink } from "fs/promises";
+import fs from "fs";
 import path from "path";
 import prisma from "@/lib/prisma";
 import { isAdmin } from "@/lib/utils/user-utils";
@@ -51,7 +52,6 @@ export async function POST(req: NextRequest) {
     const filename = `restore-${Date.now()}.sql`;
     
     // Ensure backups directory exists
-    const fs = require("fs");
     const backupsDir = path.join(process.cwd(), "backups", "database");
     if (!fs.existsSync(backupsDir)) {
       fs.mkdirSync(backupsDir, { recursive: true });
@@ -71,10 +71,6 @@ export async function POST(req: NextRequest) {
       // Remove query parameters that psql doesn't support
       const cleanUrl = databaseUrl.split('?')[0];
 
-      // Extract username from URL for GRANT statement
-      const urlParts = cleanUrl.split('//')[1]?.split('@');
-      const username = urlParts?.[0]?.split(':')[0] || 'postgres';
-
       // Don't drop schema - let the backup SQL handle table drops
       // The pg_dump backup already contains proper DROP/CREATE commands
       
@@ -83,7 +79,7 @@ export async function POST(req: NextRequest) {
       const command = `psql "${cleanUrl}" -f "${tempPath}"`;
 
       console.log("Executing restore command");
-      const { stdout, stderr } = await execAsync(command, {
+      const { stderr } = await execAsync(command, {
         maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large restores
       });
 

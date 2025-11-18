@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { format } from "date-fns";
-import { useRouter } from "next/navigation";
 import type { User } from "@/types/models";
 
 type EmployeeProfileProps = {
@@ -10,7 +9,6 @@ type EmployeeProfileProps = {
 };
 
 export default function EmployeeProfile({ user }: EmployeeProfileProps) {
-  const router = useRouter();
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -53,6 +51,7 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
         setNewPassword("");
         setConfirmPassword("");
       } catch (err) {
+        console.error(err);
         setError("Errore imprevisto");
       }
     });

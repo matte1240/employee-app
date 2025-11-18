@@ -14,8 +14,6 @@ export const ROUTES = {
   HOME: "/",
   DASHBOARD: "/dashboard",
   DASHBOARD_ADMIN: "/dashboard/admin",
-  DASHBOARD_EMPLOYEE_CALENDAR: "/dashboard/employee-calendar",
-  DASHBOARD_EMPLOYEE_REPORTS: "/dashboard/employee-reports",
   DASHBOARD_PROFILE: "/dashboard/profile",
   DASHBOARD_USERS: "/dashboard/users",
   DASHBOARD_CALENDAR: "/dashboard/calendar",

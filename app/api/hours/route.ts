@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { isAdmin } from "@/lib/utils/user-utils";
+import { isHoliday } from "@/lib/utils/holiday-utils";
 
 const createHoursSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -161,9 +162,9 @@ export async function POST(request: Request) {
 
     // Block Sundays (0 = Sunday)
     const dayOfWeek = entryDate.getUTCDay();
-    if (dayOfWeek === 0) {
+    if (dayOfWeek === 0 || isHoliday(workDate)) {
       return NextResponse.json(
-        { error: "Cannot enter hours on Sundays" },
+        { error: "Cannot enter hours on Sundays or Holidays" },
         { status: 403 }
       );
     }
@@ -189,7 +190,7 @@ export async function POST(request: Request) {
   // Calculate permessoHours only for weekdays when hours < 8 AND not vacation/sickness
   const entryDate = new Date(`${workDate}T00:00:00.000Z`);
   const dayOfWeek = entryDate.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5 && !isHoliday(workDate);
 
   let permessoHours = parsed.data.permessoHours ?? 0;
   const sicknessHours = parsed.data.sicknessHours ?? 0;

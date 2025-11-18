@@ -10,6 +10,7 @@ import UserSelector from "@/components/dashboard/user-selector";
 
 type PrismaEntry = {
   id: string;
+  userId: string;
   workDate: Date;
   hoursWorked: Decimal;
   overtimeHours: Decimal;
@@ -31,6 +32,7 @@ type UserRow = {
 
 const toDto = (entry: PrismaEntry): TimeEntryDTO => ({
   id: entry.id,
+  userId: entry.userId,
   workDate: entry.workDate.toISOString().split("T")[0],
   hoursWorked: parseFloat(entry.hoursWorked.toString()),
   overtimeHours: parseFloat(entry.overtimeHours.toString()),
@@ -62,6 +64,7 @@ export default async function CalendarPage({
   // Common query selection
   const querySelect = {
     id: true,
+    userId: true,
     workDate: true,
     hoursWorked: true,
     overtimeHours: true,

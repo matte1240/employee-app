@@ -23,12 +23,17 @@ function ResetPasswordForm() {
     const emailParam = searchParams.get("email");
 
     if (!tokenParam || !emailParam) {
-      setError("Link non valido. Richiedi un nuovo reset della password.");
+      // Use setTimeout to avoid synchronous state update during render
+      setTimeout(() => {
+        setError("Link non valido. Richiedi un nuovo reset della password.");
+      }, 0);
       return;
     }
 
-    setToken(tokenParam);
-    setEmail(emailParam);
+    setTimeout(() => {
+      setToken(tokenParam);
+      setEmail(emailParam);
+    }, 0);
   }, [searchParams]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -72,16 +77,21 @@ function ResetPasswordForm() {
         setSuccess(true);
         
         // Forza il logout per invalidare la sessione corrente
-        await fetch("/api/auth/signout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ callbackUrl: "/" }),
-        });
+        try {
+          await fetch("/api/auth/signout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ callbackUrl: "/" }),
+          });
+        } catch (e) {
+          console.error("Errore durante il logout automatico:", e);
+        }
         
         setTimeout(() => {
           router.push("/?passwordReset=true");
-        }, 3000);
+        }, 2000);
       } catch (err) {
+        console.error(err);
         setError("Errore di connessione. Riprova più tardi.");
       }
     });

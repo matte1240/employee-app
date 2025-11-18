@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import LoginForm from "@/components/auth/login-form";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import Image from "next/image";
 
 // Force dynamic rendering to check database at runtime
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ setup?: string; expired?: string }>;
+  searchParams: Promise<{ setup?: string; expired?: string; passwordReset?: string }>;
 }) {
   // Check if setup is needed (no users in database)
   const userCount = await prisma.user.count();
@@ -28,6 +29,7 @@ export default async function Home({
   const params = await searchParams;
   const showSetupSuccess = params.setup === "complete";
   const showExpiredMessage = params.expired === "true";
+  const showPasswordResetSuccess = params.passwordReset === "true";
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -41,13 +43,13 @@ export default async function Home({
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-16">
-            <img src="/logo.svg" alt="Ivicolors" className="h-14" />
+            <Image src="/logo.svg" alt="Ivicolors" width={56} height={56} className="h-14 w-auto" />
           </div>
           <h1 className="text-5xl font-bold text-slate-900 leading-tight mb-6">
-            Employee Work Hours Tracker
+            Gestione Presenze e Orari
           </h1>
           <p className="text-lg text-slate-700 leading-relaxed max-w-md">
-            Track your daily activities, manage your time efficiently, and keep your team informed with our intuitive time tracking system.
+            Traccia le tue attività giornaliere, gestisci il tuo tempo in modo efficiente e mantieni il team sincronizzato con il nostro sistema intuitivo.
           </p>
         </div>
 
@@ -59,8 +61,8 @@ export default async function Home({
               </svg>
             </div>
             <div>
-              <p className="font-semibold text-slate-900 mb-1">Easy Time Logging</p>
-              <p className="text-sm text-slate-600">Click any day to log your work hours with morning and afternoon shifts</p>
+              <p className="font-semibold text-slate-900 mb-1">Registrazione Semplice</p>
+              <p className="text-sm text-slate-600">Clicca su un giorno per registrare le ore, inclusi i turni mattutini e pomeridiani</p>
             </div>
           </div>
           <div className="flex items-start gap-4 group">
@@ -70,8 +72,8 @@ export default async function Home({
               </svg>
             </div>
             <div>
-              <p className="font-semibold text-slate-900 mb-1">Overtime Tracking</p>
-              <p className="text-sm text-slate-600">Automatic calculation of regular and overtime hours</p>
+              <p className="font-semibold text-slate-900 mb-1">Monitoraggio Straordinari</p>
+              <p className="text-sm text-slate-600">Calcolo automatico delle ore ordinarie e degli straordinari</p>
             </div>
           </div>
           <div className="flex items-start gap-4 group">
@@ -81,8 +83,8 @@ export default async function Home({
               </svg>
             </div>
             <div>
-              <p className="font-semibold text-slate-900 mb-1">Admin Dashboard</p>
-              <p className="text-sm text-slate-600">Real-time overview of team activity and hours worked</p>
+              <p className="font-semibold text-slate-900 mb-1">Pannello Amministratore</p>
+              <p className="text-sm text-slate-600">Panoramica in tempo reale delle attività del team e delle ore lavorate</p>
             </div>
           </div>
         </div>
@@ -93,7 +95,7 @@ export default async function Home({
         <div className="w-full max-w-md relative z-10">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 text-center">
-            <img src="/logo.svg" alt="Ivicolors" className="h-12 mx-auto" />
+            <Image src="/logo.svg" alt="Ivicolors" width={48} height={48} className="h-12 mx-auto w-auto" />
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
@@ -101,9 +103,9 @@ export default async function Home({
 
             <div className="relative z-10">
               <div className="mb-8">
-                <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h2>
+                <h2 className="text-3xl font-bold text-slate-900 mb-2">Bentornato</h2>
                 <p className="text-sm text-slate-600">
-                  Sign in to your account to continue
+                  Accedi al tuo account per continuare
                 </p>
               </div>
 
@@ -116,7 +118,22 @@ export default async function Home({
                       </svg>
                     </div>
                     <p className="text-sm text-green-800 font-medium pt-1">
-                      Setup completed successfully! You can now sign in with your admin account.
+                      Configurazione completata con successo! Ora puoi accedere con il tuo account amministratore.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {showPasswordResetSuccess && (
+                <div className="mb-6 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 p-4 border border-green-200/50 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-green-800 font-medium pt-1">
+                      Password aggiornata con successo! Ora puoi accedere.
                     </p>
                   </div>
                 </div>
@@ -131,7 +148,7 @@ export default async function Home({
                       </svg>
                     </div>
                     <p className="text-sm text-orange-800 font-medium pt-1">
-                      Your session has expired due to inactivity. Please log in again.
+                      La sessione è scaduta per inattività. Effettua nuovamente il login.
                     </p>
                   </div>
                 </div>
@@ -142,7 +159,7 @@ export default async function Home({
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-500">
-            © 2025 Ivicolors. All rights reserved.
+            © 2025 Ivicolors. Tutti i diritti riservati.
           </p>
         </div>
       </div>

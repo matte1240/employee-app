@@ -37,18 +37,6 @@ export async function POST(request: Request) {
   const endDate = new Date(parseInt(year), parseInt(monthNum), 0); // Last day of month
   endDate.setUTCHours(23, 59, 59, 999);
 
-  // Check if there are any medical certificates in the selected month for the selected users
-  const hasMedicalCertificates = await prisma.timeEntry.findFirst({
-    where: {
-      userId: { in: userIds },
-      workDate: {
-        gte: startDate,
-        lte: endDate,
-      },
-      medicalCertificate: { not: null },
-    },
-  });
-
   try {
     // Create a new workbook
     const workbook = new ExcelJS.Workbook();
@@ -56,7 +44,7 @@ export async function POST(request: Request) {
     workbook.created = new Date();
 
     // Function to add a worksheet for a user
-    const addUserSheet = async (userId: string, includeMedicalCertificate: boolean) => {
+    const addUserSheet = async (userId: string) => {
       const user = await prisma.user.findUnique({ where: { id: userId } });
       if (!user) throw new Error("User not found");
 
@@ -70,6 +58,11 @@ export async function POST(request: Request) {
         },
         orderBy: { workDate: "asc" },
       });
+
+      // Check if this specific user has any medical certificates in this month
+      const includeMedicalCertificate = entries.some(
+        (e) => e.medicalCertificate !== null && e.medicalCertificate !== ""
+      );
 
       // Create worksheet with user name
       const sheetName = (user.name || user.email).replace(/[^a-z0-9 ]/gi, "_").substring(0, 31);
@@ -96,14 +89,21 @@ export async function POST(request: Request) {
       columns.push({ key: "notes", width: 40 });
       worksheet.columns = columns;
 
+      // Format month for title (Italian)
+      const [y, m] = month.split("-");
+      const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1);
+      const monthName = dateObj.toLocaleString("it-IT", { month: "long" });
+      const capitalizedMonth =
+        monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
       // Add title row
       const titleRow = worksheet.addRow([
-        `Time Entries - ${user.name || user.email} - ${month}`,
+        `Presenze - ${user.name || user.email} - ${capitalizedMonth} ${y}`,
       ]);
       titleRow.font = { size: 14, bold: true };
       const lastColumn = includeMedicalCertificate ? "K" : "J";
       worksheet.mergeCells(`A1:${lastColumn}1`);
-      titleRow.alignment = { horizontal: "center", vertical: "middle" };
+      titleRow.alignment = { horizontal: "left", vertical: "middle" };
       titleRow.height = 25;
 
       // Add header row
@@ -130,13 +130,15 @@ export async function POST(request: Request) {
 
       // Style header row
       headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
-      headerRow.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FF4472C4" },
-      };
       headerRow.alignment = { horizontal: "center", vertical: "middle" };
       headerRow.height = 20;
+      for (let i = 1; i <= columns.length; i++) {
+        headerRow.getCell(i).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF4472C4" },
+        };
+      }
 
       // Add data rows
       let totalHoursSum = 0;
@@ -160,19 +162,23 @@ export async function POST(request: Request) {
         const totalHours = hoursWorked + overtime;
 
         // Extract medical certificate from the dedicated field
-        let certificatoMedico = entry.medicalCertificate || "";
+        const certificatoMedico = entry.medicalCertificate || "";
 
         totalHoursSum += hoursWorked;
         totalOvertimeSum += overtime;
         totalPermFerieSum += permFerieHours;
         totalSicknessSum += sicknessHours;
 
-        const rowData: any = {
+        // Helper to remove "PERM" from time fields
+        const cleanTimeValue = (val: string | null) => (val === "PERM" ? "" : val || "");
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rowData: Record<string, any> = {
           date: entry.workDate,
-          morningStart: entry.morningStart || "",
-          morningEnd: entry.morningEnd || "",
-          afternoonStart: entry.afternoonStart || "",
-          afternoonEnd: entry.afternoonEnd || "",
+          morningStart: cleanTimeValue(entry.morningStart),
+          morningEnd: cleanTimeValue(entry.morningEnd),
+          afternoonStart: cleanTimeValue(entry.afternoonStart),
+          afternoonEnd: cleanTimeValue(entry.afternoonEnd),
           hoursWorked: hoursWorked,
           overtime: overtime,
           permFerieHours: permFerieHours,
@@ -188,6 +194,12 @@ export async function POST(request: Request) {
 
         const row = worksheet.addRow(rowData);
 
+        // Set formula for Total Hours (Column J / 10) = F + G
+        row.getCell(10).value = {
+          formula: `F${row.number}+G${row.number}`,
+          result: totalHours,
+        };
+
         // Format date cell
         row.getCell(1).numFmt = "dd/mm/yyyy";
 
@@ -200,29 +212,35 @@ export async function POST(request: Request) {
 
         // Alternate row colors
         if (worksheet.rowCount % 2 === 0) {
-          row.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFF2F2F2" },
-          };
+          for (let i = 1; i <= columns.length; i++) {
+            row.getCell(i).fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: "FFF2F2F2" },
+            };
+          }
         }
       });
+
+      const lastDataRow = worksheet.rowCount;
+      const firstDataRow = 3;
 
       // Add empty row
       worksheet.addRow([]);
 
       // Add summary row
-      const summaryColumns = [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const summaryColumns: any[] = [
         "TOTALE",
         "",
         "",
         "",
         "",
-        totalHoursSum,
-        totalOvertimeSum,
-        totalPermFerieSum,
-        totalSicknessSum,
-        totalHoursSum + totalOvertimeSum,
+        { formula: `SUM(F${firstDataRow}:F${lastDataRow})`, result: totalHoursSum },
+        { formula: `SUM(G${firstDataRow}:G${lastDataRow})`, result: totalOvertimeSum },
+        { formula: `SUM(H${firstDataRow}:H${lastDataRow})`, result: totalPermFerieSum },
+        { formula: `SUM(I${firstDataRow}:I${lastDataRow})`, result: totalSicknessSum },
+        { formula: `SUM(J${firstDataRow}:J${lastDataRow})`, result: totalHoursSum + totalOvertimeSum },
       ];
 
       if (includeMedicalCertificate) {
@@ -234,11 +252,13 @@ export async function POST(request: Request) {
       const summaryRow = worksheet.addRow(summaryColumns);
 
       summaryRow.font = { bold: true, size: 12 };
-      summaryRow.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFFFD966" },
-      };
+      for (let i = 1; i <= columns.length; i++) {
+        summaryRow.getCell(i).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFFFD966" },
+        };
+      }
 
       // Format summary numbers
       summaryRow.getCell(6).numFmt = "0.00";
@@ -278,7 +298,7 @@ export async function POST(request: Request) {
 
     // Add a sheet for each user
     for (const userId of userIds) {
-      await addUserSheet(userId, !!hasMedicalCertificates);
+      await addUserSheet(userId);
     }
 
     // Generate Excel file buffer

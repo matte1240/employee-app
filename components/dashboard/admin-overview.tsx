@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { User } from "@/types/models";
+import type { User, TimeEntryDTO } from "@/types/models";
 import StatsCard from "./stats-card";
 
 type UserAggregate = User & {
@@ -20,13 +20,6 @@ type AdminOverviewProps = {
 };
 
 export default function AdminOverview({ users }: AdminOverviewProps) {
-  const totalRegularHours = users.reduce((sum, user) => sum + user.regularHours, 0);
-  const totalOvertimeHours = users.reduce((sum, user) => sum + user.overtimeHours, 0);
-  const totalPermessoHours = users.reduce((sum, user) => sum + user.permessoHours, 0);
-  const totalSicknessHours = users.reduce((sum, user) => sum + user.sicknessHours, 0);
-  const totalVacationHours = users.reduce((sum, user) => sum + user.vacationHours, 0);
-  const totalHours = totalRegularHours + totalOvertimeHours;
-
   const now = new Date();
   const currentMonth = format(now, "MMMM yyyy", { locale: it });
 
@@ -57,8 +50,11 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
         const entries = await response.json();
         const agg = new Map<string, { regular: number; overtime: number; permesso: number; sickness: number; vacation: number }>();
 
-        entries.forEach((entry: any) => {
+        entries.forEach((entry: TimeEntryDTO) => {
           const id = entry.userId;
+          // Skip if userId is missing (should not happen for valid entries)
+          if (!id) return;
+          
           const cur = agg.get(id) || { regular: 0, overtime: 0, permesso: 0, sickness: 0, vacation: 0 };
           cur.regular += entry.hoursWorked || 0;
           cur.overtime += entry.overtimeHours || 0;

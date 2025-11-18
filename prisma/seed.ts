@@ -101,11 +101,12 @@ async function main() {
       } else {
         console.log(`- Time entry already exists for ${e.workDate.toISOString().split('T')[0]}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // If schema mismatch (missing columns), warn but don't fail
-      if (err?.code === 'P2022' || err?.message?.includes('column')) {
+      const error = err as { code?: string; message?: string };
+      if (error?.code === 'P2022' || error?.message?.includes('column')) {
         console.warn(`⚠️  Could not create time entry: database schema may be outdated. Run migrations first.`);
-        console.warn(`   Error: ${err.message}`);
+        console.warn(`   Error: ${error.message}`);
         break;
       }
       console.error(`❌ Failed to create time entry:`, err);
