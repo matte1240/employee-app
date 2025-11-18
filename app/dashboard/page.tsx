@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
+import { isAdmin } from "@/lib/user-utils";
 
 export default async function DashboardPage() {
   const session = await getAuthSession();
@@ -9,7 +10,7 @@ export default async function DashboardPage() {
   }
 
   // Redirect based on user role
-  if (session.user.role === "ADMIN") {
+  if (isAdmin(session)) {
     redirect("/dashboard/admin");
   } else {
     redirect("/dashboard/employee-calendar");

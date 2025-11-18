@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { isAdmin } from "@/lib/user-utils";
 
 const createHoursSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -84,10 +85,10 @@ export async function GET(request: Request) {
     userId?: string;
     workDate?: { gte?: Date; lte?: Date };
   } = {
-    userId: session.user.role === "ADMIN" && userId ? userId : session.user.id,
+    userId: isAdmin(session) && userId ? userId : session.user.id,
   };
 
-  if (session.user.role === "ADMIN" && userId === "all") {
+  if (isAdmin(session) && userId === "all") {
     delete where.userId;
   }
 
@@ -136,10 +137,10 @@ export async function POST(request: Request) {
   const { workDate, hoursWorked, overtimeHours, morningStart, morningEnd, afternoonStart, afternoonEnd, medicalCertificate, notes, userId: requestedUserId } = parsed.data;
 
   // Determine which userId to use: admin can specify, employee uses their own
-  const targetUserId = session.user.role === "ADMIN" && requestedUserId ? requestedUserId : session.user.id;
+  const targetUserId = isAdmin(session) && requestedUserId ? requestedUserId : session.user.id;
 
   // Employees can only enter hours for dates up to today in the current month
-  if (session.user.role === "EMPLOYEE") {
+  if (!isAdmin(session)) {
     const entryDate = new Date(`${workDate}T00:00:00.000Z`);
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
@@ -261,7 +262,7 @@ export async function DELETE(request: Request) {
   }
 
   // Check permissions: employees can only delete their own entries, admins can delete any
-  if (session.user.role === "EMPLOYEE" && entry.userId !== session.user.id) {
+  if (!isAdmin(session) && entry.userId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -20,7 +20,7 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (session.user.role !== "ADMIN") {
+  if (!isAdmin(session)) {
     return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
 
