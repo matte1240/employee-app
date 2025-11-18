@@ -13,6 +13,7 @@ import {
   startOfWeek,
   endOfWeek,
 } from "date-fns";
+import { it } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import LogoutButton from "@/components/auth/logout-button";
@@ -20,6 +21,7 @@ import StatsCard from "./stats-card";
 import type { TimeEntryDTO } from "@/types/models";
 import { calculateHours, TIME_OPTIONS } from "@/lib/utils/time-utils";
 import { isDateEditable as isDateEditableUtil } from "@/lib/utils/date-utils";
+import { isHoliday, getHolidayName } from "@/lib/utils/holiday-utils";
 
 // Re-export for backward compatibility
 export type { TimeEntryDTO };
@@ -85,6 +87,17 @@ export default function TimesheetCalendar({
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{x: number, y: number, date: string, visible: boolean} | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  // Month picker state
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+
+  // Generate year/month options for picker
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const months = [
+    "Gen", "Feb", "Mar", "Apr", "Mag", "Giu",
+    "Lug", "Ago", "Set", "Ott", "Nov", "Dic"
+  ];
 
   // Unified function to fetch entries
   const fetchEntries = useCallback(async (signal?: AbortSignal) => {
@@ -285,11 +298,11 @@ export default function TimesheetCalendar({
   const handleDayClick = (day: Date) => {
     if (!isSameMonth(day, currentMonth)) return;
     
-    // Check if it's Sunday (only for employees)
+    // Check if it's Sunday or Holiday (only for employees)
     if (!isAdmin) {
       const dayOfWeek = day.getDay();
-      if (dayOfWeek === 0) {
-        setError("Non è possibile inserire ore la domenica.");
+      if (dayOfWeek === 0 || isHoliday(day)) {
+        setError("Non è possibile inserire ore la domenica o nei giorni festivi.");
         return;
       }
     }
@@ -609,11 +622,84 @@ export default function TimesheetCalendar({
         <section className="order-1 md:order-2 mb-8 md:mb-0 rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-200 px-3 sm:px-6 py-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {format(currentMonth, "MMMM yyyy")}
-                </h2>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
+                  className="flex items-center gap-2 text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors capitalize cursor-pointer"
+                >
+                  <span>{format(currentMonth, "MMMM yyyy", { locale: it })}</span>
+                  <svg
+                    className={`h-5 w-5 text-gray-400 transition-transform ${
+                      isMonthPickerOpen ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
                 {isFetching && <p className="text-xs text-gray-500">Aggiornamento calendario...</p>}
+
+                {isMonthPickerOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setIsMonthPickerOpen(false)}
+                    />
+                    <div className="absolute z-20 mt-1 w-80 rounded-lg bg-white border border-gray-300 p-4 shadow-lg left-0">
+                      {/* Year selector */}
+                      <select
+                        value={currentMonth.getFullYear()}
+                        onChange={(e) => {
+                          const newYear = parseInt(e.target.value);
+                          const newDate = new Date(currentMonth);
+                          newDate.setFullYear(newYear);
+                          setCurrentMonth(newDate);
+                        }}
+                        className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                      >
+                        {years.map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Month grid */}
+                      <div className="grid grid-cols-3 gap-2">
+                        {months.map((month, idx) => {
+                          const isSelected = idx === currentMonth.getMonth();
+
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                const newDate = new Date(currentMonth);
+                                newDate.setMonth(idx);
+                                setCurrentMonth(newDate);
+                                setIsMonthPickerOpen(false);
+                              }}
+                              className={`rounded-md px-3 py-2 text-sm font-medium transition cursor-pointer ${
+                                isSelected
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              }`}
+                            >
+                              {month}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -662,6 +748,8 @@ export default function TimesheetCalendar({
                 const dayOfWeek = day.getDay(); // 0 = Sunday, 6 = Saturday
                 const isSaturday = dayOfWeek === 6;
                 const isSunday = dayOfWeek === 0;
+                const isHolidayDay = isHoliday(day);
+                const holidayName = isHolidayDay ? getHolidayName(day) : null;
 
                 // Calculate permesso hours
                 let permessoHours = 0;
@@ -674,7 +762,7 @@ export default function TimesheetCalendar({
                   today.setHours(0, 0, 0, 0);
                   const yesterday = new Date(today);
                   yesterday.setDate(yesterday.getDate() - 1);
-                  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+                  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5 && !isHolidayDay;
                   const isPastOrYesterday = day <= yesterday;
                   const isInCurrentMonth = isSameMonth(day, currentMonth);
 
@@ -696,20 +784,21 @@ export default function TimesheetCalendar({
                 let bgColorDisabled = "bg-gray-50";
                 let bgColorOutside = "bg-gray-50/50";
                 
-                if (isSaturday) {
-                  bgColorClass = "bg-blue-50";
-                  bgColorDisabled = "bg-blue-50/70";
-                  bgColorOutside = "bg-blue-50/40";
-                } else if (isSunday) {
+                if (isSunday || isHolidayDay) {
                   bgColorClass = "bg-red-50";
                   bgColorDisabled = "bg-red-50/70";
                   bgColorOutside = "bg-red-50/40";
+                } else if (isSaturday) {
+                  bgColorClass = "bg-blue-50";
+                  bgColorDisabled = "bg-blue-50/70";
+                  bgColorOutside = "bg-blue-50/40";
                 }
 
                 return (
                   <button
                     key={key}
                     onClick={() => handleDayClick(day)}
+                    title={holidayName || undefined}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       if (!editable) return;
@@ -1075,7 +1164,7 @@ export default function TimesheetCalendar({
               setSelectedDate(contextMenu.date);
               handleFerie(contextMenu.date);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
           >
             Ferie
           </button>
@@ -1098,7 +1187,7 @@ export default function TimesheetCalendar({
                 })
                 .catch(() => alert("Errore nell'eliminazione"));
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100"
+            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100 cursor-pointer"
           >
             Elimina
           </button>

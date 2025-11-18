@@ -1,3 +1,5 @@
+import { isHoliday } from "./holiday-utils";
+
 /**
  * Utility functions for date-related operations
  */
@@ -30,10 +32,10 @@ export function isDateEditable(date: Date, isAdmin = false): boolean {
     earliestEditableDate = new Date(today.getFullYear(), today.getMonth(), 1);
   }
   
-  // Block Sundays (0 = Sunday) only for employees
+  // Block Sundays (0 = Sunday) and Holidays only for employees
   if (!isAdmin) {
     const dayOfWeek = checkDate.getDay();
-    if (dayOfWeek === 0) {
+    if (dayOfWeek === 0 || isHoliday(checkDate)) {
       return false;
     }
   }
