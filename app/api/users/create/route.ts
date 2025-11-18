@@ -12,6 +12,7 @@ const createUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   role: z.enum(["EMPLOYEE", "ADMIN"]),
+  password: z.string().min(8, "Password must be at least 8 characters").optional(),
 });
 
 export async function POST(request: Request) {
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, role } = parsed.data;
+    const { name, email, role, password } = parsed.data;
 
     // Check if user already exists
     const existingUser = await findUserByEmail(email);
@@ -49,12 +50,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate a temporary password (8 characters with uppercase, lowercase, and numbers)
-    const tempPassword = crypto.randomBytes(4).toString('hex') + 
-                         String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Add uppercase letter
+    // Determine password to use
+    let passwordToHash: string;
+    
+    if (password) {
+      // Manual password provided
+      passwordToHash = password;
+    } else {
+      // Generate a temporary password (8 characters with uppercase, lowercase, and numbers)
+      passwordToHash = crypto.randomBytes(4).toString('hex') + 
+                       String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Add uppercase letter
+    }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    const passwordHash = await bcrypt.hash(passwordToHash, 10);
 
     // Create user
     const newUser = await prisma.user.create({
@@ -72,6 +81,12 @@ export async function POST(request: Request) {
         createdAt: true,
       },
     });
+
+    // If manual password was provided, skip email sending
+    if (password) {
+      console.log(`✅ User created with manual password: ${email}`);
+      return NextResponse.json(newUser, { status: 201 });
+    }
 
     // Generate reset token
     const { resetToken, hashedToken } = generateResetToken();
