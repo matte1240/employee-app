@@ -15,7 +15,7 @@ type ExportDataProps = {
   users: User[];
 };
 
-export default function ExportData({ users }: ExportDataProps) {
+export default function AdminReports({ users }: ExportDataProps) {
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;

@@ -13,6 +13,6 @@ export default async function DashboardPage() {
   if (isAdmin(session)) {
     redirect("/dashboard/admin");
   } else {
-    redirect("/dashboard/employee-calendar");
+    redirect("/dashboard/calendar");
   }
 }

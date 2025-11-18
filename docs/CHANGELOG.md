@@ -49,6 +49,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic session extension for active users
   - Alert and redirect on session expiration
 
+#### Code Refactoring & UI Improvements
+- **RENAME**: Renamed dashboard components for clarity:
+  - `calendar.tsx` → `timesheet-calendar.tsx`
+  - `admin-calendar.tsx` → `admin-timesheet.tsx`
+  - `export-data.tsx` → `admin-reports.tsx`
+  - `employee-reports.tsx` → `user-reports.tsx`
+- **NEW**: Created reusable `StatsCard` component (`components/dashboard/stats-card.tsx`)
+- **UPDATE**: Refactored `admin-overview.tsx` and `admin-timesheet.tsx` to use `StatsCard` (DRY principle)
+- **UPDATE**: Set `logo40.svg` as the application favicon in `app/layout.tsx`
+- **UPDATE**: Modified `logo40.svg` to remove white background (transparent)
+
 ---
 
 # [0.6.0](https://github.com/matte1240/employee-app/compare/v0.5.0...v0.6.0) (2025-11-18)

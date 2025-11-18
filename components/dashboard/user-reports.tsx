@@ -19,7 +19,7 @@ type MonthStats = {
   workingDays: number;
 };
 
-export default function EmployeeReports({
+export default function UserReports({
   userId,
   userName,
   userEmail,

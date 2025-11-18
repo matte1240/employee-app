@@ -3,10 +3,10 @@ import { redirect } from "next/navigation";
 import { endOfMonth, startOfMonth } from "date-fns";
 import prisma from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
-import Calendar, {
+import TimesheetCalendar, {
   type TimeEntryDTO,
-} from "@/components/dashboard/calendar";
-import AdminCalendar from "@/components/dashboard/admin-calendar";
+} from "@/components/dashboard/timesheet-calendar";
+import AdminTimesheet from "@/components/dashboard/admin-timesheet";
 
 type PrismaEntry = {
   id: string;
@@ -55,76 +55,101 @@ export default async function CalendarPage({
     redirect("/");
   }
 
-  if (session.user.role !== "ADMIN") {
-    redirect("/dashboard");
-  }
-
-  // Get all users for the dropdown
-  const users = (await prisma.user.findMany({
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-    },
-  })) as UserRow[];
-
-  // Await searchParams (Next.js 15+)
+  const now = new Date();
   const params = await searchParams;
 
-  // Determine which user's calendar to show
-  const targetUserId = params.userId || session.user.id;
-  const targetUser = users.find((u) => u.id === targetUserId) || {
-    id: session.user.id,
-    name: session.user.name || null,
-    email: session.user.email,
+  // Common query selection
+  const querySelect = {
+    id: true,
+    workDate: true,
+    hoursWorked: true,
+    overtimeHours: true,
+    permessoHours: true,
+    vacationHours: true,
+    sicknessHours: true,
+    morningStart: true,
+    morningEnd: true,
+    afternoonStart: true,
+    afternoonEnd: true,
+    notes: true,
   };
 
-  // Fetch entries for the target user
-  const now = new Date();
-  const entries = (await prisma.timeEntry.findMany({
-    where: {
-      userId: targetUserId,
-      workDate: {
-        gte: startOfMonth(now),
-        lte: endOfMonth(now),
+  if (session.user.role === "ADMIN") {
+    // Get all users for the dropdown
+    const users = (await prisma.user.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
       },
-    },
-    select: {
-      id: true,
-      workDate: true,
-      hoursWorked: true,
-      overtimeHours: true,
-      permessoHours: true,
-      vacationHours: true,
-      sicknessHours: true,
-      morningStart: true,
-      morningEnd: true,
-      afternoonStart: true,
-      afternoonEnd: true,
-      notes: true,
-    },
-    orderBy: { workDate: "asc" },
-  })) as PrismaEntry[];
+    })) as UserRow[];
 
-  const plain = entries.map(toDto);
+    // Determine which user's calendar to show
+    const targetUserId = params.userId || session.user.id;
+    const targetUser = users.find((u) => u.id === targetUserId) || {
+      id: session.user.id,
+      name: session.user.name || null,
+      email: session.user.email,
+    };
 
-  // Calculate totals for the selected user
-  const totalHours = entries.reduce((sum, entry) => sum + parseFloat(entry.hoursWorked.toString()) + parseFloat(entry.overtimeHours.toString()), 0);
-  const totalOvertimeHours = entries.reduce((sum, entry) => sum + parseFloat(entry.overtimeHours.toString()), 0);
-  const totalPermFerieHours = entries.reduce((sum, entry) => sum + parseFloat(entry.permessoHours.toString()) + parseFloat(entry.vacationHours.toString()), 0);
-  const totalSicknessHours = entries.reduce((sum, entry) => sum + parseFloat(entry.sicknessHours.toString()), 0);
+    // Fetch entries for the target user
+    const entries = (await prisma.timeEntry.findMany({
+      where: {
+        userId: targetUserId,
+        workDate: {
+          gte: startOfMonth(now),
+          lte: endOfMonth(now),
+        },
+      },
+      select: querySelect,
+      orderBy: { workDate: "asc" },
+    })) as PrismaEntry[];
 
-  return (
-    <AdminCalendar
-      users={users}
-      selectedUserId={targetUserId}
-      selectedUser={targetUser}
-      initialEntries={plain}
-      totalHours={totalHours}
-      totalOvertimeHours={totalOvertimeHours}
-      totalPermFerieHours={totalPermFerieHours}
-      totalSicknessHours={totalSicknessHours}
-    />
-  );
+    const plain = entries.map(toDto);
+
+    // Calculate totals for the selected user
+    const totalHours = entries.reduce((sum, entry) => sum + parseFloat(entry.hoursWorked.toString()) + parseFloat(entry.overtimeHours.toString()), 0);
+    const totalOvertimeHours = entries.reduce((sum, entry) => sum + parseFloat(entry.overtimeHours.toString()), 0);
+    const totalPermFerieHours = entries.reduce((sum, entry) => sum + parseFloat(entry.permessoHours.toString()) + parseFloat(entry.vacationHours.toString()), 0);
+    const totalSicknessHours = entries.reduce((sum, entry) => sum + parseFloat(entry.sicknessHours.toString()), 0);
+
+    return (
+      <AdminTimesheet
+        users={users}
+        selectedUserId={targetUserId}
+        selectedUser={targetUser}
+        initialEntries={plain}
+        totalHours={totalHours}
+        totalOvertimeHours={totalOvertimeHours}
+        totalPermFerieHours={totalPermFerieHours}
+        totalSicknessHours={totalSicknessHours}
+      />
+    );
+  } else {
+    // EMPLOYEE VIEW
+    const entries = (await prisma.timeEntry.findMany({
+      where: {
+        userId: session.user.id,
+        workDate: {
+          gte: startOfMonth(now),
+          lte: endOfMonth(now),
+        },
+      },
+      select: querySelect,
+      orderBy: { workDate: "asc" },
+    })) as PrismaEntry[];
+
+    const plain = entries.map(toDto);
+
+    return (
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <TimesheetCalendar
+          initialEntries={plain}
+          userName={session.user.name ?? session.user.email}
+          hideHeader={true}
+        />
+      </div>
+    );
+  }
 }

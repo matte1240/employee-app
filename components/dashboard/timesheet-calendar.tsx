@@ -47,7 +47,7 @@ type ModalFormState = {
 
 
 
-export default function EmployeeDashboard({
+export default function TimesheetCalendar({
   initialEntries,
   userName,
   hideHeader = false,

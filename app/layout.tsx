@@ -20,6 +20,12 @@ const robotoMono = Roboto_Mono({
 export const metadata: Metadata = {
   title: "Work Hours Tracker",
   description: "Employee time tracking with admin oversight using Next.js, Prisma, and NextAuth.",
+  icons: {
+    icon: [
+      { url: "/logo40.png", type: "image/png" },
+      { url: "/logo40.svg", type: "image/svg+xml" },
+    ],
+  },
 };
 
 export default function RootLayout({
