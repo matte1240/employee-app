@@ -33,6 +33,10 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [resettingPasswordUser, setResettingPasswordUser] = useState<User | null>(null);
+  
+  // Manual password toggle states (for production mode with admin control)
+  const [manualPasswordCreate, setManualPasswordCreate] = useState(false);
+  const [manualPasswordReset, setManualPasswordReset] = useState(false);
 
   // Form states
   const [createForm, setCreateForm] = useState<CreateUserForm>({
@@ -68,8 +72,9 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
     setError(null);
     setSuccess(null);
 
-    // Validate password in DEV mode
-    if (devMode) {
+    // Validate password when manual password is enabled (either devMode or manualPasswordCreate)
+    const useManualPassword = devMode || manualPasswordCreate;
+    if (useManualPassword) {
       if (createForm.password !== createForm.confirmPassword) {
         setError("Le password non coincidono");
         return;
@@ -83,7 +88,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
     startCreating(async () => {
       try {
         const endpoint = devMode ? "/api/users/create-dev" : "/api/users/create";
-        const body = devMode
+        const body = useManualPassword
           ? {
               name: createForm.name,
               email: createForm.email,
@@ -109,7 +114,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
           return;
         }
 
-        const successMessage = devMode
+        const successMessage = useManualPassword
           ? `Utente ${createForm.email} creato con successo!`
           : `Utente ${createForm.email} creato! Riceverà un'email per impostare la password.`;
 
@@ -121,6 +126,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
           confirmPassword: "",
           role: "EMPLOYEE",
         });
+        setManualPasswordCreate(false); // Reset toggle
         setIsCreatingUserModalOpen(false);
         router.refresh();
       } catch (err) {
@@ -209,8 +215,10 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
     setError(null);
     setSuccess(null);
 
-    if (devMode) {
-      // DEV mode: Manual password reset
+    const useManualPassword = devMode || manualPasswordReset;
+
+    if (useManualPassword) {
+      // Manual password reset
       if (resetPasswordForm.newPassword !== resetPasswordForm.confirmPassword) {
         setError("Le password non coincidono");
         return;
@@ -222,7 +230,11 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
 
       startResettingPassword(async () => {
         try {
-          const response = await fetch(`/api/users/${resettingPasswordUser.id}/reset-password-dev`, {
+          const endpoint = devMode 
+            ? `/api/users/${resettingPasswordUser.id}/reset-password-dev`
+            : `/api/users/${resettingPasswordUser.id}/reset-password`;
+            
+          const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ newPassword: resetPasswordForm.newPassword }),
@@ -238,6 +250,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
           setSuccess(`Password reimpostata con successo per ${resettingPasswordUser.email}!`);
           setResettingPasswordUser(null);
           setResetPasswordForm({ newPassword: "", confirmPassword: "" });
+          setManualPasswordReset(false); // Reset toggle
         } catch (err) {
           setError("Si è verificato un errore imprevisto");
         }
@@ -439,6 +452,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                       confirmPassword: "",
                       role: "EMPLOYEE",
                     });
+                    setManualPasswordCreate(false);
                     setError(null);
                     setSuccess(null);
                   }}
@@ -494,7 +508,28 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                 </select>
               </div>
 
-              {devMode && (
+              {/* Manual Password Toggle (only show in production mode, not in dev mode) */}
+              {!devMode && (
+                <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="manualPasswordCreate"
+                    checked={manualPasswordCreate}
+                    onChange={(e) => setManualPasswordCreate(e.target.checked)}
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="manualPasswordCreate" className="flex-1 cursor-pointer">
+                    <span className="text-sm font-semibold text-blue-900">
+                      Imposta password manualmente
+                    </span>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Quando attivo, puoi impostare la password direttamente senza inviare email all'utente
+                    </p>
+                  </label>
+                </div>
+              )}
+
+              {(devMode || manualPasswordCreate) && (
                 <>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -567,6 +602,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                       confirmPassword: "",
                       role: "EMPLOYEE",
                     });
+                    setManualPasswordCreate(false);
                     setError(null);
                     setSuccess(null);
                   }}
@@ -778,6 +814,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                   onClick={() => {
                     setResettingPasswordUser(null);
                     setResetPasswordForm({ newPassword: "", confirmPassword: "" });
+                    setManualPasswordReset(false);
                     setError(null);
                     setSuccess(null);
                   }}
@@ -804,13 +841,36 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                     <p className="text-amber-700 mt-2">
                       {devMode
                         ? "Modalità DEV: imposta manualmente la nuova password. Nessuna email verrà inviata."
-                        : "Verrà inviata un'email con il link per reimpostare la password."}
+                        : manualPasswordReset
+                          ? "Imposta manualmente la nuova password. Nessuna email verrà inviata."
+                          : "Verrà inviata un'email con il link per reimpostare la password."}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {devMode && (
+              {/* Manual Password Toggle (only show in production mode, not in dev mode) */}
+              {!devMode && (
+                <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="manualPasswordReset"
+                    checked={manualPasswordReset}
+                    onChange={(e) => setManualPasswordReset(e.target.checked)}
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="manualPasswordReset" className="flex-1 cursor-pointer">
+                    <span className="text-sm font-semibold text-blue-900">
+                      Imposta password manualmente
+                    </span>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Quando attivo, puoi impostare la password direttamente senza inviare email all'utente
+                    </p>
+                  </label>
+                </div>
+              )}
+
+              {(devMode || manualPasswordReset) && (
                 <>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -861,6 +921,7 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                   onClick={() => {
                     setResettingPasswordUser(null);
                     setResetPasswordForm({ newPassword: "", confirmPassword: "" });
+                    setManualPasswordReset(false);
                     setError(null);
                     setSuccess(null);
                   }}
@@ -873,7 +934,11 @@ export default function ManageUsers({ users, currentUserId, devMode = false }: M
                   disabled={isResettingPassword}
                   className="flex-1 rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-yellow-700 hover:to-yellow-800 disabled:cursor-not-allowed disabled:from-yellow-300 disabled:to-yellow-400"
                 >
-                  {isResettingPassword ? "Reimpostazione..." : devMode ? "Reimposta Password" : "Invia Email"}
+                  {isResettingPassword 
+                    ? "Reimpostazione..." 
+                    : (devMode || manualPasswordReset) 
+                      ? "Reimposta Password" 
+                      : "Invia Email"}
                 </button>
               </div>
             </form>
