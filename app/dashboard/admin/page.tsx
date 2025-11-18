@@ -2,13 +2,9 @@ import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import AdminOverview from "@/components/dashboard/admin-overview";
+import type { User } from "@/types/models";
 
-type UserAggregate = {
-  id: string;
-  name: string | null;
-  email: string;
-  role: "EMPLOYEE" | "ADMIN";
-  createdAt: Date;
+type UserAggregate = User & {
   regularHours: number;
   overtimeHours: number;
   permessoHours: number;
@@ -17,13 +13,7 @@ type UserAggregate = {
   lastEntry?: string | null;
 };
 
-type UserRow = {
-  id: string;
-  name: string | null;
-  email: string;
-  role: "EMPLOYEE" | "ADMIN";
-  createdAt: Date;
-};
+type UserRow = User;
 
 export default async function AdminDashboardPage() {
   const session = await getAuthSession();

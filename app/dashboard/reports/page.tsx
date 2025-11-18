@@ -2,12 +2,7 @@ import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import ExportData from "@/components/dashboard/export-data";
-
-type UserRow = {
-  id: string;
-  name: string | null;
-  email: string;
-};
+import type { User } from "@/types/models";
 
 export default async function ReportsPage() {
   const session = await getAuthSession();
@@ -26,8 +21,10 @@ export default async function ReportsPage() {
       id: true,
       email: true,
       name: true,
+      role: true,
+      createdAt: true,
     },
-  })) as UserRow[];
+  })) as User[];
 
   return <ExportData users={users} />;
 }

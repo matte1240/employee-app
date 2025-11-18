@@ -61,6 +61,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64
       
       - name: Summary
         run: |
@@ -167,9 +168,9 @@ jobs:
             fi
             echo ""
             
-            # Cleanup old images
+            # Cleanup old images (including unused tagged images)
             echo "🧹 Cleaning up old images..."
-            docker image prune -f
+            docker image prune -a -f
             echo ""
             
             echo "=========================================="

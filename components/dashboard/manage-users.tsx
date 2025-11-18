@@ -3,18 +3,12 @@
 import { format } from "date-fns";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-
-type User = {
-  id: string;
-  name: string | null;
-  email: string;
-  role: "EMPLOYEE" | "ADMIN";
-  createdAt: Date;
-};
+import type { User, UserRole } from "@/types/models";
 
 type ManageUsersProps = {
   users: User[];
   currentUserId: string;
+  devMode?: boolean; // Controls whether to show DEV features (manual password setting)
 };
 
 type CreateUserForm = {
@@ -22,16 +16,16 @@ type CreateUserForm = {
   email: string;
   password: string;
   confirmPassword: string;
-  role: "EMPLOYEE" | "ADMIN";
+  role: UserRole;
 };
 
 type EditUserForm = {
   name: string;
   email: string;
-  role: "EMPLOYEE" | "ADMIN";
+  role: UserRole;
 };
 
-export default function ManageUsers({ users, currentUserId }: ManageUsersProps) {
+export default function ManageUsers({ users, currentUserId, devMode = false }: ManageUsersProps) {
   const router = useRouter();
 
   // Modal states
@@ -39,6 +33,10 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [resettingPasswordUser, setResettingPasswordUser] = useState<User | null>(null);
+  
+  // Manual password toggle states (for production mode with admin control)
+  const [manualPasswordCreate, setManualPasswordCreate] = useState(false);
+  const [manualPasswordReset, setManualPasswordReset] = useState(false);
 
   // Form states
   const [createForm, setCreateForm] = useState<CreateUserForm>({
@@ -52,6 +50,10 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
     name: "",
     email: "",
     role: "EMPLOYEE",
+  });
+  const [resetPasswordForm, setResetPasswordForm] = useState({
+    newPassword: "",
+    confirmPassword: "",
   });
 
   // Transition states
@@ -70,16 +72,39 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
     setError(null);
     setSuccess(null);
 
+    // Validate password when manual password is enabled (either devMode or manualPasswordCreate)
+    const useManualPassword = devMode || manualPasswordCreate;
+    if (useManualPassword) {
+      if (createForm.password !== createForm.confirmPassword) {
+        setError("Le password non coincidono");
+        return;
+      }
+      if (createForm.password.length < 8) {
+        setError("La password deve contenere almeno 8 caratteri");
+        return;
+      }
+    }
+
     startCreating(async () => {
       try {
-        const response = await fetch("/api/users/create", {
+        const endpoint = devMode ? "/api/users/create-dev" : "/api/users/create";
+        const body = useManualPassword
+          ? {
+              name: createForm.name,
+              email: createForm.email,
+              password: createForm.password,
+              role: createForm.role,
+            }
+          : {
+              name: createForm.name,
+              email: createForm.email,
+              role: createForm.role,
+            };
+
+        const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: createForm.name,
-            email: createForm.email,
-            role: createForm.role,
-          }),
+          body: JSON.stringify(body),
         });
 
         const data = await response.json();
@@ -89,7 +114,11 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
           return;
         }
 
-        setSuccess(`Utente ${createForm.email} creato! Riceverà un'email per impostare la password.`);
+        const successMessage = useManualPassword
+          ? `Utente ${createForm.email} creato con successo!`
+          : `Utente ${createForm.email} creato! Riceverà un'email per impostare la password.`;
+
+        setSuccess(successMessage);
         setCreateForm({
           name: "",
           email: "",
@@ -97,6 +126,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
           confirmPassword: "",
           role: "EMPLOYEE",
         });
+        setManualPasswordCreate(false); // Reset toggle
         setIsCreatingUserModalOpen(false);
         router.refresh();
       } catch (err) {
@@ -185,26 +215,69 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
     setError(null);
     setSuccess(null);
 
-    startResettingPassword(async () => {
-      try {
-        const response = await fetch(`/api/users/${resettingPasswordUser.id}/reset-password`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
+    const useManualPassword = devMode || manualPasswordReset;
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError(data.error || "Impossibile reimpostare la password");
-          return;
-        }
-
-        setSuccess(`Password reimpostata! L'utente ${resettingPasswordUser.email} riceverà un'email con la password temporanea.`);
-        setResettingPasswordUser(null);
-      } catch (err) {
-        setError("Si è verificato un errore imprevisto");
+    if (useManualPassword) {
+      // Manual password reset
+      if (resetPasswordForm.newPassword !== resetPasswordForm.confirmPassword) {
+        setError("Le password non coincidono");
+        return;
       }
-    });
+      if (resetPasswordForm.newPassword.length < 8) {
+        setError("La password deve contenere almeno 8 caratteri");
+        return;
+      }
+
+      startResettingPassword(async () => {
+        try {
+          const endpoint = devMode 
+            ? `/api/users/${resettingPasswordUser.id}/reset-password-dev`
+            : `/api/users/${resettingPasswordUser.id}/reset-password`;
+            
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ newPassword: resetPasswordForm.newPassword }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            setError(data.error || "Impossibile reimpostare la password");
+            return;
+          }
+
+          setSuccess(`Password reimpostata con successo per ${resettingPasswordUser.email}!`);
+          setResettingPasswordUser(null);
+          setResetPasswordForm({ newPassword: "", confirmPassword: "" });
+          setManualPasswordReset(false); // Reset toggle
+        } catch (err) {
+          setError("Si è verificato un errore imprevisto");
+        }
+      });
+    } else {
+      // Production mode: Email-based reset
+      startResettingPassword(async () => {
+        try {
+          const response = await fetch(`/api/users/${resettingPasswordUser.id}/reset-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            setError(data.error || "Impossibile inviare l'email di reset");
+            return;
+          }
+
+          setSuccess(`Email di reset inviata a ${resettingPasswordUser.email}!`);
+          setResettingPasswordUser(null);
+        } catch (err) {
+          setError("Si è verificato un errore imprevisto");
+        }
+      });
+    }
   };
 
   return (
@@ -212,10 +285,14 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
       {/* Header with Create Button */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestione Utenti</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Visualizza, modifica, elimina utenti e reimposta le loro password
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Gestione Utenti{devMode ? " DEV" : ""}
+          </h2>
+          {devMode && (
+            <p className="mt-2 text-sm text-gray-600">
+              Modalità sviluppo: imposta le password manualmente (nessuna email verrà inviata)
+            </p>
+          )}
         </div>
         <button
           onClick={() => {
@@ -322,6 +399,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                       <button
                         onClick={() => {
                           setResettingPasswordUser(user);
+                          setResetPasswordForm({ newPassword: "", confirmPassword: "" });
                           setError(null);
                           setSuccess(null);
                         }}
@@ -374,6 +452,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                       confirmPassword: "",
                       role: "EMPLOYEE",
                     });
+                    setManualPasswordCreate(false);
                     setError(null);
                     setSuccess(null);
                   }}
@@ -421,7 +500,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 </label>
                 <select
                   value={createForm.role}
-                  onChange={(e) => setCreateForm(f => ({ ...f, role: e.target.value as "EMPLOYEE" | "ADMIN" }))}
+                  onChange={(e) => setCreateForm(f => ({ ...f, role: e.target.value as UserRole }))}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
                 >
                   <option value="EMPLOYEE">Dipendente</option>
@@ -429,21 +508,76 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 </select>
               </div>
 
-              {/* Info Box */}
-              <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="text-sm">
-                  <p className="font-semibold text-blue-900 mb-1">
-                    Configurazione Password
-                  </p>
-                  <p className="text-blue-800">
-                    L'utente riceverà un'email con un link per impostare la propria password al primo accesso.
-                    Il link sarà valido per 24 ore.
-                  </p>
+              {/* Manual Password Toggle (only show in production mode, not in dev mode) */}
+              {!devMode && (
+                <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="manualPasswordCreate"
+                    checked={manualPasswordCreate}
+                    onChange={(e) => setManualPasswordCreate(e.target.checked)}
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="manualPasswordCreate" className="flex-1 cursor-pointer">
+                    <span className="text-sm font-semibold text-blue-900">
+                      Imposta password manualmente
+                    </span>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Quando attivo, puoi impostare la password direttamente senza inviare email all'utente
+                    </p>
+                  </label>
                 </div>
-              </div>
+              )}
+
+              {(devMode || manualPasswordCreate) && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={createForm.password}
+                      onChange={(e) => setCreateForm(f => ({ ...f, password: e.target.value }))}
+                      required
+                      minLength={8}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      placeholder="Almeno 8 caratteri"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Conferma Password
+                    </label>
+                    <input
+                      type="password"
+                      value={createForm.confirmPassword}
+                      onChange={(e) => setCreateForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                      required
+                      minLength={8}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      placeholder="Ripeti la password"
+                    />
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="text-sm">
+                      <p className="font-semibold text-amber-900 mb-1">
+                        Modalità DEV Attiva
+                      </p>
+                      <p className="text-amber-800">
+                        Imposti manualmente la password. Nessuna email verrà inviata all'utente.
+                        Questa modalità è da usare solo per test e sviluppo.
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {error && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-4">
@@ -468,6 +602,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                       confirmPassword: "",
                       role: "EMPLOYEE",
                     });
+                    setManualPasswordCreate(false);
                     setError(null);
                     setSuccess(null);
                   }}
@@ -545,7 +680,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 </label>
                 <select
                   value={editForm.role}
-                  onChange={(e) => setEditForm(f => ({ ...f, role: e.target.value as "EMPLOYEE" | "ADMIN" }))}
+                  onChange={(e) => setEditForm(f => ({ ...f, role: e.target.value as UserRole }))}
                   disabled={editingUser?.id === currentUserId}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                 >
@@ -678,6 +813,8 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 <button
                   onClick={() => {
                     setResettingPasswordUser(null);
+                    setResetPasswordForm({ newPassword: "", confirmPassword: "" });
+                    setManualPasswordReset(false);
                     setError(null);
                     setSuccess(null);
                   }}
@@ -692,22 +829,80 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
 
             <form onSubmit={handleResetPassword} className="p-6 space-y-4">
               <div className="mb-4">
-                <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="text-sm">
-                    <p className="font-semibold text-blue-900 mb-1">
+                    <p className="font-semibold text-amber-900 mb-1">
                       Reimpostazione password per:
                     </p>
-                    <p className="text-blue-800 font-medium">{resettingPasswordUser.email}</p>
-                    <p className="text-blue-700 mt-2">
-                      Una password temporanea verrà generata automaticamente e inviata via email all'utente.
-                      L'utente dovrà cambiarla al primo accesso.
+                    <p className="text-amber-800 font-medium">{resettingPasswordUser.email}</p>
+                    <p className="text-amber-700 mt-2">
+                      {devMode
+                        ? "Modalità DEV: imposta manualmente la nuova password. Nessuna email verrà inviata."
+                        : manualPasswordReset
+                          ? "Imposta manualmente la nuova password. Nessuna email verrà inviata."
+                          : "Verrà inviata un'email con il link per reimpostare la password."}
                     </p>
                   </div>
                 </div>
               </div>
+
+              {/* Manual Password Toggle (only show in production mode, not in dev mode) */}
+              {!devMode && (
+                <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="manualPasswordReset"
+                    checked={manualPasswordReset}
+                    onChange={(e) => setManualPasswordReset(e.target.checked)}
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="manualPasswordReset" className="flex-1 cursor-pointer">
+                    <span className="text-sm font-semibold text-blue-900">
+                      Imposta password manualmente
+                    </span>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Quando attivo, puoi impostare la password direttamente senza inviare email all'utente
+                    </p>
+                  </label>
+                </div>
+              )}
+
+              {(devMode || manualPasswordReset) && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Nuova Password
+                    </label>
+                    <input
+                      type="password"
+                      value={resetPasswordForm.newPassword}
+                      onChange={(e) => setResetPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
+                      required
+                      minLength={8}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      placeholder="Almeno 8 caratteri"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Conferma Nuova Password
+                    </label>
+                    <input
+                      type="password"
+                      value={resetPasswordForm.confirmPassword}
+                      onChange={(e) => setResetPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                      required
+                      minLength={8}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      placeholder="Ripeti la password"
+                    />
+                  </div>
+                </>
+              )}
 
               {error && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-4">
@@ -725,6 +920,8 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   type="button"
                   onClick={() => {
                     setResettingPasswordUser(null);
+                    setResetPasswordForm({ newPassword: "", confirmPassword: "" });
+                    setManualPasswordReset(false);
                     setError(null);
                     setSuccess(null);
                   }}
@@ -737,7 +934,11 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   disabled={isResettingPassword}
                   className="flex-1 rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-yellow-700 hover:to-yellow-800 disabled:cursor-not-allowed disabled:from-yellow-300 disabled:to-yellow-400"
                 >
-                  {isResettingPassword ? "Invio email..." : "Conferma Reset"}
+                  {isResettingPassword 
+                    ? "Reimpostazione..." 
+                    : (devMode || manualPasswordReset) 
+                      ? "Reimposta Password" 
+                      : "Invia Email"}
                 </button>
               </div>
             </form>

@@ -3,14 +3,7 @@
 import { useState, useTransition } from "react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
-
-type User = {
-  id: string;
-  name: string | null;
-  email: string;
-  role: string;
-  createdAt: Date;
-};
+import type { User } from "@/types/models";
 
 type EmployeeProfileProps = {
   user: User;

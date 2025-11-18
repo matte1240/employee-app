@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import LoginForm from "@/components/login-form";
 import { getAuthSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 // Force dynamic rendering to check database at runtime
 export const dynamic = "force-dynamic";

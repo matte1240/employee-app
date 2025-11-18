@@ -16,22 +16,12 @@ import {
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import LogoutButton from "@/components/logout-button";
+import type { TimeEntryDTO } from "@/types/models";
+import { calculateHours, TIME_OPTIONS } from "@/lib/time-utils";
+import { isDateEditable as isDateEditableUtil } from "@/lib/date-utils";
 
-export type TimeEntryDTO = {
-  id: string;
-  workDate: string;
-  hoursWorked: number;
-  overtimeHours?: number;
-  permessoHours?: number;
-  sicknessHours?: number;
-  vacationHours?: number;
-  morningStart?: string | null;
-  morningEnd?: string | null;
-  afternoonStart?: string | null;
-  afternoonEnd?: string | null;
-  medicalCertificate?: string | null;
-  notes?: string | null;
-};
+// Re-export for backward compatibility
+export type { TimeEntryDTO };
 
 type EmployeeDashboardProps = {
   initialEntries: TimeEntryDTO[];
@@ -55,29 +45,7 @@ type ModalFormState = {
   isAfternoonPermesso: boolean;
 };
 
-// Helper function to calculate hours between two times
-function calculateHours(start: string, end: string): number {
-  if (!start || !end) return 0;
-  const [startHour, startMin] = start.split(":").map(Number);
-  const [endHour, endMin] = end.split(":").map(Number);
-  const startMinutes = startHour * 60 + startMin;
-  const endMinutes = endHour * 60 + endMin;
-  return Math.max(0, (endMinutes - startMinutes) / 60);
-}
 
-// Generate time options from 06:00 to 21:00 with 30-minute intervals
-function generateTimeOptions(): string[] {
-  const options: string[] = [];
-  for (let hour = 6; hour <= 21; hour++) {
-    options.push(`${hour.toString().padStart(2, "0")}:00`);
-    if (hour < 21) {
-      options.push(`${hour.toString().padStart(2, "0")}:30`);
-    }
-  }
-  return options;
-}
-
-const TIME_OPTIONS = generateTimeOptions();
 
 export default function EmployeeDashboard({
   initialEntries,
@@ -116,6 +84,44 @@ export default function EmployeeDashboard({
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{x: number, y: number, date: string, visible: boolean} | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  // Unified function to fetch entries
+  const fetchEntries = async (signal?: AbortSignal) => {
+    setIsFetching(true);
+    setError(null);
+    try {
+      const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+      const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+      const url = targetUserId
+        ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
+        : `/api/hours?from=${from}&to=${to}`;
+      const response = await fetch(url, {
+        signal,
+      });
+
+      if (response.status === 401) {
+        router.push("/");
+        return;
+      }
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        setError(payload?.error ?? "Failed to load entries.");
+        return;
+      }
+
+      setEntries(payload as TimeEntryDTO[]);
+      onEntrySaved?.(payload as TimeEntryDTO[]);
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setError("Unexpected error while loading entries.");
+      }
+    } finally {
+      setIsFetching(false);
+      setIsRefetching(false);
+    }
+  };
 
   // Close context menu when clicking outside
   useEffect(() => {
@@ -185,44 +191,7 @@ export default function EmployeeDashboard({
     if (!isRefetching) return;
 
     const controller = new AbortController();
-    const fetchEntries = async () => {
-      setIsFetching(true);
-      setError(null);
-      try {
-        const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-        const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-        const url = targetUserId
-          ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
-          : `/api/hours?from=${from}&to=${to}`;
-        const response = await fetch(url, {
-          signal: controller.signal,
-        });
-
-        if (response.status === 401) {
-          router.push("/");
-          return;
-        }
-
-        const payload = await response.json();
-
-        if (!response.ok) {
-          setError(payload?.error ?? "Failed to load entries.");
-          return;
-        }
-
-        setEntries(payload as TimeEntryDTO[]);
-        onEntrySaved?.(payload as TimeEntryDTO[]);
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          setError("Unexpected error while loading entries.");
-        }
-      } finally {
-        setIsFetching(false);
-        setIsRefetching(false);
-      }
-    };
-
-    fetchEntries();
+    fetchEntries(controller.signal);
 
     return () => controller.abort();
   }, [isRefetching, currentMonth, router, targetUserId, onEntrySaved]);
@@ -234,43 +203,7 @@ export default function EmployeeDashboard({
     }
 
     const controller = new AbortController();
-    const fetchEntries = async () => {
-      setIsFetching(true);
-      setError(null);
-      try {
-        const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-        const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-        const url = targetUserId
-          ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
-          : `/api/hours?from=${from}&to=${to}`;
-        const response = await fetch(url, {
-          signal: controller.signal,
-        });
-
-        if (response.status === 401) {
-          router.push("/");
-          return;
-        }
-
-        const payload = await response.json();
-
-        if (!response.ok) {
-          setError(payload?.error ?? "Failed to load entries.");
-          return;
-        }
-
-        setEntries(payload as TimeEntryDTO[]);
-        onEntrySaved?.(payload as TimeEntryDTO[]);
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          setError("Unexpected error while loading entries.");
-        }
-      } finally {
-        setIsFetching(false);
-      }
-    };
-
-    fetchEntries();
+    fetchEntries(controller.signal);
 
     return () => controller.abort();
   }, [currentMonth, router, targetUserId, onEntrySaved]);
@@ -307,18 +240,13 @@ export default function EmployeeDashboard({
     [entries]
   );
 
-  const totalPermesso = useMemo(
-    () => entries.reduce((sum, entry) => sum + (entry.permessoHours ?? 0), 0),
+  const totalPermFerie = useMemo(
+    () => entries.reduce((sum, entry) => sum + (entry.permessoHours ?? 0) + (entry.vacationHours ?? 0), 0),
     [entries]
   );
 
   const totalSickness = useMemo(
     () => entries.reduce((sum, entry) => sum + (entry.sicknessHours ?? 0), 0),
-    [entries]
-  );
-
-  const totalVacation = useMemo(
-    () => entries.reduce((sum, entry) => sum + (entry.vacationHours ?? 0), 0),
     [entries]
   );
 
@@ -351,21 +279,7 @@ export default function EmployeeDashboard({
 
   // Check if date is editable
   const isDateEditable = (date: Date): boolean => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const checkDate = new Date(date);
-    checkDate.setHours(0, 0, 0, 0);
-    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    
-    // Block Sundays (0 = Sunday) only for employees
-    if (!isAdmin) {
-      const dayOfWeek = checkDate.getDay();
-      if (dayOfWeek === 0) {
-        return false;
-      }
-    }
-    
-    return checkDate >= currentMonthStart && checkDate <= today;
+    return isDateEditableUtil(date, isAdmin);
   };
 
   const handleDayClick = (day: Date) => {
@@ -381,7 +295,11 @@ export default function EmployeeDashboard({
     }
     
     if (!isDateEditable(day)) {
-      setError("È possibile inserire ore solo per il mese corrente fino ad oggi.");
+      const currentDay = new Date().getDate();
+      const errorMessage = currentDay <= 5
+        ? "È possibile inserire ore per il mese corrente fino ad oggi o per il mese precedente (fino al 5 del mese corrente)."
+        : "È possibile inserire ore solo per il mese corrente fino ad oggi.";
+      setError(errorMessage);
       return;
     }
 
@@ -662,8 +580,8 @@ export default function EmployeeDashboard({
           <div className="rounded-xl border border-purple-100 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Permesso</p>
-                <p className="mt-2 text-3xl font-bold text-purple-600">{totalPermesso.toFixed(1)}</p>
+                <p className="text-sm font-medium text-gray-600">Ore Perm/Ferie</p>
+                <p className="mt-2 text-3xl font-bold text-purple-600">{totalPermFerie.toFixed(1)}</p>
                 <p className="text-xs text-gray-500">ore utilizzate</p>
               </div>
               <div className="rounded-full bg-purple-50 p-3">
@@ -685,23 +603,6 @@ export default function EmployeeDashboard({
                 <div className="rounded-full bg-red-50 p-3">
                   <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {totalVacation > 0 && (
-            <div className="rounded-xl border border-green-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Ferie</p>
-                  <p className="mt-2 text-3xl font-bold text-green-600">{totalVacation.toFixed(1)}</p>
-                  <p className="text-xs text-gray-500">ore ferie</p>
-                </div>
-                <div className="rounded-full bg-green-50 p-3">
-                  <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { isAdmin } from "@/lib/user-utils";
 
 const createHoursSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -84,10 +85,10 @@ export async function GET(request: Request) {
     userId?: string;
     workDate?: { gte?: Date; lte?: Date };
   } = {
-    userId: session.user.role === "ADMIN" && userId ? userId : session.user.id,
+    userId: isAdmin(session) && userId ? userId : session.user.id,
   };
 
-  if (session.user.role === "ADMIN" && userId === "all") {
+  if (isAdmin(session) && userId === "all") {
     delete where.userId;
   }
 
@@ -136,14 +137,27 @@ export async function POST(request: Request) {
   const { workDate, hoursWorked, overtimeHours, morningStart, morningEnd, afternoonStart, afternoonEnd, medicalCertificate, notes, userId: requestedUserId } = parsed.data;
 
   // Determine which userId to use: admin can specify, employee uses their own
-  const targetUserId = session.user.role === "ADMIN" && requestedUserId ? requestedUserId : session.user.id;
+  const targetUserId = isAdmin(session) && requestedUserId ? requestedUserId : session.user.id;
 
-  // Employees can only enter hours for dates up to today in the current month
-  if (session.user.role === "EMPLOYEE") {
+  // Employees can only enter hours for dates up to today, and:
+  // - Current month always allowed
+  // - Previous month allowed only if today is on or before the 5th
+  if (!isAdmin(session)) {
     const entryDate = new Date(`${workDate}T00:00:00.000Z`);
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-    const currentMonthStart = new Date(today.getUTCFullYear(), today.getUTCMonth(), 1);
+    
+    // Determine the earliest editable date
+    const currentDay = today.getUTCDate();
+    let earliestEditableDate: Date;
+    
+    if (currentDay <= 5) {
+      // If before or on the 5th, allow editing previous month
+      earliestEditableDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+    } else {
+      // Otherwise, only current month
+      earliestEditableDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+    }
 
     // Block Sundays (0 = Sunday)
     const dayOfWeek = entryDate.getUTCDay();
@@ -161,9 +175,12 @@ export async function POST(request: Request) {
       );
     }
 
-    if (entryDate < currentMonthStart) {
+    if (entryDate < earliestEditableDate) {
+      const errorMessage = currentDay <= 5
+        ? "Can only enter hours for the current month or previous month (until the 5th of the current month)"
+        : "Can only enter hours for the current month";
       return NextResponse.json(
-        { error: "Can only enter hours for the current month" },
+        { error: errorMessage },
         { status: 403 }
       );
     }
@@ -175,8 +192,8 @@ export async function POST(request: Request) {
   const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
 
   let permessoHours = parsed.data.permessoHours ?? 0;
-  let sicknessHours = parsed.data.sicknessHours ?? 0;
-  let vacationHours = parsed.data.vacationHours ?? 0;
+  const sicknessHours = parsed.data.sicknessHours ?? 0;
+  const vacationHours = parsed.data.vacationHours ?? 0;
 
   // Only auto-calculate permesso if not already provided and not vacation/sickness
   if (!parsed.data.permessoHours && sicknessHours === 0 && vacationHours === 0) {
@@ -261,7 +278,7 @@ export async function DELETE(request: Request) {
   }
 
   // Check permissions: employees can only delete their own entries, admins can delete any
-  if (session.user.role === "EMPLOYEE" && entry.userId !== session.user.id) {
+  if (!isAdmin(session) && entry.userId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

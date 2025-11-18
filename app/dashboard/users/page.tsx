@@ -2,14 +2,7 @@ import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import ManageUsers from "@/components/dashboard/manage-users";
-
-type UserRow = {
-  id: string;
-  name: string | null;
-  email: string;
-  role: "EMPLOYEE" | "ADMIN";
-  createdAt: Date;
-};
+import type { User } from "@/types/models";
 
 export default async function UsersPage() {
   const session = await getAuthSession();
@@ -31,7 +24,7 @@ export default async function UsersPage() {
       role: true,
       createdAt: true,
     },
-  })) as UserRow[];
+  })) as User[];
 
-  return <ManageUsers users={users} currentUserId={session.user.id} />;
+  return <ManageUsers users={users} currentUserId={session.user.id} devMode={false} />;
 }

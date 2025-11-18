@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
+import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { sendPasswordResetLinkEmail } from "@/lib/email";
+import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/token-utils";
+import { findUserById, isAdmin } from "@/lib/user-utils";
+
+const resetPasswordSchema = z.object({
+  newPassword: z.string().min(8, "Password must be at least 8 characters").optional(),
+});
 
 export async function POST(
   request: Request,
@@ -14,7 +21,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (session.user.role !== "ADMIN") {
+  if (!isAdmin(session)) {
     return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
 
@@ -22,34 +29,57 @@ export async function POST(
     const { id: userId } = await params;
 
     // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const existingUser = await findUserById(userId);
 
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Parse request body to check if manual password is provided
+    const body = await request.json().catch(() => ({}));
+    const parsed = resetPasswordSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    const { newPassword } = parsed.data;
+
+    // If manual password is provided, reset password directly
+    if (newPassword) {
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+
+      // Update password and invalidate all sessions
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: userId },
+          data: {
+            passwordHash,
+            tokenVersion: { increment: 1 },
+            updatedAt: new Date(),
+          },
+        }),
+        // Delete all active sessions for this user
+        prisma.session.deleteMany({
+          where: { userId },
+        }),
+      ]);
+
+      console.log(`✅ Password reset manually for: ${existingUser.email}`);
+      return NextResponse.json({ 
+        message: "Password reimpostata con successo." 
+      });
+    }
+
+    // Otherwise, send email with reset link
     // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    const { resetToken, hashedToken } = generateResetToken();
     
     // Token expires in 24 hours (admin reset has longer expiry)
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    // Delete any existing reset tokens for this user
-    await prisma.verificationToken.deleteMany({
-      where: { identifier: existingUser.email },
-    });
-
-    // Create new reset token
-    await prisma.verificationToken.create({
-      data: {
-        identifier: existingUser.email,
-        token: hashedToken,
-        expires,
-      },
-    });
+    await createVerificationToken(existingUser.email, hashedToken, 24);
 
     // Send email with reset link
     try {
@@ -66,9 +96,7 @@ export async function POST(
       console.error("⚠️ Failed to send password reset email:", emailError);
       
       // Cleanup token if email fails
-      await prisma.verificationToken.deleteMany({
-        where: { identifier: existingUser.email },
-      });
+      await deleteVerificationTokens(existingUser.email);
       
       return NextResponse.json({
         error: "Failed to send email notification. Password reset not initiated.",

@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-
-type User = {
-  id: string;
-  name: string | null;
-  email: string;
-  role?: "EMPLOYEE" | "ADMIN";
-};
+import type { User } from "@/types/models";
 
 type UserWithHours = User & {
   regularHours: number;
