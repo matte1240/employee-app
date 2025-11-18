@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import ManageUsersDev from "@/components/dashboard/manage-users-dev";
+import ManageUsers from "@/components/dashboard/manage-users";
+import type { User } from "@/types/models";
 
 export default async function UsersDevPage() {
   // Guard: DEV route only accessible in development
@@ -17,9 +18,9 @@ export default async function UsersDevPage() {
   }
 
   // Recupera tutti gli utenti dal database
-  const users = await prisma.user.findMany({
+  const users = (await prisma.user.findMany({
     orderBy: { createdAt: "asc" },
-  });
+  })) as User[];
 
-  return <ManageUsersDev users={users} currentUserId={session.user.id} />;
+  return <ManageUsers users={users} currentUserId={session.user.id} devMode={true} />;
 }

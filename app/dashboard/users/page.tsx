@@ -4,8 +4,6 @@ import prisma from "@/lib/prisma";
 import ManageUsers from "@/components/dashboard/manage-users";
 import type { User } from "@/types/models";
 
-type UserRow = User;
-
 export default async function UsersPage() {
   const session = await getAuthSession();
 
@@ -26,7 +24,7 @@ export default async function UsersPage() {
       role: true,
       createdAt: true,
     },
-  })) as UserRow[];
+  })) as User[];
 
-  return <ManageUsers users={users} currentUserId={session.user.id} />;
+  return <ManageUsers users={users} currentUserId={session.user.id} devMode={false} />;
 }
