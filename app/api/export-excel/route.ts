@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import ExcelJS from "exceljs";
+import { isAdmin } from "@/lib/user-utils";
 
 const exportSchema = z.object({
   userIds: z.array(z.string()),
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
   const { userIds, month } = parsed.data;
 
   // Check permissions: admin can export any users, employees can only export themselves
-  if (session.user.role !== "ADMIN") {
+  if (!isAdmin(session)) {
     if (userIds.length !== 1 || userIds[0] !== session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }

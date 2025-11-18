@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { findUserById, findUserByEmail, isAdmin } from "@/lib/user-utils";
 
 const updateUserSchema = z.object({
   name: z.string().min(1, "Name is required").max(100).optional(),
@@ -19,7 +20,7 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (session.user.role !== "ADMIN") {
+  if (!isAdmin(session)) {
     return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
 
@@ -27,9 +28,7 @@ export async function PUT(
     const { id: userId } = await params;
 
     // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const existingUser = await findUserById(userId);
 
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -58,9 +57,7 @@ export async function PUT(
 
     // If email is being changed, check if it's already in use
     if (email && email !== existingUser.email) {
-      const emailInUse = await prisma.user.findUnique({
-        where: { email },
-      });
+      const emailInUse = await findUserByEmail(email);
 
       if (emailInUse) {
         return NextResponse.json(
@@ -107,7 +104,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (session.user.role !== "ADMIN") {
+  if (!isAdmin(session)) {
     return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
 
@@ -123,9 +120,7 @@ export async function DELETE(
     }
 
     // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const existingUser = await findUserById(userId);
 
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });

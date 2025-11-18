@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format, startOfMonth } from "date-fns";
 import { useRouter } from "next/navigation";
-import EmployeeDashboard, { type TimeEntryDTO } from "./employee-dashboard";
+import Calendar, { type TimeEntryDTO } from "./calendar";
+import type { User } from "@/types/models";
+import { calculateTotalsFromEntries } from "@/lib/calculations";
 
-type User = {
-  id: string;
-  name: string | null;
-  email: string;
-};
+// Minimal user type for admin calendar (only needs id, name, email)
+type UserMinimal = Pick<User, "id" | "name" | "email">;
 
 type AdminCalendarProps = {
-  users: User[];
+  users: UserMinimal[];
   selectedUserId: string;
-  selectedUser: User;
+  selectedUser: UserMinimal;
   initialEntries: TimeEntryDTO[];
   totalHours: number;
   totalOvertimeHours: number;
@@ -59,16 +58,8 @@ export default function AdminCalendar({
         const response = await fetch(`/api/hours?userId=${selectedUserId}&from=${fromDate}`);
         if (response.ok) {
           const data: TimeEntryDTO[] = await response.json();
-          const newTotalHours = data.reduce((sum, entry) => sum + (entry.hoursWorked ?? 0) + (entry.overtimeHours ?? 0), 0);
-          const newTotalOvertimeHours = data.reduce((sum, entry) => sum + (entry.overtimeHours ?? 0), 0);
-          const newTotalPermFerieHours = data.reduce((sum, entry) => sum + (entry.permessoHours ?? 0) + (entry.vacationHours ?? 0), 0);
-          const newTotalSicknessHours = data.reduce((sum, entry) => sum + (entry.sicknessHours ?? 0), 0);
-          setCurrentTotals({
-            totalHours: newTotalHours,
-            totalOvertimeHours: newTotalOvertimeHours,
-            totalPermFerieHours: newTotalPermFerieHours,
-            totalSicknessHours: newTotalSicknessHours,
-          });
+          const newTotals = calculateTotalsFromEntries(data);
+          setCurrentTotals(newTotals);
         }
       } catch (error) {
         console.error('Error fetching latest entries:', error);
@@ -84,20 +75,11 @@ export default function AdminCalendar({
     router.push(`/dashboard/calendar?userId=${userId}`);
   };
 
-  const handleEntrySaved = (updatedEntries: TimeEntryDTO[]) => {
+  const handleEntrySaved = useCallback((updatedEntries: TimeEntryDTO[]) => {
     // Recalculate totals from updated entries
-    const newTotalHours = updatedEntries.reduce((sum, entry) => sum + (entry.hoursWorked ?? 0) + (entry.overtimeHours ?? 0), 0);
-    const newTotalOvertimeHours = updatedEntries.reduce((sum, entry) => sum + (entry.overtimeHours ?? 0), 0);
-    const newTotalPermFerieHours = updatedEntries.reduce((sum, entry) => sum + (entry.permessoHours ?? 0) + (entry.vacationHours ?? 0), 0);
-    const newTotalSicknessHours = updatedEntries.reduce((sum, entry) => sum + (entry.sicknessHours ?? 0), 0);
-
-    setCurrentTotals({
-      totalHours: newTotalHours,
-      totalOvertimeHours: newTotalOvertimeHours,
-      totalPermFerieHours: newTotalPermFerieHours,
-      totalSicknessHours: newTotalSicknessHours,
-    });
-  };
+    const newTotals = calculateTotalsFromEntries(updatedEntries);
+    setCurrentTotals(newTotals);
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -261,8 +243,8 @@ export default function AdminCalendar({
         </div>
       </div>
 
-      {/* Employee Dashboard (Calendar) */}
-      <EmployeeDashboard
+      {/* Calendar Component */}
+      <Calendar
         initialEntries={initialEntries}
         userName={selectedUser.name || selectedUser.email}
         hideHeader={true}

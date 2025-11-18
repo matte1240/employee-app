@@ -6,6 +6,7 @@ import {
   eachDayOfInterval,
   endOfMonth,
   format,
+  getDay,
   isSameDay,
   isSameMonth,
   startOfMonth,
@@ -13,23 +14,14 @@ import {
   endOfWeek,
 } from "date-fns";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import LogoutButton from "@/components/logout-button";
+import type { TimeEntryDTO } from "@/types/models";
+import { calculateHours, TIME_OPTIONS } from "@/lib/time-utils";
+import { isDateEditable as isDateEditableUtil } from "@/lib/date-utils";
 
-export type TimeEntryDTO = {
-  id: string;
-  workDate: string;
-  hoursWorked: number;
-  overtimeHours?: number;
-  permessoHours?: number;
-  sicknessHours?: number;
-  vacationHours?: number;
-  morningStart?: string | null;
-  morningEnd?: string | null;
-  afternoonStart?: string | null;
-  afternoonEnd?: string | null;
-  medicalCertificate?: string | null;
-  notes?: string | null;
-};
+// Re-export for backward compatibility
+export type { TimeEntryDTO };
 
 type EmployeeDashboardProps = {
   initialEntries: TimeEntryDTO[];
@@ -53,29 +45,7 @@ type ModalFormState = {
   isAfternoonPermesso: boolean;
 };
 
-// Helper function to calculate hours between two times
-function calculateHours(start: string, end: string): number {
-  if (!start || !end) return 0;
-  const [startHour, startMin] = start.split(":").map(Number);
-  const [endHour, endMin] = end.split(":").map(Number);
-  const startMinutes = startHour * 60 + startMin;
-  const endMinutes = endHour * 60 + endMin;
-  return Math.max(0, (endMinutes - startMinutes) / 60);
-}
 
-// Generate time options from 06:00 to 21:00 with 30-minute intervals
-function generateTimeOptions(): string[] {
-  const options: string[] = [];
-  for (let hour = 6; hour <= 21; hour++) {
-    options.push(`${hour.toString().padStart(2, "0")}:00`);
-    if (hour < 21) {
-      options.push(`${hour.toString().padStart(2, "0")}:30`);
-    }
-  }
-  return options;
-}
-
-const TIME_OPTIONS = generateTimeOptions();
 
 export default function EmployeeDashboard({
   initialEntries,
@@ -114,6 +84,44 @@ export default function EmployeeDashboard({
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{x: number, y: number, date: string, visible: boolean} | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  // Unified function to fetch entries
+  const fetchEntries = async (signal?: AbortSignal) => {
+    setIsFetching(true);
+    setError(null);
+    try {
+      const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+      const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+      const url = targetUserId
+        ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
+        : `/api/hours?from=${from}&to=${to}`;
+      const response = await fetch(url, {
+        signal,
+      });
+
+      if (response.status === 401) {
+        router.push("/");
+        return;
+      }
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        setError(payload?.error ?? "Failed to load entries.");
+        return;
+      }
+
+      setEntries(payload as TimeEntryDTO[]);
+      onEntrySaved?.(payload as TimeEntryDTO[]);
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setError("Unexpected error while loading entries.");
+      }
+    } finally {
+      setIsFetching(false);
+      setIsRefetching(false);
+    }
+  };
 
   // Close context menu when clicking outside
   useEffect(() => {
@@ -183,47 +191,10 @@ export default function EmployeeDashboard({
     if (!isRefetching) return;
 
     const controller = new AbortController();
-    const fetchEntries = async () => {
-      setIsFetching(true);
-      setError(null);
-      try {
-        const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-        const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-        const url = targetUserId
-          ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
-          : `/api/hours?from=${from}&to=${to}`;
-        const response = await fetch(url, {
-          signal: controller.signal,
-        });
-
-        if (response.status === 401) {
-          router.push("/");
-          return;
-        }
-
-        const payload = await response.json();
-
-        if (!response.ok) {
-          setError(payload?.error ?? "Failed to load entries.");
-          return;
-        }
-
-        setEntries(payload as TimeEntryDTO[]);
-        onEntrySaved?.(payload as TimeEntryDTO[]);
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          setError("Unexpected error while loading entries.");
-        }
-      } finally {
-        setIsFetching(false);
-        setIsRefetching(false);
-      }
-    };
-
-    fetchEntries();
+    fetchEntries(controller.signal);
 
     return () => controller.abort();
-  }, [isRefetching, currentMonth, router, targetUserId]);
+  }, [isRefetching, currentMonth, router, targetUserId, onEntrySaved]);
 
   useEffect(() => {
     if (!hasFetched.current) {
@@ -232,46 +203,10 @@ export default function EmployeeDashboard({
     }
 
     const controller = new AbortController();
-    const fetchEntries = async () => {
-      setIsFetching(true);
-      setError(null);
-      try {
-        const from = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-        const to = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-        const url = targetUserId
-          ? `/api/hours?userId=${targetUserId}&from=${from}&to=${to}`
-          : `/api/hours?from=${from}&to=${to}`;
-        const response = await fetch(url, {
-          signal: controller.signal,
-        });
-
-        if (response.status === 401) {
-          router.push("/");
-          return;
-        }
-
-        const payload = await response.json();
-
-        if (!response.ok) {
-          setError(payload?.error ?? "Failed to load entries.");
-          return;
-        }
-
-        setEntries(payload as TimeEntryDTO[]);
-        onEntrySaved?.(payload as TimeEntryDTO[]);
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          setError("Unexpected error while loading entries.");
-        }
-      } finally {
-        setIsFetching(false);
-      }
-    };
-
-    fetchEntries();
+    fetchEntries(controller.signal);
 
     return () => controller.abort();
-  }, [currentMonth, router, targetUserId]);
+  }, [currentMonth, router, targetUserId, onEntrySaved]);
 
   const entriesByDay = useMemo(() => {
     const map = new Map<string, TimeEntryDTO[]>();
@@ -329,29 +264,27 @@ export default function EmployeeDashboard({
     
     const permesso = (modalForm.isMorningPermesso ? 4 : 0) + (modalForm.isAfternoonPermesso ? 4 : 0);
     
-    const regular = Math.min(totalWorked, 8);
-    const overtime = Math.max(0, totalWorked - 8);
+    // Check if selected date is a weekend (Saturday=6, Sunday=0)
+    let regular = Math.min(totalWorked, 8);
+    let overtime = Math.max(0, totalWorked - 8);
+    
+    if (selectedDate && modalForm.dayType === "normal") {
+      const dayOfWeek = getDay(new Date(`${selectedDate}T12:00:00`));
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      
+      if (isWeekend) {
+        // On weekends, all worked hours are overtime
+        regular = 0;
+        overtime = totalWorked;
+      }
+    }
 
     return { morning: modalForm.isMorningPermesso ? 4 : morningWorked, afternoon: modalForm.isAfternoonPermesso ? 4 : afternoonWorked, totalWorked, regular, overtime, permesso };
-  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso]);
+  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso, modalForm.dayType, selectedDate]);
 
   // Check if date is editable
   const isDateEditable = (date: Date): boolean => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const checkDate = new Date(date);
-    checkDate.setHours(0, 0, 0, 0);
-    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    
-    // Block Sundays (0 = Sunday) only for employees
-    if (!isAdmin) {
-      const dayOfWeek = checkDate.getDay();
-      if (dayOfWeek === 0) {
-        return false;
-      }
-    }
-    
-    return checkDate >= currentMonthStart && checkDate <= today;
+    return isDateEditableUtil(date, isAdmin);
   };
 
   const handleDayClick = (day: Date) => {
@@ -587,10 +520,13 @@ export default function EmployeeDashboard({
         <header className="border-b border-gray-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 py-4">
             <div className="flex items-center gap-8">
-              <img
+              <Image
                 src="/logo.svg"
                 alt="Ivicolors"
+                width={160}
+                height={40}
                 className="h-10 w-auto"
+                priority
               />
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">
