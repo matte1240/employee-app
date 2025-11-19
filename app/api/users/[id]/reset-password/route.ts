@@ -88,7 +88,8 @@ export async function POST(
       await sendPasswordResetLinkEmail(
         existingUser.email,
         existingUser.name || existingUser.email,
-        resetUrl
+        resetUrl,
+        "24 ore"
       );
       
       console.log(`✅ Password reset email sent to ${existingUser.email}`);

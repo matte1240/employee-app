@@ -113,7 +113,7 @@ export async function POST(request: Request) {
         "Fine Mattina",
         "Inizio Pomeriggio",
         "Fine Pomeriggio",
-        "Ore Lavorate",
+        "Ore Ordinarie",
         "Straordinario",
         "Ore Perm/Ferie",
         "Ore Malattia",
