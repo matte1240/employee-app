@@ -45,6 +45,10 @@ services:
       EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Time Tracker}
       
+      # Backup Configuration
+      BACKUP_CRON_SCHEDULE: ${BACKUP_CRON_SCHEDULE:-0 2 * * *}
+      BACKUP_EMAIL_RECIPIENT: ${BACKUP_EMAIL_RECIPIENT:-}
+
       # Node
       NODE_ENV: production
       PORT: 3000

@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { exec } from "child_process";
-import { promisify } from "util";
+import { isAdmin } from "@/lib/utils/user-utils";
+import { performBackup } from "@/lib/db-backup";
 import path from "path";
 import fs from "fs";
-import { isAdmin } from "@/lib/utils/user-utils";
-
-const execAsync = promisify(exec);
 
 export async function POST() {
   try {
@@ -20,43 +17,14 @@ export async function POST() {
       );
     }
 
-    // Generate backup filename with timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const filename = `backup-${timestamp}.sql`;
-    
-    // Ensure backups directory exists
-    const backupsDir = path.join(process.cwd(), "backups", "database");
-    if (!fs.existsSync(backupsDir)) {
-      fs.mkdirSync(backupsDir, { recursive: true });
-    }
-    
-    const backupPath = path.join(backupsDir, filename);
-
-    // Get database URL from environment and clean it
-    const databaseUrl = process.env.DATABASE_URL;
-    if (!databaseUrl) {
-      throw new Error("DATABASE_URL not configured");
-    }
-
-    // Remove query parameters that pg_dump doesn't support
-    const cleanUrl = databaseUrl.split('?')[0];
-
-    // Use pg_dump with connection string (format: plain SQL)
-    // --clean adds DROP commands before CREATE to allow clean restore
-    // --if-exists prevents errors if objects don't exist during DROP
-    const command = `pg_dump "${cleanUrl}" -F p -b -v --clean --if-exists -f "${backupPath}"`;
-
-    console.log("Executing backup command");
-    const { stderr } = await execAsync(command);    if (stderr && !stderr.includes("successfully")) {
-      console.error("Backup stderr:", stderr);
-    }
+    const result = await performBackup();
 
     return NextResponse.json(
       {
         success: true,
-        filename,
+        filename: result.filename,
         message: "Database backup created successfully",
-        path: backupPath,
+        path: result.path,
       },
       { status: 200 }
     );
