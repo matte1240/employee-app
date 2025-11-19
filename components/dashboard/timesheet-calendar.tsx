@@ -527,6 +527,49 @@ export default function TimesheetCalendar({
     }
   };
 
+  const handleMalattia = async (date: string) => {
+    setContextMenu(null);
+    setError(null);
+
+    const payload = {
+      workDate: date,
+      hoursWorked: 0,
+      overtimeHours: 0,
+      permessoHours: 0,
+      sicknessHours: 8,
+      vacationHours: 0,
+      ...(targetUserId && { userId: targetUserId }),
+    };
+
+    try {
+      const response = await fetch("/api/hours", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data?.error ?? "Errore nel salvare la malattia.");
+        return;
+      }
+
+      // Calculate new entries
+      const newEntries = (() => {
+        const filtered = entries.filter(e => e.workDate !== date);
+        return [...filtered, data as TimeEntryDTO];
+      })();
+
+      onEntrySaved?.(newEntries);
+      setEntries(newEntries);
+
+      router.refresh();
+    } catch {
+      setError("Errore imprevisto durante il salvataggio della malattia.");
+    }
+  };
+
   return (
     <div>
       {/* Header with logo - hide in embedded views */}
@@ -1169,6 +1212,17 @@ export default function TimesheetCalendar({
             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
           >
             Ferie
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setContextMenu(null);
+              setSelectedDate(contextMenu.date);
+              handleMalattia(contextMenu.date);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+          >
+            Malattia
           </button>
           <button
             onClick={(e) => {
