@@ -145,9 +145,14 @@ export async function sendWelcomeSetupEmail(
 export async function sendPasswordResetLinkEmail(
   to: string,
   username: string,
-  resetUrl: string
+  resetUrl: string,
+  validityDuration: string = "1 ora"
 ) {
-  const { html, text } = getPasswordResetLinkEmailTemplate(username, resetUrl);
+  const { html, text } = getPasswordResetLinkEmailTemplate(
+    username,
+    resetUrl,
+    validityDuration
+  );
 
   const mailOptions = {
     from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,

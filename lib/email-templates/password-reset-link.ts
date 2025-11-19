@@ -1,6 +1,7 @@
 export const getPasswordResetLinkEmailTemplate = (
   username: string,
-  resetUrl: string
+  resetUrl: string,
+  validityDuration: string = "1 ora"
 ) => {
   const html = `
       <!DOCTYPE html>
@@ -200,7 +201,7 @@ export const getPasswordResetLinkEmailTemplate = (
               <div class="info-box">
                 <div class="info-box-title">⏰ Informazioni importanti</div>
                 <ul class="info-list">
-                  <li>Questo link è <strong>valido per 1 ora</strong></li>
+                  <li>Questo link è <strong>valido per ${validityDuration}</strong></li>
                   <li>Può essere utilizzato <strong>una sola volta</strong></li>
                   <li>Dopo il reset, dovrai effettuare il login con la nuova password</li>
                 </ul>
@@ -241,7 +242,7 @@ Clicca sul link qui sotto per reimpostare la password:
 ${resetUrl}
 
 ⚠️ IMPORTANTE:
-- Questo link è valido per 1 ora
+- Questo link è valido per ${validityDuration}
 - Dopo aver reimpostato la password, il link non sarà più utilizzabile
 - Se non hai richiesto questo reset, ignora questa email
 
