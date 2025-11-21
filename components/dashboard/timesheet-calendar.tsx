@@ -245,6 +245,18 @@ export default function TimesheetCalendar({
     return eachDayOfInterval({ start, end });
   }, [currentMonth]);
 
+  // Memoize holiday checks for all calendar days to avoid redundant calculations
+  const holidayMap = useMemo(() => {
+    const map = new Map<string, { isHoliday: boolean; name: string | undefined }>();
+    for (const day of calendarDays) {
+      const dateKey = format(day, 'yyyy-MM-dd');
+      const isHolidayDay = isHoliday(day);
+      const holidayName = isHolidayDay ? getHolidayName(day) : undefined;
+      map.set(dateKey, { isHoliday: isHolidayDay, name: holidayName });
+    }
+    return map;
+  }, [calendarDays]);
+
   const totalHours = useMemo(
     () => entries.reduce((sum, entry) => sum + entry.hoursWorked + (entry.overtimeHours ?? 0), 0),
     [entries]
@@ -303,7 +315,9 @@ export default function TimesheetCalendar({
     // Check if it's Sunday or Holiday (only for employees)
     if (!isAdmin) {
       const dayOfWeek = day.getDay();
-      if (dayOfWeek === 0 || isHoliday(day)) {
+      const dateKey = format(day, 'yyyy-MM-dd');
+      const holidayInfo = holidayMap.get(dateKey);
+      if (dayOfWeek === 0 || holidayInfo?.isHoliday) {
         setError("Non è possibile inserire ore la domenica o nei giorni festivi.");
         return;
       }
@@ -793,8 +807,10 @@ export default function TimesheetCalendar({
                 const dayOfWeek = day.getDay(); // 0 = Sunday, 6 = Saturday
                 const isSaturday = dayOfWeek === 6;
                 const isSunday = dayOfWeek === 0;
-                const isHolidayDay = isHoliday(day);
-                const holidayName = isHolidayDay ? getHolidayName(day) : null;
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const holidayInfo = holidayMap.get(dateKey);
+                const isHolidayDay = holidayInfo?.isHoliday ?? false;
+                const holidayName = holidayInfo?.name;
 
                 // Calculate permesso hours
                 let permessoHours = 0;

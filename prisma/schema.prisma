@@ -43,6 +43,7 @@ model TimeEntry {
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, workDate], map: "user_workdate_idx")
+  @@index([workDate], map: "workdate_idx")
 }
 
 model Account {
