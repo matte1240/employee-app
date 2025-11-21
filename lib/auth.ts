@@ -93,7 +93,7 @@ export const authOptions: NextAuthOptions = {
             const tokenVersionInToken = (token.tokenVersion as number) || 0;
             if (dbUser.tokenVersion !== tokenVersionInToken) {
               console.log(`🔒 Token invalidated for ${token.email} - password changed`);
-              return {}; // Invalida il token
+              return {}; // Invalidate the token
             }
           }
         }
