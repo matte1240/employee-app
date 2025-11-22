@@ -43,21 +43,41 @@ export async function POST(request: Request) {
     workbook.creator = "Employee Time Tracker";
     workbook.created = new Date();
 
-    // Function to add a worksheet for a user
-    const addUserSheet = async (userId: string) => {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user) throw new Error("User not found");
-
-      const entries = await prisma.timeEntry.findMany({
+    // Batch fetch all users and entries in parallel to avoid N+1 queries
+    const [users, allEntries] = await Promise.all([
+      prisma.user.findMany({
+        where: { id: { in: userIds } },
+      }),
+      prisma.timeEntry.findMany({
         where: {
-          userId,
+          userId: { in: userIds },
           workDate: {
             gte: startDate,
             lte: endDate,
           },
         },
         orderBy: { workDate: "asc" },
-      });
+      }),
+    ]);
+
+    // Create a map of userId to user for O(1) lookup
+    const userMap = new Map(users.map(user => [user.id, user]));
+    
+    // Group entries by userId for O(1) lookup
+    const entriesByUser = new Map<string, typeof allEntries>();
+    for (const entry of allEntries) {
+      if (!entriesByUser.has(entry.userId)) {
+        entriesByUser.set(entry.userId, []);
+      }
+      entriesByUser.get(entry.userId)!.push(entry);
+    }
+
+    // Function to add a worksheet for a user
+    const addUserSheet = (userId: string) => {
+      const user = userMap.get(userId);
+      if (!user) throw new Error("User not found");
+
+      const entries = entriesByUser.get(userId) || [];
 
       // Check if this specific user has any medical certificates in this month
       const includeMedicalCertificate = entries.some(
@@ -298,7 +318,7 @@ export async function POST(request: Request) {
 
     // Add a sheet for each user
     for (const userId of userIds) {
-      await addUserSheet(userId);
+      addUserSheet(userId);
     }
 
     // Generate Excel file buffer

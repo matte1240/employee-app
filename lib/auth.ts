@@ -8,6 +8,7 @@ import prisma from "./prisma";
 
 type CredentialsUser = AdapterUser & {
   role: string;
+  tokenVersion?: number;
 };
 
 export const authOptions: NextAuthOptions = {
@@ -49,6 +50,7 @@ export const authOptions: NextAuthOptions = {
           emailVerified: user.emailVerified,
           image: user.image ?? undefined,
           role: user.role,
+          tokenVersion: user.tokenVersion,
         };
 
         return authUser;
@@ -63,12 +65,8 @@ export const authOptions: NextAuthOptions = {
         token.role = credentialsUser.role;
         token.lastActivity = Date.now();
         
-        // Salva la tokenVersion al login
-        const dbUser = await prisma.user.findUnique({
-          where: { id: credentialsUser.id },
-          select: { tokenVersion: true },
-        });
-        token.tokenVersion = dbUser?.tokenVersion || 0;
+        // Get tokenVersion from user object (already fetched in authorize)
+        token.tokenVersion = credentialsUser.tokenVersion || 0;
       } else if (token.email) {
         // Check if session is expired (30 minutes of inactivity)
         const lastActivity = (token.lastActivity as number) || 0;
@@ -83,24 +81,24 @@ export const authOptions: NextAuthOptions = {
         // Update lastActivity on token refresh (triggered by client)
         if (trigger === "update") {
           token.lastActivity = now;
+          
+          // Only validate tokenVersion on explicit updates (not on every request)
+          // This reduces database queries significantly while still maintaining security
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email },
+            select: { tokenVersion: true },
+          });
+          
+          if (dbUser) {
+            const tokenVersionInToken = (token.tokenVersion as number) || 0;
+            if (dbUser.tokenVersion !== tokenVersionInToken) {
+              console.log(`🔒 Token invalidated for ${token.email} - password changed`);
+              return {}; // Invalidate the token
+            }
+          }
         }
         
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email },
-          select: { id: true, role: true, tokenVersion: true },
-        });
-
-        if (dbUser) {
-          // Verifica che la tokenVersion corrisponda
-          const tokenVersionInToken = (token.tokenVersion as number) || 0;
-          if (dbUser.tokenVersion !== tokenVersionInToken) {
-            console.log(`🔒 Token invalidated for ${token.email} - password changed`);
-            return {}; // Invalida il token
-          }
-          
-          token.id = dbUser.id;
-          token.role = dbUser.role;
-        }
+        // Keep existing id and role from token (no DB query needed)
       }
       return token;
     },

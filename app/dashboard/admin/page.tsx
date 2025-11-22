@@ -26,17 +26,6 @@ export default async function AdminDashboardPage() {
     redirect("/dashboard");
   }
 
-  const users = (await prisma.user.findMany({
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      createdAt: true,
-    },
-  })) as UserRow[];
-
   // Filter by current month only (to match calendar view)
   const now = new Date();
   const year = now.getFullYear();
@@ -45,21 +34,33 @@ export default async function AdminDashboardPage() {
   const lastDay = new Date(year, month, 0).getDate();
   const lastDayDate = new Date(`${year}-${month.toString().padStart(2, '0')}-${lastDay}T23:59:59.999Z`);
 
-  const totals = await prisma.timeEntry.groupBy({
-    by: ["userId"],
-    _sum: { hoursWorked: true, overtimeHours: true, permessoHours: true, sicknessHours: true, vacationHours: true },
-    where: {
-      workDate: {
-        gte: firstDay,
-        lte: lastDayDate,
+  // Run all queries in parallel for better performance
+  const [users, totals, lastEntries] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
       },
-    },
-  });
-
-  const lastEntries = await prisma.timeEntry.groupBy({
-    by: ["userId"],
-    _max: { workDate: true },
-  });
+    }) as Promise<UserRow[]>,
+    prisma.timeEntry.groupBy({
+      by: ["userId"],
+      _sum: { hoursWorked: true, overtimeHours: true, permessoHours: true, sicknessHours: true, vacationHours: true },
+      where: {
+        workDate: {
+          gte: firstDay,
+          lte: lastDayDate,
+        },
+      },
+    }),
+    prisma.timeEntry.groupBy({
+      by: ["userId"],
+      _max: { workDate: true },
+    }),
+  ]);
 
   const regularHoursMap = new Map<string, number>();
   const overtimeHoursMap = new Map<string, number>();
