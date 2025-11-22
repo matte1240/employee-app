@@ -134,17 +134,27 @@ export default function SetupForm() {
 
           {restoreSuccess && (
             <div className="mt-4 rounded-md bg-green-50 p-4">
-              <p className="text-sm text-green-800">
-                ✓ Database restored successfully! Redirecting...
-              </p>
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-green-800">
+                  Database restored successfully! Redirecting...
+                </p>
+              </div>
             </div>
           )}
 
           {error && (
             <div className="mt-4 rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800" role="alert">
-                {error}
-              </p>
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-red-800" role="alert">
+                  {error}
+                </p>
+              </div>
             </div>
           )}
 
@@ -271,9 +281,14 @@ export default function SetupForm() {
 
       {error ? (
         <div className="rounded-md bg-red-50 p-4">
-          <p className="text-sm text-red-800" role="alert">
-            {error}
-          </p>
+          <div className="flex items-center gap-2">
+            <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-red-800" role="alert">
+              {error}
+            </p>
+          </div>
         </div>
       ) : null}
 

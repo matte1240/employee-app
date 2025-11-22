@@ -190,18 +190,28 @@ export function ManageServer() {
 
           {/* Alerts */}
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-800">
-                <strong>Errore:</strong> {error}
-              </p>
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium text-red-800">
+                  <strong>Errore:</strong> {error}
+                </p>
+              </div>
             </div>
           )}
 
           {success && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-green-800">
-                <strong>Successo:</strong> {success}
-              </p>
+            <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4">
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium text-green-800">
+                  <strong>Successo:</strong> {success}
+                </p>
+              </div>
             </div>
           )}
 

@@ -383,8 +383,8 @@ export default function TimesheetCalendar({
     event.preventDefault();
     setModalError(null);
 
-    if (modalForm.dayType === "normal" && calculatedHours.totalWorked === 0) {
-      setModalError("Inserisci ore di lavoro valide.");
+    if (modalForm.dayType === "normal" && calculatedHours.totalWorked === 0 && calculatedHours.permesso === 0) {
+      setModalError("Inserisci ore di lavoro o permesso valide.");
       return;
     }
 
@@ -673,7 +673,12 @@ export default function TimesheetCalendar({
 
         {error && (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
-            <p className="text-sm font-medium text-red-800">{error}</p>
+            <div className="flex items-center gap-2">
+              <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm font-medium text-red-800">{error}</p>
+            </div>
           </div>
         )}
 
@@ -801,6 +806,8 @@ export default function TimesheetCalendar({
                 const regularHours = dayEntry?.hoursWorked ?? 0;
                 const overtimeHours = dayEntry?.overtimeHours ?? 0;
                 const totalHours = regularHours + overtimeHours;
+                const isFerie = (dayEntry?.vacationHours ?? 0) > 0;
+                const isMalattia = (dayEntry?.sicknessHours ?? 0) > 0;
                 const hasEntries = Boolean(dayEntry);
                 const highlight = isSameDay(day, new Date());
                 const editable = isDateEditable(day) && isSameMonth(day, currentMonth);
@@ -832,13 +839,11 @@ export default function TimesheetCalendar({
                   }
                 }
 
-                // Determine permesso indicator color
-                let permessoColor = "";
-                if (permessoHours > 0 && permessoHours < 8) {
-                  permessoColor = "bg-yellow-400";
-                } else if (permessoHours === 8) {
-                  permessoColor = "bg-red-500";
-                }
+                // Determine missing entry indicator
+                const isMissingEntry = permessoHours === 8 && !hasEntries;
+                
+                // Determine explicit permesso
+                const isPermesso = hasEntries && permessoHours > 0;
 
                 // Determine background color based on day type
                 let bgColorClass = "bg-white";
@@ -876,45 +881,33 @@ export default function TimesheetCalendar({
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
-                        {permessoColor && (
-                          <div className={`w-2 h-2 rounded-full ${permessoColor}`} title={`Permesso: ${permessoHours}h`}></div>
+                        {isMissingEntry && (
+                          <div className="w-2 h-2 rounded-full bg-red-500" title="Mancato inserimento"></div>
                         )}
                         <span className={`text-xs sm:text-sm font-semibold ${highlight ? "text-blue-600" : "text-gray-700"}`}>
                           {format(day, "d")}
                         </span>
                       </div>
+                      <div className="flex gap-1">
+                        {isFerie && <span className="text-xs font-bold text-blue-600">F</span>}
+                        {isMalattia && <span className="text-xs font-bold text-red-600">M</span>}
+                        {isPermesso && <span className="text-xs font-bold text-yellow-600">P</span>}
+                      </div>
                     </div>
                     {hasEntries ? (
                       <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
-                        {((dayEntry?.vacationHours ?? 0) > 0 || (dayEntry?.sicknessHours ?? 0) > 0) ? (
-                          // Show type and notes for vacation/sickness days
-                          <div className="flex flex-col items-center gap-1">
-                            <div className={`text-xs sm:text-xl font-bold text-center break-all sm:break-normal ${(dayEntry?.vacationHours ?? 0) > 0 ? "text-blue-600" : "text-red-600"}`}>
-                              {(dayEntry?.vacationHours ?? 0) > 0 ? "Ferie" : "Malattia"}
-                            </div>
-                            {dayEntry?.notes && (
-                              <div className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2 break-words px-1 text-center">
-                                {dayEntry.notes}
-                              </div>
-                            )}
+                        <div className="flex flex-col items-center">
+                          <div className="text-2xl sm:text-3xl font-bold tracking-tight text-blue-600">
+                            {totalHours.toFixed(1)}
                           </div>
-                        ) : (
-                          // Show hours for normal working days
-                          <>
-                            <div className="flex flex-col items-center">
-                              <div className="text-2xl sm:text-3xl font-bold text-blue-600 tracking-tight">
-                                {totalHours.toFixed(1)}
-                              </div>
-                              <div className="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                ore
-                              </div>
-                            </div>
-                            {dayEntry?.notes && (
-                              <div className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2 break-words px-1 text-center">
-                                {dayEntry.notes}
-                              </div>
-                            )}
-                          </>
+                          <div className="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
+                            ore
+                          </div>
+                        </div>
+                        {dayEntry?.notes && (
+                          <div className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2 break-words px-1 text-center">
+                            {dayEntry.notes}
+                          </div>
                         )}
                       </div>
                     ) : (
@@ -1171,7 +1164,12 @@ export default function TimesheetCalendar({
 
                 {modalError && (
                   <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-                    <p className="text-sm font-medium text-red-800">{modalError}</p>
+                    <div className="flex items-center gap-2">
+                      <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm font-medium text-red-800">{modalError}</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1198,7 +1196,7 @@ export default function TimesheetCalendar({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSaving || (modalForm.dayType === "normal" && calculatedHours.totalWorked === 0)}
+                  disabled={isSaving || (modalForm.dayType === "normal" && calculatedHours.totalWorked === 0 && calculatedHours.permesso === 0)}
                   className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
                 >
                   {isSaving ? "Salvataggio..." : modalForm.dayType === "ferie" ? "Salva Ferie" : modalForm.dayType === "malattia" ? "Salva Malattia" : "Salva"}

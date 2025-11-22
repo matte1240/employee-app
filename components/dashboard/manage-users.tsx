@@ -3,6 +3,7 @@
 import { format } from "date-fns";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import type { User, UserRole } from "@/types/models";
 
 type ManageUsersProps = {
@@ -355,8 +356,12 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 <tr key={user.id} className="transition hover:bg-gray-50">
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="flex items-center">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-semibold text-white">
-                        {(user.name ?? "U")[0].toUpperCase()}
+                      <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600 overflow-hidden">
+                        {user.image ? (
+                          <Image src={user.image} alt={user.name || "User"} fill className="object-cover" />
+                        ) : (
+                          (user.name ?? "U")[0].toUpperCase()
+                        )}
                       </div>
                       <div className="ml-3">
                         <p className="font-semibold text-gray-900">{user.name ?? "Non assegnato"}</p>
@@ -385,7 +390,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                         className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 cursor-pointer"
                         title="Modifica utente"
                       >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                         Modifica
@@ -400,7 +405,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                         className="inline-flex items-center gap-1 rounded-lg bg-yellow-50 px-3 py-2 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-100 cursor-pointer"
                         title="Reimposta password"
                       >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                         </svg>
                         Reimposta
@@ -415,7 +420,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                         className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                         title={user.id === currentUserId ? "Non puoi eliminare il tuo account" : "Elimina utente"}
                       >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                         Elimina

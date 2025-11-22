@@ -22,6 +22,7 @@ export default async function UsersPage() {
       email: true,
       name: true,
       role: true,
+      image: true,
       createdAt: true,
     },
   })) as User[];

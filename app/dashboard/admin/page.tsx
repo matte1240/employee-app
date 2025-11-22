@@ -43,6 +43,7 @@ export default async function AdminDashboardPage() {
         email: true,
         name: true,
         role: true,
+        image: true,
         createdAt: true,
       },
     }) as Promise<UserRow[]>,

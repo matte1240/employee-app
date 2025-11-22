@@ -1,8 +1,7 @@
-import { performBackup } from "@/lib/db-backup";
-import { sendBackupEmail } from "@/lib/email";
-
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { performBackup } = await import("@/lib/db-backup");
+    const { sendBackupEmail } = await import("@/lib/email");
     const cron = await import("node-cron");
     
     // Schedule backup every day at 2:00 AM (default) or use env var

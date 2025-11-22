@@ -3,6 +3,7 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { User, TimeEntryDTO } from "@/types/models";
 import StatsCard from "./stats-card";
@@ -99,9 +100,9 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
   }, [users]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
       {/* Leaderboard Cards (mese corrente) */}
-      <div className="grid gap-6 md:grid-cols-4 mb-8">
+      <div className="grid gap-6 md:grid-cols-4 mb-8 order-2 md:order-1">
         <StatsCard
           title={`Più Ore (${currentMonth})`}
           value={topHoursUser ? topHoursUser.name : '—'}
@@ -152,7 +153,7 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
       </div>
 
       {/* Users Table */}
-      <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden order-1 md:order-2 mb-8 md:mb-0">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Utenti e Ore Lavorate</h2>
@@ -205,10 +206,14 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-blue-600 font-semibold text-sm">
-                            {(user.name || user.email).charAt(0).toUpperCase()}
-                          </span>
+                        <div className="relative flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                          {user.image ? (
+                            <Image src={user.image} alt={user.name || "User"} fill className="object-cover" />
+                          ) : (
+                            <span className="text-blue-600 font-semibold text-sm">
+                              {(user.name || user.email).charAt(0).toUpperCase()}
+                            </span>
+                          )}
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">

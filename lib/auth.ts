@@ -63,6 +63,7 @@ export const authOptions: NextAuthOptions = {
         const credentialsUser = user as CredentialsUser;
         token.id = credentialsUser.id;
         token.role = credentialsUser.role;
+        token.picture = credentialsUser.image;
         token.lastActivity = Date.now();
         
         // Get tokenVersion from user object (already fetched in authorize)
@@ -86,10 +87,13 @@ export const authOptions: NextAuthOptions = {
           // This reduces database queries significantly while still maintaining security
           const dbUser = await prisma.user.findUnique({
             where: { email: token.email },
-            select: { tokenVersion: true },
+            select: { tokenVersion: true, image: true },
           });
           
           if (dbUser) {
+            // Update image in token
+            token.picture = dbUser.image;
+
             const tokenVersionInToken = (token.tokenVersion as number) || 0;
             if (dbUser.tokenVersion !== tokenVersionInToken) {
               console.log(`🔒 Token invalidated for ${token.email} - password changed`);
@@ -104,11 +108,12 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && token.id) {
-        const typedToken = token as JWT & { id?: string; role?: string; lastActivity?: number };
+        const typedToken = token as JWT & { id?: string; role?: string; lastActivity?: number; picture?: string };
         session.user = {
           id: typedToken.id ?? session.user?.id ?? "",
           email: session.user?.email ?? typedToken.email ?? "",
           name: session.user?.name ?? (typedToken.name as string | undefined),
+          image: typedToken.picture,
           role: typedToken.role ?? "EMPLOYEE",
         };
         // Add lastActivity to session for client-side tracking

@@ -10,9 +10,10 @@ type NavbarProps = {
   userRole: string;
   userName?: string | null;
   userEmail?: string | null;
+  userImage?: string | null;
 };
 
-export default function Navbar({ userRole, userName, userEmail }: NavbarProps) {
+export default function Navbar({ userRole, userName, userEmail, userImage }: NavbarProps) {
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -155,14 +156,23 @@ export default function Navbar({ userRole, userName, userEmail }: NavbarProps) {
 
             {/* Desktop User Menu */}
             <div className="hidden md:flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm font-medium text-gray-900">
-                  {userName || userEmail}
+              <Link href="/dashboard/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity group">
+                <div className="text-right">
+                  <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                    {userName || userEmail}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {userRole === "ADMIN" ? "Amministratore" : "Dipendente"}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">
-                  {userRole === "ADMIN" ? "Amministratore" : "Dipendente"}
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold overflow-hidden relative border border-gray-200 shadow-sm">
+                  {userImage ? (
+                    <Image src={userImage} alt="Profile" fill className="object-cover" />
+                  ) : (
+                    (userName || userEmail || "U").charAt(0).toUpperCase()
+                  )}
                 </div>
-              </div>
+              </Link>
               <button
                 onClick={handleLogout}
                 disabled={isPending}
@@ -204,11 +214,15 @@ export default function Navbar({ userRole, userName, userEmail }: NavbarProps) {
         >
           {/* Drawer Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
-            <div className="flex items-center space-x-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                <span className="text-lg font-bold text-gray-700">
-                  {(userName || userEmail || "U").charAt(0).toUpperCase()}
-                </span>
+            <Link href="/dashboard/profile" className="flex items-center space-x-3 hover:opacity-80 transition-opacity" onClick={() => setIsMobileMenuOpen(false)}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 overflow-hidden relative border border-gray-200">
+                {userImage ? (
+                  <Image src={userImage} alt="Profile" fill className="object-cover" />
+                ) : (
+                  <span className="text-lg font-bold text-gray-700">
+                    {(userName || userEmail || "U").charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <div className="text-sm font-semibold text-gray-900">
@@ -218,7 +232,7 @@ export default function Navbar({ userRole, userName, userEmail }: NavbarProps) {
                   {userRole === "ADMIN" ? "Amministratore" : "Dipendente"}
                 </div>
               </div>
-            </div>
+            </Link>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
               className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"

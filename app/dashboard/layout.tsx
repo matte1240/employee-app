@@ -21,6 +21,7 @@ export default async function DashboardLayout({
         userRole={session.user.role}
         userName={session.user.name}
         userEmail={session.user.email}
+        userImage={session.user.image}
       />
       <main>{children}</main>
     </div>
