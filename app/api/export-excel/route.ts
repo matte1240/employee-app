@@ -72,6 +72,120 @@ export async function POST(request: Request) {
       entriesByUser.get(entry.userId)!.push(entry);
     }
 
+    // Add summary sheet if multiple users are selected
+    if (userIds.length > 1) {
+      const summarySheet = workbook.addWorksheet("Riepilogo");
+
+      // Set columns
+      summarySheet.columns = [
+        { key: "name", width: 30 },
+        { key: "hoursWorked", width: 15 },
+        { key: "overtime", width: 15 },
+        { key: "permFerieHours", width: 15 },
+        { key: "sicknessHours", width: 15 },
+        { key: "totalHours", width: 15 },
+      ];
+
+      // Format month for title (Italian)
+      const [y, m] = month.split("-");
+      const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1);
+      const monthName = dateObj.toLocaleString("it-IT", { month: "long" });
+      const capitalizedMonth =
+        monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+      const titleRow = summarySheet.addRow([
+        `Riepilogo Ore - ${capitalizedMonth} ${y}`,
+      ]);
+      titleRow.font = { size: 16, bold: true };
+      summarySheet.mergeCells("A1:F1");
+      titleRow.alignment = { horizontal: "center", vertical: "middle" };
+      titleRow.height = 30;
+
+      // Header
+      const headerRow = summarySheet.addRow([
+        "Dipendente",
+        "Ore Ordinarie",
+        "Straordinario",
+        "Ore Perm/Ferie",
+        "Ore Malattia",
+        "Totale Ore",
+      ]);
+
+      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      headerRow.alignment = { horizontal: "center", vertical: "middle" };
+      headerRow.height = 20;
+
+      for (let i = 1; i <= 6; i++) {
+        headerRow.getCell(i).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF4472C4" },
+        };
+      }
+
+      // Data rows
+      for (const userId of userIds) {
+        const user = userMap.get(userId);
+        if (!user) continue;
+
+        const entries = entriesByUser.get(userId) || [];
+
+        let totalHoursWorked = 0;
+        let totalOvertime = 0;
+        let totalPermFerie = 0;
+        let totalSickness = 0;
+
+        entries.forEach((entry) => {
+          const hoursWorked = parseFloat(entry.hoursWorked.toString());
+          const overtime = parseFloat(entry.overtimeHours.toString());
+          const permessoHours = entry.permessoHours
+            ? parseFloat(entry.permessoHours.toString())
+            : 0;
+          const vacationHours = entry.vacationHours
+            ? parseFloat(entry.vacationHours.toString())
+            : 0;
+          const sicknessHours = entry.sicknessHours
+            ? parseFloat(entry.sicknessHours.toString())
+            : 0;
+
+          totalHoursWorked += hoursWorked;
+          totalOvertime += overtime;
+          totalPermFerie += permessoHours + vacationHours;
+          totalSickness += sicknessHours;
+        });
+
+        const row = summarySheet.addRow({
+          name: user.name || user.email,
+          hoursWorked: totalHoursWorked,
+          overtime: totalOvertime,
+          permFerieHours: totalPermFerie,
+          sicknessHours: totalSickness,
+          totalHours: totalHoursWorked + totalOvertime,
+        });
+
+        // Formatting
+        row.getCell(2).numFmt = "0.00";
+        row.getCell(3).numFmt = "0.00";
+        row.getCell(4).numFmt = "0.00";
+        row.getCell(5).numFmt = "0.00";
+        row.getCell(6).numFmt = "0.00";
+      }
+
+      // Add borders
+      summarySheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1) {
+          row.eachCell((cell) => {
+            cell.border = {
+              top: { style: "thin" },
+              left: { style: "thin" },
+              bottom: { style: "thin" },
+              right: { style: "thin" },
+            };
+          });
+        }
+      });
+    }
+
     // Function to add a worksheet for a user
     const addUserSheet = (userId: string) => {
       const user = userMap.get(userId);
