@@ -186,7 +186,7 @@ export async function sendBackupEmail(
 
   const { html } = getBackupEmailTemplate(success, filename, errorMessage);
 
-  const mailOptions: any = {
+  const mailOptions: nodemailer.SendMailOptions = {
     from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
     to,
     subject,
