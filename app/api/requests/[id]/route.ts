@@ -26,6 +26,24 @@ const updateRequestSchema = z.object({
   status: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional(),
 });
 
+interface TimeEntryData {
+  userId: string;
+  workDate: Date;
+  hoursWorked: number;
+  vacationHours?: number;
+  sicknessHours?: number;
+}
+
+interface LeaveRequestUpdateData {
+  startDate?: Date;
+  endDate?: Date;
+  type?: "VACATION" | "SICKNESS" | "PERMESSO";
+  reason?: string;
+  startTime?: string;
+  endTime?: string;
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+}
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -59,14 +77,6 @@ export async function PATCH(
       // Generate TimeEntries only for VACATION and SICKNESS
       // PERMESSO requests are just marked in the calendar, user enters hours manually
       if (request.type !== "PERMESSO") {
-        interface TimeEntryData {
-          userId: string;
-          workDate: Date;
-          hoursWorked: number;
-          vacationHours?: number;
-          sicknessHours?: number;
-        }
-
         const entriesToCreate: TimeEntryData[] = [];
         let currentDate = new Date(request.startDate);
         const endDate = new Date(request.endDate);
@@ -153,17 +163,7 @@ export async function PUT(
     }
 
     // Build update data
-    interface UpdateData {
-      startDate?: Date;
-      endDate?: Date;
-      type?: "VACATION" | "SICKNESS" | "PERMESSO";
-      reason?: string;
-      startTime?: string;
-      endTime?: string;
-      status?: "PENDING" | "APPROVED" | "REJECTED";
-    }
-
-    const updateData: UpdateData = {};
+    const updateData: LeaveRequestUpdateData = {};
     if (body.startDate) updateData.startDate = new Date(body.startDate);
     if (body.endDate) updateData.endDate = new Date(body.endDate);
     if (body.type) updateData.type = body.type;

@@ -19,6 +19,11 @@ const createRequestSchema = z.object({
   endTime: z.string().optional(),
 });
 
+interface LeaveRequestWhereClause {
+  userId?: string;
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+}
+
 export async function POST(req: Request) {
   const { session, error } = await requireAuth();
   if (error) return error;
@@ -111,12 +116,7 @@ export async function GET(req: Request) {
     return forbiddenResponse("Forbidden");
   }
 
-  interface WhereClause {
-    userId?: string;
-    status?: string;
-  }
-
-  const where: WhereClause = {};
+  const where: LeaveRequestWhereClause = {};
   
   if (userIdParam) {
     where.userId = userIdParam;
@@ -126,7 +126,7 @@ export async function GET(req: Request) {
   }
   // If admin and no userId, show all (or filter by status)
 
-  if (statusParam) {
+  if (statusParam && (statusParam === "PENDING" || statusParam === "APPROVED" || statusParam === "REJECTED")) {
     where.status = statusParam;
   }
 

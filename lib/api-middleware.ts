@@ -7,6 +7,9 @@ import type { Session } from "next-auth";
 import { getAuthSession } from "@/lib/auth";
 import { isAdmin as checkIsAdmin } from "@/lib/utils/user-utils";
 
+// Re-export isAdmin for convenience
+export { isAdmin } from "@/lib/utils/user-utils";
+
 /**
  * Require authentication and return the session
  * Returns an error response if not authenticated
@@ -53,11 +56,4 @@ export async function requireAdmin(): Promise<
   }
 
   return { session, error: null };
-}
-
-/**
- * Check if user has admin role
- */
-export function isAdmin(session: Session): boolean {
-  return checkIsAdmin(session);
 }
