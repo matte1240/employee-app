@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import AdminOverview from "@/components/dashboard/admin-overview";
+import PendingRequests from "@/components/dashboard/admin/pending-requests";
 import type { User } from "@/types/models";
 
 type UserAggregate = User & {
@@ -103,5 +104,10 @@ export default async function AdminDashboardPage() {
     lastEntry: lastEntryMap.get(user.id) ?? null,
   }));
 
-  return <AdminOverview users={rows} />;
+  return (
+    <div className="space-y-8">
+      <PendingRequests />
+      <AdminOverview users={rows} />
+    </div>
+  );
 }

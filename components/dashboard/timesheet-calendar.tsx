@@ -22,6 +22,7 @@ import type { TimeEntryDTO } from "@/types/models";
 import { calculateHours, TIME_OPTIONS } from "@/lib/utils/time-utils";
 import { isDateEditable as isDateEditableUtil } from "@/lib/utils/date-utils";
 import { isHoliday, getHolidayName } from "@/lib/utils/holiday-utils";
+import RequestLeaveModal from "./request-leave-modal";
 
 // Re-export for backward compatibility
 export type { TimeEntryDTO };
@@ -69,9 +70,11 @@ export default function TimesheetCalendar({
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [isRefetching, setIsRefetching] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [modalForm, setModalForm] = useState<ModalFormState>({
     morningStart: "08:00",
     morningEnd: "12:00",
@@ -222,6 +225,21 @@ export default function TimesheetCalendar({
 
     return () => controller.abort();
   }, [fetchEntries, onEntrySaved]);
+
+  useEffect(() => {
+    const fetchPendingRequests = async () => {
+      try {
+        const res = await fetch(`/api/requests?status=PENDING${targetUserId ? `&userId=${targetUserId}` : ''}`);
+        if (res.ok) {
+          const data = await res.json();
+          setPendingRequests(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch pending requests", error);
+      }
+    };
+    fetchPendingRequests();
+  }, [targetUserId, isRefetching]);
 
   const entriesByDay = useMemo(() => {
     const map = new Map<string, TimeEntryDTO[]>();
@@ -768,6 +786,13 @@ export default function TimesheetCalendar({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => setIsRequestModalOpen(true)}
+                  className="hidden sm:block rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 mr-2"
+                >
+                  Richiedi Ferie
+                </button>
+                <button
+                  type="button"
                   onClick={() => setCurrentMonth((month) => addMonths(month, -1))}
                   className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
                 >
@@ -819,6 +844,17 @@ export default function TimesheetCalendar({
                 const isHolidayDay = holidayInfo?.isHoliday ?? false;
                 const holidayName = holidayInfo?.name;
 
+                const pendingRequest = pendingRequests.find(req => {
+                  const start = new Date(req.startDate);
+                  const end = new Date(req.endDate);
+                  // Reset hours to compare dates only
+                  start.setHours(0,0,0,0);
+                  end.setHours(0,0,0,0);
+                  const current = new Date(day);
+                  current.setHours(0,0,0,0);
+                  return current >= start && current <= end;
+                });
+
                 // Calculate permesso hours
                 let permessoHours = 0;
                 if (hasEntries) {
@@ -858,6 +894,11 @@ export default function TimesheetCalendar({
                   bgColorClass = "bg-blue-50";
                   bgColorDisabled = "bg-blue-50/70";
                   bgColorOutside = "bg-blue-50/40";
+                }
+
+                if (pendingRequest) {
+                  bgColorClass = "bg-yellow-50";
+                  bgColorDisabled = "bg-yellow-50/70";
                 }
 
                 return (
@@ -909,6 +950,12 @@ export default function TimesheetCalendar({
                             {dayEntry.notes}
                           </div>
                         )}
+                      </div>
+                    ) : pendingRequest ? (
+                      <div className="flex-1 flex flex-col justify-center items-center">
+                        <span className="text-xs font-medium text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
+                          In Attesa
+                        </span>
                       </div>
                     ) : (
                       <div className="flex-1 flex items-center justify-center">
@@ -1263,6 +1310,11 @@ export default function TimesheetCalendar({
           </button>
         </div>
       )}
+
+      <RequestLeaveModal
+        isOpen={isRequestModalOpen}
+        onClose={() => setIsRequestModalOpen(false)}
+      />
     </div>
   );
 }
