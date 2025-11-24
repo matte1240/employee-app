@@ -9,6 +9,8 @@ const createRequestSchema = z.object({
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   type: z.enum(["VACATION", "SICKNESS", "PERMESSO"]),
   reason: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -21,6 +23,15 @@ export async function POST(req: Request) {
     const json = await req.json();
     const body = createRequestSchema.parse(json);
     const userId = session.user.id;
+
+    if (body.type === "PERMESSO") {
+      if (!body.startTime || !body.endTime) {
+        return new NextResponse("Start time and end time are required for Permesso", { status: 400 });
+      }
+      if (body.startDate !== body.endDate) {
+        return new NextResponse("Permesso requests must be for a single day", { status: 400 });
+      }
+    }
 
     const startDate = new Date(body.startDate);
     const endDate = new Date(body.endDate);
@@ -69,6 +80,8 @@ export async function POST(req: Request) {
         endDate,
         type: body.type,
         reason: body.reason,
+        startTime: body.startTime,
+        endTime: body.endTime,
       },
     });
 

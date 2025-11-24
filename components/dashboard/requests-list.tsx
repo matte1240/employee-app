@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import RequestLeaveModal from "./request-leave-modal";
 
 type LeaveRequest = {
   id: string;
@@ -12,6 +13,8 @@ type LeaveRequest = {
   type: "VACATION" | "SICKNESS" | "PERMESSO";
   status: "PENDING" | "APPROVED" | "REJECTED";
   reason?: string;
+  startTime?: string;
+  endTime?: string;
   user: {
     name: string | null;
     email: string;
@@ -27,6 +30,8 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchRequests = async () => {
     setIsLoading(true);
@@ -73,6 +78,39 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
       }
     } catch (error) {
       console.error("Error updating request", error);
+      alert("Errore di connessione");
+    }
+  };
+
+  const startEdit = (req: LeaveRequest) => {
+    setEditingRequest(req);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingRequest(null);
+  };
+
+  const handleSaveEdit = () => {
+    fetchRequests();
+  };
+
+  const deleteRequest = async (id: string) => {
+    if (!confirm("Sei sicuro di voler eliminare questa richiesta?")) return;
+    
+    try {
+      const res = await fetch(`/api/requests/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        fetchRequests();
+      } else {
+        alert("Errore nell'eliminazione");
+      }
+    } catch (error) {
+      console.error("Error deleting request", error);
       alert("Errore di connessione");
     }
   };
@@ -175,6 +213,11 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                     {format(new Date(req.startDate), "d MMM", { locale: it })} -{" "}
                     {format(new Date(req.endDate), "d MMM yyyy", { locale: it })}
+                    {req.type === "PERMESSO" && req.startTime && req.endTime && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        {req.startTime} - {req.endTime}
+                      </div>
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     {getStatusBadge(req.status)}
@@ -184,22 +227,36 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
                   </td>
                   {isAdmin && (
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                      {req.status === "PENDING" && (
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleAction(req.id, "APPROVED")}
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            Approva
-                          </button>
-                          <button
-                            onClick={() => handleAction(req.id, "REJECTED")}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Rifiuta
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => startEdit(req)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          Modifica
+                        </button>
+                        {req.status === "PENDING" && (
+                          <>
+                            <button
+                              onClick={() => handleAction(req.id, "APPROVED")}
+                              className="text-green-600 hover:text-green-900"
+                            >
+                              Approva
+                            </button>
+                            <button
+                              onClick={() => handleAction(req.id, "REJECTED")}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Rifiuta
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => deleteRequest(req.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Elimina
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -208,6 +265,12 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
           </table>
         </div>
       )}
+
+      <RequestLeaveModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        editRequest={editingRequest}
+      />
     </div>
   );
 }
