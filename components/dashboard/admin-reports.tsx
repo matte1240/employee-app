@@ -41,46 +41,49 @@ export default function AdminReports({ users }: ExportDataProps) {
         if (response.ok) {
           const entries = await response.json();
 
-          // Calculate hours per user for the selected month
-          const regularHoursMap = new Map<string, number>();
-          const overtimeHoursMap = new Map<string, number>();
-          const permessoHoursMap = new Map<string, number>();
-          const sicknessHoursMap = new Map<string, number>();
-          const vacationHoursMap = new Map<string, number>();
+          // Calculate hours per user for the selected month using a more efficient single-pass aggregation
+          const hoursMap = new Map<string, {
+            regular: number;
+            overtime: number;
+            permesso: number;
+            sickness: number;
+            vacation: number;
+          }>();
 
           entries.forEach((entry: TimeEntryDTO) => {
             // Skip if userId is missing
             if (!entry.userId) return;
 
-            const regularCurrent = regularHoursMap.get(entry.userId) || 0;
-            const overtimeCurrent = overtimeHoursMap.get(entry.userId) || 0;
-            const permessoCurrent = permessoHoursMap.get(entry.userId) || 0;
-            const sicknessCurrent = sicknessHoursMap.get(entry.userId) || 0;
-            const vacationCurrent = vacationHoursMap.get(entry.userId) || 0;
+            const current = hoursMap.get(entry.userId) || {
+              regular: 0,
+              overtime: 0,
+              permesso: 0,
+              sickness: 0,
+              vacation: 0,
+            };
 
-            // hoursWorked already contains only regular hours (max 8 per day)
-            const regularHours = entry.hoursWorked || 0;
-            const overtimeHours = entry.overtimeHours || 0;
-            const permessoHours = entry.permessoHours || 0;
-            const sicknessHours = entry.sicknessHours || 0;
-            const vacationHours = entry.vacationHours || 0;
+            // Accumulate all hours in a single pass
+            current.regular += entry.hoursWorked || 0;
+            current.overtime += entry.overtimeHours || 0;
+            current.permesso += entry.permessoHours || 0;
+            current.sickness += entry.sicknessHours || 0;
+            current.vacation += entry.vacationHours || 0;
 
-            regularHoursMap.set(entry.userId, regularCurrent + regularHours);
-            overtimeHoursMap.set(entry.userId, overtimeCurrent + overtimeHours);
-            permessoHoursMap.set(entry.userId, permessoCurrent + permessoHours);
-            sicknessHoursMap.set(entry.userId, sicknessCurrent + sicknessHours);
-            vacationHoursMap.set(entry.userId, vacationCurrent + vacationHours);
+            hoursMap.set(entry.userId, current);
           });
 
           // Update users with month-specific hours
-          const updatedUsers = users.map(user => ({
-            ...user,
-            regularHours: regularHoursMap.get(user.id) || 0,
-            overtimeHours: overtimeHoursMap.get(user.id) || 0,
-            permessoHours: permessoHoursMap.get(user.id) || 0,
-            sicknessHours: sicknessHoursMap.get(user.id) || 0,
-            vacationHours: vacationHoursMap.get(user.id) || 0,
-          }));
+          const updatedUsers = users.map(user => {
+            const hours = hoursMap.get(user.id);
+            return {
+              ...user,
+              regularHours: hours?.regular || 0,
+              overtimeHours: hours?.overtime || 0,
+              permessoHours: hours?.permesso || 0,
+              sicknessHours: hours?.sickness || 0,
+              vacationHours: hours?.vacation || 0,
+            };
+          });
 
           setUsersWithMonthHours(updatedUsers);
         }

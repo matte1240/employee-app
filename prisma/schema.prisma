@@ -100,6 +100,10 @@ model LeaveRequest {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status], map: "user_status_idx")
+  @@index([status, createdAt], map: "status_created_idx")
+  @@index([userId, startDate, endDate], map: "user_dates_idx")
 }
 
 enum RequestStatus {
