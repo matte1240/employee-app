@@ -1,8 +1,15 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { findUserById, findUserByEmail, isAdmin } from "@/lib/utils/user-utils";
+import { findUserById, findUserByEmail } from "@/lib/utils/user-utils";
+import { requireAdmin } from "@/lib/api-middleware";
+import {
+  successResponse,
+  notFoundResponse,
+  badRequestResponse,
+  conflictResponse,
+  handleError,
+  handleZodError,
+} from "@/lib/api-responses";
 
 const updateUserSchema = z.object({
   name: z.string().min(1, "Name is required").max(100).optional(),
@@ -14,15 +21,8 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (!isAdmin(session)) {
-    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
-  }
+  const { session, error } = await requireAdmin();
+  if (error) return error;
 
   try {
     const { id: userId } = await params;
@@ -31,28 +31,21 @@ export async function PUT(
     const existingUser = await findUserById(userId);
 
     if (!existingUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return notFoundResponse("User not found");
     }
 
     const body = await request.json();
     const parsed = updateUserSchema.safeParse(body);
 
     if (!parsed.success) {
-      const firstError = parsed.error.issues[0];
-      return NextResponse.json(
-        { error: firstError?.message ?? "Invalid input" },
-        { status: 400 }
-      );
+      return handleZodError(parsed.error);
     }
 
     const { name, email, role } = parsed.data;
 
     // Prevent admin from removing their own admin privileges
     if (session.user.id === userId && role && role !== existingUser.role) {
-      return NextResponse.json(
-        { error: "Cannot change your own role" },
-        { status: 400 }
-      );
+      return badRequestResponse("Cannot change your own role");
     }
 
     // If email is being changed, check if it's already in use
@@ -60,10 +53,7 @@ export async function PUT(
       const emailInUse = await findUserByEmail(email);
 
       if (emailInUse) {
-        return NextResponse.json(
-          { error: "Email already in use" },
-          { status: 409 }
-        );
+        return conflictResponse("Email already in use");
       }
     }
 
@@ -84,13 +74,9 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(updatedUser);
+    return successResponse(updatedUser);
   } catch (error) {
-    console.error("Error updating user:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleError(error, "updating user");
   }
 }
 
@@ -98,32 +84,22 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (!isAdmin(session)) {
-    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
-  }
+  const { session, error } = await requireAdmin();
+  if (error) return error;
 
   try {
     const { id: userId } = await params;
 
     // Prevent admin from deleting themselves
     if (session.user.id === userId) {
-      return NextResponse.json(
-        { error: "Cannot delete your own account" },
-        { status: 400 }
-      );
+      return badRequestResponse("Cannot delete your own account");
     }
 
     // Check if user exists
     const existingUser = await findUserById(userId);
 
     if (!existingUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return notFoundResponse("User not found");
     }
 
     // Delete user and cascade delete their time entries
@@ -131,12 +107,8 @@ export async function DELETE(
       where: { id: userId },
     });
 
-    return NextResponse.json({ message: "User deleted successfully" });
+    return successResponse({ message: "User deleted successfully" });
   } catch (error) {
-    console.error("Error deleting user:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleError(error, "deleting user");
   }
 }

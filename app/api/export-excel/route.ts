@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import ExcelJS from "exceljs";
-import { isAdmin } from "@/lib/utils/user-utils";
+import { requireAuth, isAdmin } from "@/lib/api-middleware";
+import { badRequestResponse, forbiddenResponse, handleError } from "@/lib/api-responses";
+import { decimalToNumber } from "@/lib/utils/serialization";
 
 const exportSchema = z.object({
   userIds: z.array(z.string()),
@@ -11,17 +12,14 @@ const exportSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   const body = await request.json();
   const parsed = exportSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return badRequestResponse("Invalid payload");
   }
 
   const { userIds, month } = parsed.data;
@@ -29,7 +27,7 @@ export async function POST(request: Request) {
   // Check permissions: admin can export any users, employees can only export themselves
   if (!isAdmin(session)) {
     if (userIds.length !== 1 || userIds[0] !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return forbiddenResponse("Unauthorized");
     }
   }
   const [year, monthNum] = month.split("-");
@@ -136,17 +134,11 @@ export async function POST(request: Request) {
         let totalSickness = 0;
 
         entries.forEach((entry) => {
-          const hoursWorked = parseFloat(entry.hoursWorked.toString());
-          const overtime = parseFloat(entry.overtimeHours.toString());
-          const permessoHours = entry.permessoHours
-            ? parseFloat(entry.permessoHours.toString())
-            : 0;
-          const vacationHours = entry.vacationHours
-            ? parseFloat(entry.vacationHours.toString())
-            : 0;
-          const sicknessHours = entry.sicknessHours
-            ? parseFloat(entry.sicknessHours.toString())
-            : 0;
+          const hoursWorked = decimalToNumber(entry.hoursWorked);
+          const overtime = decimalToNumber(entry.overtimeHours);
+          const permessoHours = decimalToNumber(entry.permessoHours);
+          const vacationHours = decimalToNumber(entry.vacationHours);
+          const sicknessHours = decimalToNumber(entry.sicknessHours);
 
           totalHoursWorked += hoursWorked;
           totalOvertime += overtime;
@@ -281,17 +273,11 @@ export async function POST(request: Request) {
       let totalSicknessSum = 0;
 
       entries.forEach((entry) => {
-        const hoursWorked = parseFloat(entry.hoursWorked.toString());
-        const overtime = parseFloat(entry.overtimeHours.toString());
-        const permessoHours = entry.permessoHours
-          ? parseFloat(entry.permessoHours.toString())
-          : 0;
-        const sicknessHours = entry.sicknessHours
-          ? parseFloat(entry.sicknessHours.toString())
-          : 0;
-        const vacationHours = entry.vacationHours
-          ? parseFloat(entry.vacationHours.toString())
-          : 0;
+        const hoursWorked = decimalToNumber(entry.hoursWorked);
+        const overtime = decimalToNumber(entry.overtimeHours);
+        const permessoHours = decimalToNumber(entry.permessoHours);
+        const sicknessHours = decimalToNumber(entry.sicknessHours);
+        const vacationHours = decimalToNumber(entry.vacationHours);
         const permFerieHours = permessoHours + vacationHours;
         const totalHours = hoursWorked + overtime;
 
@@ -448,10 +434,6 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Export error:", error);
-    return NextResponse.json(
-      { error: "Failed to export data" },
-      { status: 500 }
-    );
+    return handleError(error, "exporting data");
   }
 }

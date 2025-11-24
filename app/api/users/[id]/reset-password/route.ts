@@ -1,11 +1,16 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { sendPasswordResetLinkEmail } from "@/lib/email";
 import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/utils/token-utils";
-import { findUserById, isAdmin } from "@/lib/utils/user-utils";
+import { findUserById } from "@/lib/utils/user-utils";
+import { requireAdmin } from "@/lib/api-middleware";
+import {
+  successResponse,
+  notFoundResponse,
+  handleError,
+  handleZodError,
+} from "@/lib/api-responses";
 
 const resetPasswordSchema = z.object({
   newPassword: z.string().min(8, "Password must be at least 8 characters").optional(),
@@ -15,15 +20,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (!isAdmin(session)) {
-    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
-  }
+  const { error } = await requireAdmin();
+  if (error) return error;
 
   try {
     const { id: userId } = await params;
@@ -32,7 +30,7 @@ export async function POST(
     const existingUser = await findUserById(userId);
 
     if (!existingUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return notFoundResponse("User not found");
     }
 
     // Parse request body to check if manual password is provided
@@ -40,10 +38,7 @@ export async function POST(
     const parsed = resetPasswordSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0].message },
-        { status: 400 }
-      );
+      return handleZodError(parsed.error);
     }
 
     const { newPassword } = parsed.data;
@@ -69,7 +64,7 @@ export async function POST(
       ]);
 
       console.log(`✅ Password reset manually for: ${existingUser.email}`);
-      return NextResponse.json({ 
+      return successResponse({ 
         message: "Password reimpostata con successo." 
       });
     }
@@ -99,19 +94,13 @@ export async function POST(
       // Cleanup token if email fails
       await deleteVerificationTokens(existingUser.email);
       
-      return NextResponse.json({
-        error: "Failed to send email notification. Password reset not initiated.",
-      }, { status: 500 });
+      return handleError(emailError, "sending password reset email");
     }
 
-    return NextResponse.json({ 
+    return successResponse({ 
       message: "Email di reset password inviata con successo all'utente." 
     });
   } catch (error) {
-    console.error("Error resetting password:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleError(error, "resetting password");
   }
 }
