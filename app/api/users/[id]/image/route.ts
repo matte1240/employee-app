@@ -1,40 +1,44 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/auth";
+import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { writeFile } from "fs/promises";
 import path from "path";
+import { requireAuth } from "@/lib/api-middleware";
+import {
+  successResponse,
+  badRequestResponse,
+  forbiddenResponse,
+  handleError,
+} from "@/lib/api-responses";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getAuthSession();
-  if (!session) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   const { id: userId } = await params;
 
   // Allow users to update their own image, or admins to update anyone's
   if (session.user.id !== userId && session.user.role !== "ADMIN") {
-    return new NextResponse("Forbidden", { status: 403 });
+    return forbiddenResponse("Forbidden");
   }
 
   const formData = await req.formData();
   const file = formData.get("image") as File | null;
 
   if (!file) {
-    return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    return badRequestResponse("No file uploaded");
   }
 
   // Validate file type
   if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "File must be an image" }, { status: 400 });
+    return badRequestResponse("File must be an image");
   }
 
   // Validate file size (e.g., 5MB)
   if (file.size > 5 * 1024 * 1024) {
-    return NextResponse.json({ error: "File size too large (max 5MB)" }, { status: 400 });
+    return badRequestResponse("File size too large (max 5MB)");
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -53,9 +57,8 @@ export async function POST(
       data: { image: imageUrl },
     });
 
-    return NextResponse.json({ imageUrl });
+    return successResponse({ imageUrl });
   } catch (error) {
-    console.error("Error uploading file:", error);
-    return NextResponse.json({ error: "Error uploading file" }, { status: 500 });
+    return handleError(error, "uploading file");
   }
 }

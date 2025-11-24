@@ -1,10 +1,15 @@
 import type { Decimal } from "@prisma/client/runtime/library";
-import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { isAdmin } from "@/lib/utils/user-utils";
 import { isHoliday } from "@/lib/utils/holiday-utils";
+import { requireAuth, isAdmin } from "@/lib/api-middleware";
+import {
+  successResponse,
+  badRequestResponse,
+  forbiddenResponse,
+  notFoundResponse,
+} from "@/lib/api-responses";
+import { serializeTimeEntry, serializeTimeEntries } from "@/lib/utils/serialization";
 
 const createHoursSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -47,37 +52,15 @@ type RawEntry = {
   updatedAt: Date;
 };
 
-const toPlainEntry = (entry: RawEntry) => ({
-  id: entry.id,
-  userId: entry.userId,
-  workDate: entry.workDate.toISOString().split('T')[0], // Return only date part (YYYY-MM-DD)
-  hoursWorked: parseFloat(entry.hoursWorked.toString()),
-  overtimeHours: parseFloat(entry.overtimeHours.toString()),
-  permessoHours: parseFloat(entry.permessoHours.toString()),
-  sicknessHours: parseFloat(entry.sicknessHours.toString()),
-  vacationHours: parseFloat(entry.vacationHours.toString()),
-  morningStart: entry.morningStart,
-  morningEnd: entry.morningEnd,
-  afternoonStart: entry.afternoonStart,
-  afternoonEnd: entry.afternoonEnd,
-  medicalCertificate: entry.medicalCertificate,
-  notes: entry.notes,
-  createdAt: entry.createdAt.toISOString(),
-  updatedAt: entry.updatedAt.toISOString(),
-});
-
 export async function GET(request: Request) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   const url = new URL(request.url);
   const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams));
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid query" }, { status: 400 });
+    return badRequestResponse("Invalid query");
   }
 
   const { userId, from, to } = parsed.data;
@@ -109,8 +92,7 @@ export async function GET(request: Request) {
       where: where.workDate ? { workDate: where.workDate } : undefined,
       orderBy: { workDate: "desc" },
     })) as RawEntry[];
-    const payload = entries.map((entry) => toPlainEntry(entry));
-    return NextResponse.json(payload);
+    return successResponse(serializeTimeEntries(entries));
   }
 
   const entries = (await prisma.timeEntry.findMany({
@@ -118,21 +100,18 @@ export async function GET(request: Request) {
     orderBy: { workDate: "desc" },
   })) as RawEntry[];
 
-  return NextResponse.json(entries.map((entry) => toPlainEntry(entry)));
+  return successResponse(serializeTimeEntries(entries));
 }
 
 export async function POST(request: Request) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   const body = await request.json();
   const parsed = createHoursSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return badRequestResponse("Invalid payload");
   }
 
   const { workDate, hoursWorked, overtimeHours, morningStart, morningEnd, afternoonStart, afternoonEnd, medicalCertificate, notes, userId: requestedUserId } = parsed.data;
@@ -163,27 +142,18 @@ export async function POST(request: Request) {
     // Block Sundays (0 = Sunday)
     const dayOfWeek = entryDate.getUTCDay();
     if (dayOfWeek === 0 || isHoliday(workDate)) {
-      return NextResponse.json(
-        { error: "Cannot enter hours on Sundays or Holidays" },
-        { status: 403 }
-      );
+      return forbiddenResponse("Cannot enter hours on Sundays or Holidays");
     }
 
     if (entryDate > today) {
-      return NextResponse.json(
-        { error: "Cannot enter hours for future dates" },
-        { status: 403 }
-      );
+      return forbiddenResponse("Cannot enter hours for future dates");
     }
 
     if (entryDate < earliestEditableDate) {
       const errorMessage = currentDay <= 5
         ? "Can only enter hours for the current month or previous month (until the 5th of the current month)"
         : "Can only enter hours for the current month";
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: 403 }
-      );
+      return forbiddenResponse(errorMessage);
     }
   }
 
@@ -252,21 +222,18 @@ export async function POST(request: Request) {
     })) as RawEntry;
   }
 
-  return NextResponse.json(toPlainEntry(entry), { status: existing ? 200 : 201 });
+  return successResponse(serializeTimeEntry(entry), existing ? 200 : 201);
 }
 
 export async function DELETE(request: Request) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   const url = new URL(request.url);
   const entryId = url.searchParams.get("id");
 
   if (!entryId) {
-    return NextResponse.json({ error: "Entry ID required" }, { status: 400 });
+    return badRequestResponse("Entry ID required");
   }
 
   // Find the entry
@@ -275,12 +242,12 @@ export async function DELETE(request: Request) {
   });
 
   if (!entry) {
-    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    return notFoundResponse("Entry not found");
   }
 
   // Check permissions: employees can only delete their own entries, admins can delete any
   if (!isAdmin(session) && entry.userId !== session.user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return forbiddenResponse("Forbidden");
   }
 
   // Delete the entry
@@ -288,5 +255,5 @@ export async function DELETE(request: Request) {
     where: { id: entryId },
   });
 
-  return NextResponse.json({ success: true }, { status: 200 });
+  return successResponse({ success: true });
 }

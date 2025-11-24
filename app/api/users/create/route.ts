@@ -1,12 +1,17 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { sendWelcomeSetupEmail } from "@/lib/email";
 import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/utils/token-utils";
-import { findUserByEmail, isAdmin } from "@/lib/utils/user-utils";
+import { findUserByEmail } from "@/lib/utils/user-utils";
+import { requireAdmin } from "@/lib/api-middleware";
+import {
+  successResponse,
+  conflictResponse,
+  handleError,
+  handleZodError,
+} from "@/lib/api-responses";
 
 const createUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -16,26 +21,15 @@ const createUserSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (!isAdmin(session)) {
-    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
-  }
+  const { error } = await requireAdmin();
+  if (error) return error;
 
   try {
     const body = await request.json();
     const parsed = createUserSchema.safeParse(body);
 
     if (!parsed.success) {
-      const firstError = parsed.error.issues[0];
-      return NextResponse.json(
-        { error: firstError?.message ?? "Invalid input" },
-        { status: 400 }
-      );
+      return handleZodError(parsed.error);
     }
 
     const { name, email, role, password } = parsed.data;
@@ -44,10 +38,7 @@ export async function POST(request: Request) {
     const existingUser = await findUserByEmail(email);
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: "User with this email already exists" },
-        { status: 409 }
-      );
+      return conflictResponse("User with this email already exists");
     }
 
     // Determine password to use
@@ -85,7 +76,7 @@ export async function POST(request: Request) {
     // If manual password was provided, skip email sending
     if (password) {
       console.log(`✅ User created with manual password: ${email}`);
-      return NextResponse.json(newUser, { status: 201 });
+      return successResponse(newUser, 201);
     }
 
     // Generate reset token
@@ -112,18 +103,11 @@ export async function POST(request: Request) {
       await prisma.user.delete({ where: { id: newUser.id } });
       await deleteVerificationTokens(email);
       
-      return NextResponse.json(
-        { error: "Failed to send welcome email. User not created." },
-        { status: 500 }
-      );
+      return handleError(emailError, "sending welcome email");
     }
 
-    return NextResponse.json(newUser, { status: 201 });
+    return successResponse(newUser, 201);
   } catch (error) {
-    console.error("Error creating user:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleError(error, "creating user");
   }
 }
