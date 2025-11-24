@@ -43,7 +43,7 @@ model TimeEntry {
   vacationHours      Decimal  @default(0)
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, workDate], map: "user_workdate_idx")
+  @@unique([userId, workDate], map: "user_workdate_unique")
   @@index([workDate], map: "workdate_idx")
 }
 

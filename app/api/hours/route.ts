@@ -173,11 +173,13 @@ export async function POST(request: Request) {
     }
   }
 
-  // Check if entry already exists for this date
-  const existing = await prisma.timeEntry.findFirst({
+  // Check if entry already exists for this date (using unique constraint for better performance)
+  const existing = await prisma.timeEntry.findUnique({
     where: {
-      userId: targetUserId,
-      workDate: new Date(`${workDate}T00:00:00.000Z`),
+      userId_workDate: {
+        userId: targetUserId,
+        workDate: new Date(`${workDate}T00:00:00.000Z`),
+      },
     },
   });
 
