@@ -59,14 +59,22 @@ export async function PATCH(
       // Generate TimeEntries only for VACATION and SICKNESS
       // PERMESSO requests are just marked in the calendar, user enters hours manually
       if (request.type !== "PERMESSO") {
-        const entriesToCreate = [];
+        interface TimeEntryData {
+          userId: string;
+          workDate: Date;
+          hoursWorked: number;
+          vacationHours?: number;
+          sicknessHours?: number;
+        }
+
+        const entriesToCreate: TimeEntryData[] = [];
         let currentDate = new Date(request.startDate);
         const endDate = new Date(request.endDate);
 
         while (currentDate <= endDate) {
           // Skip weekends and holidays
           if (!isWeekend(currentDate) && !isHoliday(currentDate)) {
-            const entryData: any = {
+            const entryData: TimeEntryData = {
               userId: request.userId,
               workDate: new Date(currentDate),
               hoursWorked: 0, 
@@ -145,7 +153,17 @@ export async function PUT(
     }
 
     // Build update data
-    const updateData: any = {};
+    interface UpdateData {
+      startDate?: Date;
+      endDate?: Date;
+      type?: "VACATION" | "SICKNESS" | "PERMESSO";
+      reason?: string;
+      startTime?: string;
+      endTime?: string;
+      status?: "PENDING" | "APPROVED" | "REJECTED";
+    }
+
+    const updateData: UpdateData = {};
     if (body.startDate) updateData.startDate = new Date(body.startDate);
     if (body.endDate) updateData.endDate = new Date(body.endDate);
     if (body.type) updateData.type = body.type;
@@ -165,9 +183,6 @@ export async function PUT(
       return handleZodError(error);
     }
     return handleError(error, "updating leave request");
-  }
-}
-    return new NextResponse(null, { status: 500 });
   }
 }
 

@@ -111,7 +111,12 @@ export async function GET(req: Request) {
     return forbiddenResponse("Forbidden");
   }
 
-  const where: any = {};
+  interface WhereClause {
+    userId?: string;
+    status?: string;
+  }
+
+  const where: WhereClause = {};
   
   if (userIdParam) {
     where.userId = userIdParam;

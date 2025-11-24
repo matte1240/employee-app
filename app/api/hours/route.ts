@@ -8,7 +8,6 @@ import {
   badRequestResponse,
   forbiddenResponse,
   notFoundResponse,
-  handleError,
 } from "@/lib/api-responses";
 import { serializeTimeEntry, serializeTimeEntries } from "@/lib/utils/serialization";
 
