@@ -50,10 +50,10 @@ export function getHolidayName(date: Date | string): string | undefined {
   const year = dateObj.getFullYear();
   const dateKey = formatDateKey(dateObj);
   
-  // Check cache first
+  // Check cache first - return early if we have cached data
   const yearCache = getOrCreateYearCache(year);
   const cached = yearCache.get(dateKey);
-  if (cached !== undefined && cached.name !== undefined) {
+  if (cached !== undefined) {
     return cached.name;
   }
   
