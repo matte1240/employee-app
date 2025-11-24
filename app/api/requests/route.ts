@@ -1,8 +1,14 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { isAdmin } from "@/lib/utils/user-utils";
+import { requireAuth, isAdmin } from "@/lib/api-middleware";
+import {
+  successResponse,
+  badRequestResponse,
+  forbiddenResponse,
+  conflictResponse,
+  handleError,
+  handleZodError,
+} from "@/lib/api-responses";
 
 const createRequestSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -14,10 +20,8 @@ const createRequestSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const session = await getAuthSession();
-  if (!session) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   try {
     const json = await req.json();
@@ -26,10 +30,10 @@ export async function POST(req: Request) {
 
     if (body.type === "PERMESSO") {
       if (!body.startTime || !body.endTime) {
-        return new NextResponse("Start time and end time are required for Permesso", { status: 400 });
+        return badRequestResponse("Start time and end time are required for Permesso");
       }
       if (body.startDate !== body.endDate) {
-        return new NextResponse("Permesso requests must be for a single day", { status: 400 });
+        return badRequestResponse("Permesso requests must be for a single day");
       }
     }
 
@@ -37,7 +41,7 @@ export async function POST(req: Request) {
     const endDate = new Date(body.endDate);
 
     if (endDate < startDate) {
-      return new NextResponse("End date must be after start date", { status: 400 });
+      return badRequestResponse("End date must be after start date");
     }
 
     // Check for overlaps with existing requests
@@ -55,7 +59,7 @@ export async function POST(req: Request) {
     });
 
     if (existingRequest) {
-      return new NextResponse("Request overlaps with an existing request", { status: 409 });
+      return conflictResponse("Request overlaps with an existing request");
     }
     
     // Check for overlaps with existing TimeEntries
@@ -70,7 +74,7 @@ export async function POST(req: Request) {
     });
 
     if (existingEntry) {
-        return new NextResponse("Request overlaps with existing time entries", { status: 409 });
+        return conflictResponse("Request overlaps with existing time entries");
     }
 
     const request = await prisma.leaveRequest.create({
@@ -85,21 +89,18 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(request);
+    return successResponse(request);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return new NextResponse(JSON.stringify(error.issues), { status: 422 });
+      return handleZodError(error);
     }
-    console.error(error);
-    return new NextResponse(null, { status: 500 });
+    return handleError(error, "creating leave request");
   }
 }
 
 export async function GET(req: Request) {
-  const session = await getAuthSession();
-  if (!session) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   const { searchParams } = new URL(req.url);
   const userIdParam = searchParams.get("userId");
@@ -107,7 +108,7 @@ export async function GET(req: Request) {
 
   // Only admin can view other users' requests
   if (userIdParam && userIdParam !== session.user.id && !isAdmin(session)) {
-    return new NextResponse("Forbidden", { status: 403 });
+    return forbiddenResponse("Forbidden");
   }
 
   const where: any = {};
@@ -139,5 +140,5 @@ export async function GET(req: Request) {
     },
   });
 
-  return NextResponse.json(requests);
+  return successResponse(requests);
 }

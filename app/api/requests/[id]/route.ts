@@ -1,11 +1,16 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { isAdmin } from "@/lib/utils/user-utils";
 import { isHoliday } from "@/lib/utils/holiday-utils";
 import { createCalendarEvent } from "@/lib/google-calendar";
 import { addDays, isWeekend } from "date-fns";
+import { requireAdmin } from "@/lib/api-middleware";
+import {
+  successResponse,
+  notFoundResponse,
+  badRequestResponse,
+  handleError,
+  handleZodError,
+} from "@/lib/api-responses";
 
 const updateStatusSchema = z.object({
   status: z.enum(["APPROVED", "REJECTED"]),
@@ -25,10 +30,8 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getAuthSession();
-  if (!session || !isAdmin(session)) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const { error } = await requireAdmin();
+  if (error) return error;
 
   try {
     const json = await req.json();
@@ -41,7 +44,7 @@ export async function PATCH(
     });
 
     if (!request) {
-      return new NextResponse("Request not found", { status: 404 });
+      return notFoundResponse("Request not found");
     }
 
     // Allow status change even if not pending (admin override)
@@ -102,13 +105,12 @@ export async function PATCH(
       });
     }
 
-    return NextResponse.json(updatedRequest);
+    return successResponse(updatedRequest);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return new NextResponse(JSON.stringify(error.issues), { status: 422 });
+      return handleZodError(error);
     }
-    console.error(error);
-    return new NextResponse(null, { status: 500 });
+    return handleError(error, "updating leave request status");
   }
 }
 
@@ -116,10 +118,8 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getAuthSession();
-  if (!session || !isAdmin(session)) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const { error } = await requireAdmin();
+  if (error) return error;
 
   try {
     const json = await req.json();
@@ -131,7 +131,7 @@ export async function PUT(
     });
 
     if (!request) {
-      return new NextResponse("Request not found", { status: 404 });
+      return notFoundResponse("Request not found");
     }
 
     // Validate PERMESSO constraints
@@ -140,7 +140,7 @@ export async function PUT(
       const endDate = body.endDate ? new Date(body.endDate) : request.endDate;
       
       if (startDate.getTime() !== endDate.getTime()) {
-        return new NextResponse("Permesso requests must be for a single day", { status: 400 });
+        return badRequestResponse("Permesso requests must be for a single day");
       }
     }
 
@@ -159,12 +159,14 @@ export async function PUT(
       data: updateData,
     });
 
-    return NextResponse.json(updatedRequest);
+    return successResponse(updatedRequest);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return new NextResponse(JSON.stringify(error.issues), { status: 422 });
+      return handleZodError(error);
     }
-    console.error(error);
+    return handleError(error, "updating leave request");
+  }
+}
     return new NextResponse(null, { status: 500 });
   }
 }
@@ -173,10 +175,8 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getAuthSession();
-  if (!session || !isAdmin(session)) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const { error } = await requireAdmin();
+  if (error) return error;
 
   try {
     const { id } = await params;
@@ -186,16 +186,15 @@ export async function DELETE(
     });
 
     if (!request) {
-      return new NextResponse("Request not found", { status: 404 });
+      return notFoundResponse("Request not found");
     }
 
     await prisma.leaveRequest.delete({
       where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
-    console.error(error);
-    return new NextResponse(null, { status: 500 });
+    return handleError(error, "deleting leave request");
   }
 }
