@@ -42,9 +42,15 @@ export async function POST(request: Request) {
     workbook.created = new Date();
 
     // Batch fetch all users and entries in parallel to avoid N+1 queries
+    // Select only the fields we need to reduce memory usage
     const [users, allEntries] = await Promise.all([
       prisma.user.findMany({
         where: { id: { in: userIds } },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
       }),
       prisma.timeEntry.findMany({
         where: {
@@ -53,6 +59,21 @@ export async function POST(request: Request) {
             gte: startDate,
             lte: endDate,
           },
+        },
+        select: {
+          userId: true,
+          workDate: true,
+          hoursWorked: true,
+          overtimeHours: true,
+          permessoHours: true,
+          sicknessHours: true,
+          vacationHours: true,
+          morningStart: true,
+          morningEnd: true,
+          afternoonStart: true,
+          afternoonEnd: true,
+          medicalCertificate: true,
+          notes: true,
         },
         orderBy: { workDate: "asc" },
       }),

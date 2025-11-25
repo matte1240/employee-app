@@ -4,8 +4,8 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import type { User, TimeEntryDTO } from "@/types/models";
+import { useMemo } from "react";
+import type { User } from "@/types/models";
 import StatsCard from "./stats-card";
 
 type UserAggregate = User & {
@@ -24,79 +24,46 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
   const now = new Date();
   const currentMonth = format(now, "MMMM yyyy", { locale: it });
 
-  // Leaderboard (mese corrente)
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-  const [topHoursUser, setTopHoursUser] = useState<{ id: string; name: string; value: number } | null>(null);
-  const [topOvertimeUser, setTopOvertimeUser] = useState<{ id: string; name: string; value: number } | null>(null);
-  const [topPermessoUser, setTopPermessoUser] = useState<{ id: string; name: string; value: number } | null>(null);
-  const [topSicknessUser, setTopSicknessUser] = useState<{ id: string; name: string; value: number } | null>(null);
+  // Calculate leaderboard using useMemo to avoid setState in effect
+  const leaderboardData = useMemo(() => {
+    let maxHours = -1; let maxHoursId: string | null = null;
+    let maxOver = -1; let maxOverId: string | null = null;
+    let maxPerm = -1; let maxPermId: string | null = null;
+    let maxSick = -1; let maxSickId: string | null = null;
 
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      setLeaderboardLoading(true);
-      try {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1;
-        const from = `${year}-${String(month).padStart(2, '0')}-01`;
-        const lastDay = new Date(year, month, 0).getDate();
-        const to = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
-        const response = await fetch(`/api/hours?userId=all&from=${from}&to=${to}`);
-        if (!response.ok) {
-          setLeaderboardLoading(false);
-          return;
-        }
-
-        const entries = await response.json();
-        const agg = new Map<string, { regular: number; overtime: number; permesso: number; sickness: number; vacation: number }>();
-
-        entries.forEach((entry: TimeEntryDTO) => {
-          const id = entry.userId;
-          // Skip if userId is missing (should not happen for valid entries)
-          if (!id) return;
-          
-          const cur = agg.get(id) || { regular: 0, overtime: 0, permesso: 0, sickness: 0, vacation: 0 };
-          cur.regular += entry.hoursWorked || 0;
-          cur.overtime += entry.overtimeHours || 0;
-          cur.permesso += entry.permessoHours || 0;
-          cur.sickness += entry.sicknessHours || 0;
-          cur.vacation += entry.vacationHours || 0;
-          agg.set(id, cur);
-        });
-
-        let maxHours = -1; let maxHoursId: string | null = null;
-        let maxOver = -1; let maxOverId: string | null = null;
-        let maxPerm = -1; let maxPermId: string | null = null;
-        let maxSick = -1; let maxSickId: string | null = null;
-
-        for (const [id, v] of agg.entries()) {
-          const total = v.regular + v.overtime;
-          if (total > maxHours) { maxHours = total; maxHoursId = id; }
-          if (v.overtime > maxOver) { maxOver = v.overtime; maxOverId = id; }
-          const permsum = v.permesso + v.vacation;
-          if (permsum > maxPerm) { maxPerm = permsum; maxPermId = id; }
-          if (v.sickness > maxSick) { maxSick = v.sickness; maxSickId = id; }
-        }
-
-        const findName = (id: string | null) => {
-          if (!id) return '—';
-          const u = users.find((x) => x.id === id);
-          return u ? (u.name || u.email) : id;
-        };
-
-        setTopHoursUser(maxHoursId ? { id: maxHoursId, name: findName(maxHoursId), value: Math.max(0, maxHours) } : null);
-        setTopOvertimeUser(maxOverId ? { id: maxOverId, name: findName(maxOverId), value: Math.max(0, maxOver) } : null);
-        setTopPermessoUser(maxPermId ? { id: maxPermId, name: findName(maxPermId), value: Math.max(0, maxPerm) } : null);
-        setTopSicknessUser(maxSickId ? { id: maxSickId, name: findName(maxSickId), value: Math.max(0, maxSick) } : null);
-      } catch (err) {
-        console.error('Error fetching leaderboard:', err);
-      } finally {
-        setLeaderboardLoading(false);
+    for (const user of users) {
+      const total = user.regularHours + user.overtimeHours;
+      if (total > maxHours) { 
+        maxHours = total; 
+        maxHoursId = user.id; 
       }
+      if (user.overtimeHours > maxOver) { 
+        maxOver = user.overtimeHours; 
+        maxOverId = user.id; 
+      }
+      const permsum = user.permessoHours + user.vacationHours;
+      if (permsum > maxPerm) { 
+        maxPerm = permsum; 
+        maxPermId = user.id; 
+      }
+      if (user.sicknessHours > maxSick) { 
+        maxSick = user.sicknessHours; 
+        maxSickId = user.id; 
+      }
+    }
+
+    const findName = (id: string | null) => {
+      if (!id) return '—';
+      const u = users.find((x) => x.id === id);
+      return u ? (u.name || u.email) : id;
     };
 
-    fetchLeaderboard();
+    return {
+      topHoursUser: maxHoursId ? { id: maxHoursId, name: findName(maxHoursId), value: Math.max(0, maxHours) } : null,
+      topOvertimeUser: maxOverId ? { id: maxOverId, name: findName(maxOverId), value: Math.max(0, maxOver) } : null,
+      topPermessoUser: maxPermId ? { id: maxPermId, name: findName(maxPermId), value: Math.max(0, maxPerm) } : null,
+      topSicknessUser: maxSickId ? { id: maxSickId, name: findName(maxSickId), value: Math.max(0, maxSick) } : null,
+    };
   }, [users]);
 
   return (
@@ -105,9 +72,8 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
       <div className="grid gap-6 md:grid-cols-4 mb-8 order-2 md:order-1">
         <StatsCard
           title={`Più Ore (${currentMonth})`}
-          value={topHoursUser ? topHoursUser.name : '—'}
+          value={leaderboardData.topHoursUser ? leaderboardData.topHoursUser.name : '—'}
           color="green"
-          isLoading={leaderboardLoading}
           icon={
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -117,9 +83,8 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
 
         <StatsCard
           title="Più Straordinarie"
-          value={topOvertimeUser ? topOvertimeUser.name : '—'}
+          value={leaderboardData.topOvertimeUser ? leaderboardData.topOvertimeUser.name : '—'}
           color="orange"
-          isLoading={leaderboardLoading}
           icon={
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -129,9 +94,8 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
 
         <StatsCard
           title="Più Perm/Ferie"
-          value={topPermessoUser ? topPermessoUser.name : '—'}
+          value={leaderboardData.topPermessoUser ? leaderboardData.topPermessoUser.name : '—'}
           color="purple"
-          isLoading={leaderboardLoading}
           icon={
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -141,9 +105,8 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
 
         <StatsCard
           title="Più Malattia (ore)"
-          value={topSicknessUser ? topSicknessUser.name : '—'}
+          value={leaderboardData.topSicknessUser ? leaderboardData.topSicknessUser.name : '—'}
           color="red"
-          isLoading={leaderboardLoading}
           icon={
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
