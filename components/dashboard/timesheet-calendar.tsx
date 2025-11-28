@@ -841,7 +841,7 @@ export default function TimesheetCalendar({
                           newDate.setFullYear(newYear);
                           setCurrentMonth(newDate);
                         }}
-                        className="mb-4 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                        className="mb-4 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {years.map((year) => (
                           <option key={year} value={year}>
@@ -1169,7 +1169,7 @@ export default function TimesheetCalendar({
                           | "malattia",
                       }))
                     }
-                    className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all hover:bg-accent/50 cursor-pointer"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <option value="normal">Normale</option>
                     <option value="ferie">Ferie</option>
@@ -1250,7 +1250,7 @@ export default function TimesheetCalendar({
                               }))
                             }
                             disabled={modalForm.isMorningPermesso}
-                            className="flex h-9 w-full rounded-lg border border-blue-200 dark:border-blue-800 bg-background px-3 py-1 text-sm shadow-sm transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {TIME_OPTIONS.map((time) => (
                               <option
@@ -1275,7 +1275,7 @@ export default function TimesheetCalendar({
                               }))
                             }
                             disabled={modalForm.isMorningPermesso}
-                            className="flex h-9 w-full rounded-lg border border-blue-200 dark:border-blue-800 bg-background px-3 py-1 text-sm shadow-sm transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {TIME_OPTIONS.map((time) => (
                               <option key={`morning-end-${time}`} value={time}>
@@ -1342,7 +1342,7 @@ export default function TimesheetCalendar({
                               }))
                             }
                             disabled={modalForm.isAfternoonPermesso}
-                            className="flex h-9 w-full rounded-lg border border-orange-200 dark:border-orange-800 bg-background px-3 py-1 text-sm shadow-sm transition-all hover:bg-orange-50 dark:hover:bg-orange-900/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {TIME_OPTIONS.map((time) => (
                               <option
@@ -1367,7 +1367,7 @@ export default function TimesheetCalendar({
                               }))
                             }
                             disabled={modalForm.isAfternoonPermesso}
-                            className="flex h-9 w-full rounded-lg border border-orange-200 dark:border-orange-800 bg-background px-3 py-1 text-sm shadow-sm transition-all hover:bg-orange-50 dark:hover:bg-orange-900/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {TIME_OPTIONS.map((time) => (
                               <option key={`afternoon-end-${time}`} value={time}>
