@@ -198,7 +198,7 @@ export default function AdminReports({ users }: ExportDataProps) {
                       const month = selectedMonth.split('-')[1] || '01';
                       setSelectedMonth(`${year}-${month}`);
                     }}
-                    className="w-full rounded border border-input bg-background px-3 py-2 text-sm text-foreground font-medium focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground font-medium shadow-sm transition-all hover:bg-accent/50 focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
                   >
                     {(() => {
                       const currentYear = new Date().getFullYear();

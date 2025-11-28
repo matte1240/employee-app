@@ -500,7 +500,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 <select
                   value={createForm.role}
                   onChange={(e) => setCreateForm(f => ({ ...f, role: e.target.value as UserRole }))}
-                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none shadow-sm transition-all hover:bg-accent/50 focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
                 >
                   <option value="EMPLOYEE">Dipendente</option>
                   <option value="ADMIN">Amministratore</option>
@@ -674,7 +674,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   value={editForm.role}
                   onChange={(e) => setEditForm(f => ({ ...f, role: e.target.value as UserRole }))}
                   disabled={editingUser?.id === currentUserId}
-                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none shadow-sm transition-all hover:bg-accent/50 focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <option value="EMPLOYEE">Dipendente</option>
                   <option value="ADMIN">Amministratore</option>

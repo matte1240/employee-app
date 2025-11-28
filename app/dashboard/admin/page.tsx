@@ -106,7 +106,9 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <PendingRequests />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
+        <PendingRequests />
+      </div>
       <AdminOverview users={rows} />
     </div>
   );

@@ -39,7 +39,7 @@ export default function UserSelector({ users, selectedUserId }: UserSelectorProp
         id="user-select"
         value={selectedUserId}
         onChange={(e) => handleUserChange(e.target.value)}
-        className="block w-64 rounded-lg border border-input bg-background px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-base font-medium text-foreground"
+        className="block w-64 rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
       >
         {users.map((user) => (
           <option key={user.id} value={user.id}>

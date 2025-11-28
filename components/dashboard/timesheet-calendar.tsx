@@ -100,7 +100,7 @@ export default function TimesheetCalendar({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [isRefetching, setIsRefetching] = useState(false);
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
   const [modalForm, setModalForm] = useState<ModalFormState>({
     morningStart: "08:00",
     morningEnd: "12:00",
@@ -258,19 +258,22 @@ export default function TimesheetCalendar({
   }, [fetchEntries, onEntrySaved]);
 
   useEffect(() => {
-    const fetchPendingRequests = async () => {
+    const fetchRequests = async () => {
       try {
-        const res = await fetch(`/api/requests?status=PENDING${targetUserId ? `&userId=${targetUserId}` : ''}`);
+        const res = await fetch(`/api/requests?${targetUserId ? `userId=${targetUserId}` : ''}`);
         if (res.ok) {
           const data = await res.json();
-          setPendingRequests(data);
+          setRequests(data);
         }
       } catch (error) {
-        console.error("Failed to fetch pending requests", error);
+        console.error("Failed to fetch requests", error);
       }
     };
-    fetchPendingRequests();
+    fetchRequests();
   }, [targetUserId, isRefetching]);
+
+  const pendingRequests = useMemo(() => requests.filter((r) => r.status === "PENDING"), [requests]);
+  const approvedRequests = useMemo(() => requests.filter((r) => r.status === "APPROVED"), [requests]);
 
   const entriesByDay = useMemo(() => {
     const map = new Map<string, TimeEntryDTO[]>();
@@ -331,27 +334,109 @@ export default function TimesheetCalendar({
     const morningWorked = modalForm.isMorningPermesso ? 0 : calculateHours(modalForm.morningStart, modalForm.morningEnd);
     const afternoonWorked = modalForm.isAfternoonPermesso ? 0 : calculateHours(modalForm.afternoonStart, modalForm.afternoonEnd);
     
-    const totalWorked = morningWorked + afternoonWorked;
+    let totalWorked = morningWorked + afternoonWorked;
+    let overlap = 0;
+
+    // Check for approved permission requests for this day
+    if (selectedDate) {
+      const approvedPermission = approvedRequests.find(req => {
+        if (req.type !== 'PERMESSO') return false;
+        const start = new Date(req.startDate);
+        return format(start, 'yyyy-MM-dd') === selectedDate;
+      });
+
+      if (approvedPermission && approvedPermission.startTime && approvedPermission.endTime) {
+        const reqStart = approvedPermission.startTime;
+        const reqEnd = approvedPermission.endTime;
+        
+        // Calculate overlap with morning shift
+        if (!modalForm.isMorningPermesso && modalForm.morningStart && modalForm.morningEnd) {
+          overlap += calculateOverlap(
+            modalForm.morningStart, modalForm.morningEnd,
+            reqStart, reqEnd
+          );
+        }
+
+        // Calculate overlap with afternoon shift
+        if (!modalForm.isAfternoonPermesso && modalForm.afternoonStart && modalForm.afternoonEnd) {
+          overlap += calculateOverlap(
+            modalForm.afternoonStart, modalForm.afternoonEnd,
+            reqStart, reqEnd
+          );
+        }
+      }
+    }
     
-    const permesso = (modalForm.isMorningPermesso ? 4 : 0) + (modalForm.isAfternoonPermesso ? 4 : 0);
+    // Subtract overlap from worked hours
+    const netWork = Math.max(0, totalWorked - overlap);
     
-    // Check if selected date is a weekend (Saturday=6, Sunday=0)
-    let regular = Math.min(totalWorked, 8);
-    let overtime = Math.max(0, totalWorked - 8);
+    let regular = 0;
+    let overtime = 0;
+    let permesso = 0;
     
     if (selectedDate && modalForm.dayType === "normal") {
-      const dayOfWeek = getDay(new Date(`${selectedDate}T12:00:00`));
+      const dateObj = new Date(`${selectedDate}T12:00:00`);
+      const dayOfWeek = getDay(dateObj);
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isHol = isHoliday(dateObj);
       
-      if (isWeekend) {
-        // On weekends, all worked hours are overtime
+      if (isWeekend || isHol) {
+        // On weekends/holidays, all worked hours are overtime
         regular = 0;
-        overtime = totalWorked;
+        overtime = netWork;
+        permesso = 0;
+      } else {
+        // Weekdays
+        if (netWork < 8) {
+          regular = netWork;
+          permesso = 8 - netWork;
+          overtime = 0;
+        } else {
+          regular = 8;
+          permesso = 0;
+          overtime = netWork - 8;
+        }
       }
     }
 
-    return { morning: modalForm.isMorningPermesso ? 4 : morningWorked, afternoon: modalForm.isAfternoonPermesso ? 4 : afternoonWorked, totalWorked, regular, overtime, permesso };
-  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso, modalForm.dayType, selectedDate]);
+    return { 
+      morning: modalForm.isMorningPermesso ? 4 : morningWorked, 
+      afternoon: modalForm.isAfternoonPermesso ? 4 : afternoonWorked, 
+      totalWorked: netWork, 
+      regular, 
+      overtime, 
+      permesso 
+    };
+  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso, modalForm.dayType, selectedDate, approvedRequests]);
+
+  const activePerm = useMemo(() => {
+    if (!selectedDate) return null;
+    return approvedRequests.find(req => 
+      req.type === 'PERMESSO' && 
+      format(new Date(req.startDate), 'yyyy-MM-dd') === selectedDate
+    );
+  }, [selectedDate, approvedRequests]);
+
+  // Helper to calculate overlap between two time ranges (HH:MM)
+  function calculateOverlap(start1: string, end1: string, start2: string, end2: string): number {
+    const toMinutes = (time: string) => {
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const s1 = toMinutes(start1);
+    const e1 = toMinutes(end1);
+    const s2 = toMinutes(start2);
+    const e2 = toMinutes(end2);
+
+    const start = Math.max(s1, s2);
+    const end = Math.min(e1, e2);
+
+    if (start < end) {
+      return (end - start) / 60;
+    }
+    return 0;
+  }
 
   // Check if date is editable
   const isDateEditable = (date: Date): boolean => {
@@ -756,7 +841,7 @@ export default function TimesheetCalendar({
                           newDate.setFullYear(newYear);
                           setCurrentMonth(newDate);
                         }}
-                        className="mb-4 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="mb-4 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
                       >
                         {years.map((year) => (
                           <option key={year} value={year}>
@@ -876,6 +961,16 @@ export default function TimesheetCalendar({
                   return current >= start && current <= end;
                 });
 
+                const approvedRequest = approvedRequests.find((req) => {
+                  const start = new Date(req.startDate);
+                  const end = new Date(req.endDate);
+                  start.setHours(0, 0, 0, 0);
+                  end.setHours(0, 0, 0, 0);
+                  const current = new Date(day);
+                  current.setHours(0, 0, 0, 0);
+                  return current >= start && current <= end && req.type === 'PERMESSO';
+                });
+
                 // Calculate permesso hours
                 let permessoHours = 0;
                 if (hasEntries) {
@@ -901,7 +996,12 @@ export default function TimesheetCalendar({
                 const isMissingEntry = permessoHours === 8 && !hasEntries;
 
                 // Determine explicit permesso
-                const isPermesso = hasEntries && permessoHours > 0;
+                const isPermesso = (hasEntries && permessoHours > 0) || !!approvedRequest;
+
+                let approvedHours = 0;
+                if (approvedRequest && approvedRequest.startTime && approvedRequest.endTime) {
+                   approvedHours = calculateHours(approvedRequest.startTime, approvedRequest.endTime);
+                }
 
                 return (
                   <button
@@ -968,8 +1068,11 @@ export default function TimesheetCalendar({
                           </span>
                         )}
                         {isPermesso && (
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-[10px] font-bold text-yellow-600 dark:text-yellow-400">
-                            P
+                          <span className="flex h-5 min-w-[1.25rem] px-1 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-[10px] font-bold text-yellow-600 dark:text-yellow-400">
+                            {hasEntries && permessoHours > 0 
+                              ? (permessoHours === 8 ? "P" : `${Number(permessoHours)}h P`) 
+                              : (approvedHours > 0 ? (approvedHours === 8 ? "P" : `${Number(approvedHours)}h P`) : "P")
+                            }
                           </span>
                         )}
                       </div>
@@ -1066,7 +1169,7 @@ export default function TimesheetCalendar({
                           | "malattia",
                       }))
                     }
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all hover:bg-accent/50 cursor-pointer"
                   >
                     <option value="normal">Normale</option>
                     <option value="ferie">Ferie</option>
@@ -1096,6 +1199,17 @@ export default function TimesheetCalendar({
                 )}
                 {modalForm.dayType === "normal" && (
                   <>
+                    {activePerm && activePerm.startTime && activePerm.endTime && (
+                      <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:bg-yellow-900/10 dark:border-yellow-900/20">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                          <div className="text-xs text-yellow-800 dark:text-yellow-200">
+                            <p className="font-semibold">Permesso Approvato ({activePerm.startTime} - {activePerm.endTime})</p>
+                            <p>Le ore di permesso verranno conteggiate automaticamente per coprire le ore mancanti al raggiungimento delle 8 ore lavorative.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {/* Morning shift */}
                     <div className="rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 p-4 shadow-sm">
                       <div className="mb-3 flex items-center gap-2">
@@ -1118,7 +1232,7 @@ export default function TimesheetCalendar({
                             className="h-4 w-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                           />
                           <span className="text-xs font-medium text-blue-800 dark:text-blue-200">
-                            Permesso (non conteggiato come lavoro)
+                            Permesso Totale Turno (4h)
                           </span>
                         </label>
                       </div>
@@ -1136,7 +1250,7 @@ export default function TimesheetCalendar({
                               }))
                             }
                             disabled={modalForm.isMorningPermesso}
-                            className="flex h-9 w-full rounded-md border border-blue-200 dark:border-blue-800 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-9 w-full rounded-lg border border-blue-200 dark:border-blue-800 bg-background px-3 py-1 text-sm shadow-sm transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                           >
                             {TIME_OPTIONS.map((time) => (
                               <option
@@ -1161,7 +1275,7 @@ export default function TimesheetCalendar({
                               }))
                             }
                             disabled={modalForm.isMorningPermesso}
-                            className="flex h-9 w-full rounded-md border border-blue-200 dark:border-blue-800 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-9 w-full rounded-lg border border-blue-200 dark:border-blue-800 bg-background px-3 py-1 text-sm shadow-sm transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                           >
                             {TIME_OPTIONS.map((time) => (
                               <option key={`morning-end-${time}`} value={time}>
@@ -1210,7 +1324,7 @@ export default function TimesheetCalendar({
                             className="h-4 w-4 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
                           />
                           <span className="text-xs font-medium text-orange-800 dark:text-orange-200">
-                            Permesso (non conteggiato come lavoro)
+                            Permesso Totale Turno (4h)
                           </span>
                         </label>
                       </div>
@@ -1228,7 +1342,7 @@ export default function TimesheetCalendar({
                               }))
                             }
                             disabled={modalForm.isAfternoonPermesso}
-                            className="flex h-9 w-full rounded-md border border-orange-200 dark:border-orange-800 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-9 w-full rounded-lg border border-orange-200 dark:border-orange-800 bg-background px-3 py-1 text-sm shadow-sm transition-all hover:bg-orange-50 dark:hover:bg-orange-900/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                           >
                             {TIME_OPTIONS.map((time) => (
                               <option
@@ -1253,7 +1367,7 @@ export default function TimesheetCalendar({
                               }))
                             }
                             disabled={modalForm.isAfternoonPermesso}
-                            className="flex h-9 w-full rounded-md border border-orange-200 dark:border-orange-800 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-9 w-full rounded-lg border border-orange-200 dark:border-orange-800 bg-background px-3 py-1 text-sm shadow-sm transition-all hover:bg-orange-50 dark:hover:bg-orange-900/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                           >
                             {TIME_OPTIONS.map((time) => (
                               <option key={`afternoon-end-${time}`} value={time}>

@@ -121,7 +121,7 @@ export default function UserReports({
                       setSelectedMonth(newMonth);
                       setIsMonthPickerOpen(false);
                     }}
-                    className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="mb-3 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-all hover:bg-accent/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
                   >
                     {years.map((year) => (
                       <option key={year} value={year}>

@@ -141,8 +141,8 @@ export default function PendingRequests() {
   if (requests.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center gap-2 mb-6">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center gap-2 mb-4">
         <AlertCircle className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-semibold text-foreground">
           Richieste in Attesa
@@ -152,11 +152,11 @@ export default function PendingRequests() {
         </span>
       </div>
       
-      <div className="space-y-4">
+      <div className="space-y-3">
         {requests.map((req) => (
           <div
             key={req.id}
-            className="rounded-lg border border-border bg-muted/30 p-4 transition-all hover:bg-muted/50"
+            className="rounded-lg border border-border bg-muted/30 p-3 transition-all hover:bg-muted/50"
           >
             {editingId === req.id ? (
               <div className="space-y-4 animate-in fade-in duration-200">
