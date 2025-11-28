@@ -88,7 +88,8 @@ export default async function Home({
       {/* Right side - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md relative z-10">
-          <div className="bg-card rounded-2xl shadow-xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl shadow-2xl border border-border/50 overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50" />
             <div className="p-8">
               <div className="flex justify-center mb-8 lg:hidden">
                 <Image src="/logo.svg" alt="Ivicolors" width={180} height={45} className="h-12 w-auto" />

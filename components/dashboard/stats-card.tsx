@@ -48,14 +48,15 @@ export default function StatsCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md",
+        "group relative overflow-hidden rounded-xl border border-border/50 bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg",
         className
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary/5 opacity-0 transition-opacity group-hover:opacity-100" />
+      <div className="relative flex items-center gap-4">
         <div
           className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-full transition-colors",
+            "flex h-12 w-12 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-110",
             colors.bg
           )}
         >

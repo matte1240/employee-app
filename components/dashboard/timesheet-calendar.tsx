@@ -799,24 +799,24 @@ export default function TimesheetCalendar({
                 <button
                   type="button"
                   onClick={() => setIsRequestModalOpen(true)}
-                  className="hidden sm:inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 mr-2 shadow-sm"
+                  className="hidden sm:inline-flex items-center justify-center rounded-lg text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 mr-2 shadow-md hover:shadow-lg hover:-translate-y-0.5"
                 >
                   Richiedi Ferie
                 </button>
-                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border border-border">
+                <div className="flex items-center gap-1 bg-card p-1 rounded-lg border border-border shadow-sm">
                   <button
                     type="button"
                     onClick={() =>
                       setCurrentMonth((month) => addMonths(month, -1))
                     }
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none hover:bg-background hover:text-accent-foreground h-8 w-8 text-muted-foreground"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none hover:bg-accent hover:text-accent-foreground h-8 w-8 text-muted-foreground"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setCurrentMonth(startOfMonth(new Date()))}
-                    className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none hover:bg-background hover:text-accent-foreground h-8 px-3 text-foreground"
+                    className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none hover:bg-accent hover:text-accent-foreground h-8 px-3 text-foreground"
                   >
                     Oggi
                   </button>
@@ -825,7 +825,7 @@ export default function TimesheetCalendar({
                     onClick={() =>
                       setCurrentMonth((month) => addMonths(month, 1))
                     }
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none hover:bg-background hover:text-accent-foreground h-8 w-8 text-muted-foreground"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none hover:bg-accent hover:text-accent-foreground h-8 w-8 text-muted-foreground"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -920,19 +920,19 @@ export default function TimesheetCalendar({
                     }}
                     disabled={!editable}
                     className={cn(
-                      "flex min-h-[80px] sm:min-h-[110px] flex-col rounded-lg sm:rounded-xl border p-1.5 sm:p-3 text-left transition-all duration-200 relative group",
+                      "flex min-h-[80px] sm:min-h-[110px] flex-col rounded-xl border p-2 sm:p-3 text-left transition-all duration-200 relative group overflow-hidden",
                       isSameMonth(day, currentMonth)
                         ? editable
-                          ? "border-border bg-card hover:border-primary/50 hover:shadow-md cursor-pointer hover:-translate-y-0.5"
-                          : "border-border/50 bg-muted/30 text-muted-foreground cursor-not-allowed"
-                        : "border-dashed border-border/30 bg-muted/10 text-muted-foreground/30",
-                      highlight && "ring-2 ring-primary shadow-lg z-10",
+                          ? "border-border bg-card hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+                          : "border-border/40 bg-muted/20 text-muted-foreground cursor-not-allowed"
+                        : "border-transparent bg-transparent text-muted-foreground/20",
+                      highlight && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl z-10 bg-primary/5",
                       (isSunday || isHolidayDay) &&
                         isSameMonth(day, currentMonth) &&
-                        "bg-red-50/50 dark:bg-red-950/10 border-red-100 dark:border-red-900/20",
+                        "bg-red-50/30 dark:bg-red-950/10 border-red-100/50 dark:border-red-900/20",
                       isSaturday &&
                         isSameMonth(day, currentMonth) &&
-                        "bg-blue-50/50 dark:bg-blue-950/10 border-blue-100 dark:border-blue-900/20",
+                        "bg-blue-50/30 dark:bg-blue-950/10 border-blue-100/50 dark:border-blue-900/20",
                       pendingRequest &&
                         "bg-yellow-50/50 dark:bg-yellow-950/10 border-yellow-100 dark:border-yellow-900/20"
                     )}

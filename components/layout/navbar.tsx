@@ -130,7 +130,7 @@ export default function Navbar({
 
   return (
     <>
-      <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border sticky top-0 z-40">
+      <nav className="bg-background/80 backdrop-blur-md border-b border-border/40 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Mobile Menu Button */}
@@ -144,13 +144,13 @@ export default function Navbar({
 
             {/* Logo/Brand */}
             <div className="flex items-center h-full">
-              <Link href="/dashboard" className="flex items-center h-full py-3">
+              <Link href="/dashboard" className="flex items-center h-full py-3 group">
                 <Image
                   src="/logo.svg"
                   alt="Ivicolors"
                   width={40}
                   height={40}
-                  className="h-10 w-auto"
+                  className="h-10 w-auto transition-transform group-hover:scale-105 translate-y-0.5"
                 />
               </Link>
             </div>
@@ -164,10 +164,10 @@ export default function Navbar({
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                      "inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                       isActive
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        ? "bg-primary/10 text-primary shadow-sm"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     )}
                   >
                     {link.icon}
