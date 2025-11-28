@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition, useCallback } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+  useCallback,
+} from "react";
 import {
   addMonths,
   eachDayOfInterval,
@@ -16,6 +23,24 @@ import {
 import { it } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Calendar as CalendarIcon,
+  Clock,
+  Briefcase,
+  AlertCircle,
+  Trash2,
+  MoreVertical,
+  Sun,
+  Stethoscope,
+  FileText,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Plus,
+} from "lucide-react";
 import LogoutButton from "@/components/auth/logout-button";
 import StatsCard from "./stats-card";
 import type { TimeEntryDTO } from "@/types/models";
@@ -23,6 +48,7 @@ import { calculateHours, TIME_OPTIONS } from "@/lib/utils/time-utils";
 import { isDateEditable as isDateEditableUtil } from "@/lib/utils/date-utils";
 import { isHoliday, getHolidayName } from "@/lib/utils/holiday-utils";
 import RequestLeaveModal from "./request-leave-modal";
+import { cn } from "@/lib/utils";
 
 // Re-export for backward compatibility
 export type { TimeEntryDTO };
@@ -49,8 +75,6 @@ type ModalFormState = {
   isAfternoonPermesso: boolean;
 };
 
-
-
 export default function TimesheetCalendar({
   initialEntries,
   userName,
@@ -61,7 +85,9 @@ export default function TimesheetCalendar({
   isAdmin = false,
 }: EmployeeDashboardProps) {
   const router = useRouter();
-  const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
+  const [currentMonth, setCurrentMonth] = useState(() =>
+    startOfMonth(new Date())
+  );
   const [entries, setEntries] = useState<TimeEntryDTO[]>(initialEntries);
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +114,12 @@ export default function TimesheetCalendar({
   });
 
   // Context menu state
-  const [contextMenu, setContextMenu] = useState<{x: number, y: number, date: string, visible: boolean} | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    date: string;
+    visible: boolean;
+  } | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
   // Month picker state
@@ -603,25 +634,25 @@ export default function TimesheetCalendar({
   };
 
   return (
-    <div>
+    <div className="flex flex-col gap-6">
       {/* Header with logo - hide in embedded views */}
       {!hideHeader && (
-        <header className="border-b border-gray-200 bg-white shadow-sm">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 py-4">
-            <div className="flex items-center gap-8">
+        <header className="border-b border-border bg-card shadow-sm">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-6">
               <Image
                 src="/logo.svg"
                 alt="Ivicolors"
-                width={160}
-                height={40}
-                className="h-10 w-auto"
+                width={140}
+                height={35}
+                className="h-9 w-auto"
                 priority
               />
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-semibold text-foreground">
                   Benvenuto, {userName.split(" ")[0] ?? userName}
                 </h1>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Gestisci le tue ore di lavoro
                 </p>
               </div>
@@ -631,103 +662,83 @@ export default function TimesheetCalendar({
         </header>
       )}
 
-      <div className={hideHeader ? "w-full pb-8 flex flex-col" : "mx-auto max-w-7xl px-3 sm:px-6 py-8 flex flex-col"}>
+      <div
+        className={cn(
+          "flex flex-col gap-6",
+          hideHeader ? "w-full pb-8" : "mx-auto w-full max-w-7xl px-4 sm:px-6 py-8"
+        )}
+      >
         {/* Stats cards */}
         {!hideStats && (
-          <div className="order-2 md:order-1 mb-8 flex flex-wrap gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
-              className="flex-1 min-w-[200px]"
               title="Totale Mese"
               value={totalHours.toFixed(1)}
               color="blue"
-              icon={
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              }
+              icon={<Clock className="h-5 w-5" />}
             />
 
             {totalOvertime > 0 && (
               <StatsCard
-                className="flex-1 min-w-[200px]"
                 title="Straordinario"
                 value={totalOvertime.toFixed(1)}
                 color="orange"
-                icon={
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                }
+                icon={<Briefcase className="h-5 w-5" />}
               />
             )}
 
             <StatsCard
-              className="flex-1 min-w-[200px]"
               title="Ore Perm/Ferie"
               value={totalPermFerie.toFixed(1)}
               color="purple"
-              icon={
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              }
+              icon={<CalendarIcon className="h-5 w-5" />}
             />
 
             {totalSickness > 0 && (
               <StatsCard
-                className="flex-1 min-w-[200px]"
                 title="Malattia"
                 value={totalSickness.toFixed(1)}
                 color="red"
-                icon={
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                }
+                icon={<Stethoscope className="h-5 w-5" />}
               />
             )}
           </div>
         )}
 
         {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
-            <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-sm font-medium text-red-800">{error}</p>
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <p className="text-sm font-medium text-destructive">{error}</p>
             </div>
           </div>
         )}
 
         {/* Calendar section */}
-        <section className="order-1 md:order-2 mb-8 md:mb-0 rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-200 px-3 sm:px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="relative">
+        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="border-b border-border px-4 sm:px-6 py-4 bg-muted/30">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="relative z-20">
                 <button
                   type="button"
                   onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
-                  className="flex items-center gap-2 text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors capitalize cursor-pointer"
+                  className="flex items-center gap-2 text-lg font-semibold text-foreground hover:text-primary transition-colors capitalize"
                 >
-                  <span>{format(currentMonth, "MMMM yyyy", { locale: it })}</span>
-                  <svg
-                    className={`h-5 w-5 text-gray-400 transition-transform ${
-                      isMonthPickerOpen ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
+                  <span>
+                    {format(currentMonth, "MMMM yyyy", { locale: it })}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "h-5 w-5 text-muted-foreground transition-transform duration-200",
+                      isMonthPickerOpen && "rotate-180"
+                    )}
+                  />
                 </button>
-                {isFetching && <p className="text-xs text-gray-500">Aggiornamento calendario...</p>}
+                {isFetching && (
+                  <p className="absolute -bottom-5 left-0 text-[10px] text-muted-foreground animate-pulse">
+                    Aggiornamento...
+                  </p>
+                )}
 
                 {isMonthPickerOpen && (
                   <>
@@ -735,7 +746,7 @@ export default function TimesheetCalendar({
                       className="fixed inset-0 z-10"
                       onClick={() => setIsMonthPickerOpen(false)}
                     />
-                    <div className="absolute z-20 mt-1 w-80 rounded-lg bg-white border border-gray-300 p-4 shadow-lg left-0">
+                    <div className="absolute top-full left-0 mt-2 w-72 rounded-lg border border-border bg-popover p-4 shadow-lg animate-in fade-in zoom-in-95 duration-100 z-30">
                       {/* Year selector */}
                       <select
                         value={currentMonth.getFullYear()}
@@ -745,7 +756,7 @@ export default function TimesheetCalendar({
                           newDate.setFullYear(newYear);
                           setCurrentMonth(newDate);
                         }}
-                        className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                        className="mb-4 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {years.map((year) => (
                           <option key={year} value={year}>
@@ -768,11 +779,12 @@ export default function TimesheetCalendar({
                                 setCurrentMonth(newDate);
                                 setIsMonthPickerOpen(false);
                               }}
-                              className={`rounded-md px-3 py-2 text-sm font-medium transition cursor-pointer ${
+                              className={cn(
+                                "rounded-md px-2 py-2 text-sm font-medium transition-colors",
                                 isSelected
-                                  ? "bg-blue-600 text-white"
-                                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                              }`}
+                                  ? "bg-primary text-primary-foreground shadow-sm"
+                                  : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                              )}
                             >
                               {month}
                             </button>
@@ -783,47 +795,55 @@ export default function TimesheetCalendar({
                   </>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setIsRequestModalOpen(true)}
-                  className="hidden sm:block rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 mr-2"
+                  className="hidden sm:inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 mr-2 shadow-sm"
                 >
                   Richiedi Ferie
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentMonth((month) => addMonths(month, -1))}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-                >
-                  &#8592;
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentMonth(startOfMonth(new Date()))}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-                >
-                  Oggi
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentMonth((month) => addMonths(month, 1))}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-                >
-                  &#8594;
-                </button>
+                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border border-border">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentMonth((month) => addMonths(month, -1))
+                    }
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none hover:bg-background hover:text-accent-foreground h-8 w-8 text-muted-foreground"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentMonth(startOfMonth(new Date()))}
+                    className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none hover:bg-background hover:text-accent-foreground h-8 px-3 text-foreground"
+                  >
+                    Oggi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentMonth((month) => addMonths(month, 1))
+                    }
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none hover:bg-background hover:text-accent-foreground h-8 w-8 text-muted-foreground"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="px-2 py-4 sm:p-6">
-            <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <div className="p-4 sm:p-6 bg-card">
+            <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
               {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map((day) => (
-                <div key={day} className="py-2">{day}</div>
+                <div key={day} className="py-2">
+                  {day}
+                </div>
               ))}
             </div>
 
-            <div className="mt-2 grid grid-cols-7 gap-0.5 sm:gap-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-3">
               {calendarDays.map((day) => {
                 const key = format(day, "yyyy-MM-dd");
                 const bucket = entriesByDay.get(key);
@@ -835,23 +855,24 @@ export default function TimesheetCalendar({
                 const isMalattia = (dayEntry?.sicknessHours ?? 0) > 0;
                 const hasEntries = Boolean(dayEntry);
                 const highlight = isSameDay(day, new Date());
-                const editable = isDateEditable(day) && isSameMonth(day, currentMonth);
+                const editable =
+                  isDateEditable(day) && isSameMonth(day, currentMonth);
                 const dayOfWeek = day.getDay(); // 0 = Sunday, 6 = Saturday
                 const isSaturday = dayOfWeek === 6;
                 const isSunday = dayOfWeek === 0;
-                const dateKey = format(day, 'yyyy-MM-dd');
+                const dateKey = format(day, "yyyy-MM-dd");
                 const holidayInfo = holidayMap.get(dateKey);
                 const isHolidayDay = holidayInfo?.isHoliday ?? false;
                 const holidayName = holidayInfo?.name;
 
-                const pendingRequest = pendingRequests.find(req => {
+                const pendingRequest = pendingRequests.find((req) => {
                   const start = new Date(req.startDate);
                   const end = new Date(req.endDate);
                   // Reset hours to compare dates only
-                  start.setHours(0,0,0,0);
-                  end.setHours(0,0,0,0);
+                  start.setHours(0, 0, 0, 0);
+                  end.setHours(0, 0, 0, 0);
                   const current = new Date(day);
-                  current.setHours(0,0,0,0);
+                  current.setHours(0, 0, 0, 0);
                   return current >= start && current <= end;
                 });
 
@@ -866,7 +887,8 @@ export default function TimesheetCalendar({
                   today.setHours(0, 0, 0, 0);
                   const yesterday = new Date(today);
                   yesterday.setDate(yesterday.getDate() - 1);
-                  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5 && !isHolidayDay;
+                  const isWeekday =
+                    dayOfWeek >= 1 && dayOfWeek <= 5 && !isHolidayDay;
                   const isPastOrYesterday = day <= yesterday;
                   const isInCurrentMonth = isSameMonth(day, currentMonth);
 
@@ -877,29 +899,9 @@ export default function TimesheetCalendar({
 
                 // Determine missing entry indicator
                 const isMissingEntry = permessoHours === 8 && !hasEntries;
-                
+
                 // Determine explicit permesso
                 const isPermesso = hasEntries && permessoHours > 0;
-
-                // Determine background color based on day type
-                let bgColorClass = "bg-white";
-                let bgColorDisabled = "bg-gray-50";
-                let bgColorOutside = "bg-gray-50/50";
-                
-                if (isSunday || isHolidayDay) {
-                  bgColorClass = "bg-red-50";
-                  bgColorDisabled = "bg-red-50/70";
-                  bgColorOutside = "bg-red-50/40";
-                } else if (isSaturday) {
-                  bgColorClass = "bg-blue-50";
-                  bgColorDisabled = "bg-blue-50/70";
-                  bgColorOutside = "bg-blue-50/40";
-                }
-
-                if (pendingRequest) {
-                  bgColorClass = "bg-yellow-50";
-                  bgColorDisabled = "bg-yellow-50/70";
-                }
 
                 return (
                   <button
@@ -909,58 +911,100 @@ export default function TimesheetCalendar({
                     onContextMenu={(e) => {
                       e.preventDefault();
                       if (!editable) return;
-                      setContextMenu({x: e.clientX, y: e.clientY, date: key, visible: true});
+                      setContextMenu({
+                        x: e.clientX,
+                        y: e.clientY,
+                        date: key,
+                        visible: true,
+                      });
                     }}
                     disabled={!editable}
-                    className={`flex min-h-[80px] sm:min-h-[100px] flex-col rounded-md sm:rounded-xl border p-1.5 sm:p-3 text-left transition ${
+                    className={cn(
+                      "flex min-h-[80px] sm:min-h-[110px] flex-col rounded-lg sm:rounded-xl border p-1.5 sm:p-3 text-left transition-all duration-200 relative group",
                       isSameMonth(day, currentMonth)
                         ? editable
-                          ? `border-gray-200 ${bgColorClass} hover:border-blue-300 hover:shadow-md cursor-pointer hover:scale-105`
-                          : `border-gray-200 ${bgColorDisabled} text-gray-400 cursor-not-allowed`
-                        : `border-dashed border-gray-200 ${bgColorOutside} text-gray-300`
-                    } ${highlight ? "ring-2 ring-blue-400 shadow-md" : ""}`}
+                          ? "border-border bg-card hover:border-primary/50 hover:shadow-md cursor-pointer hover:-translate-y-0.5"
+                          : "border-border/50 bg-muted/30 text-muted-foreground cursor-not-allowed"
+                        : "border-dashed border-border/30 bg-muted/10 text-muted-foreground/30",
+                      highlight && "ring-2 ring-primary shadow-lg z-10",
+                      (isSunday || isHolidayDay) &&
+                        isSameMonth(day, currentMonth) &&
+                        "bg-red-50/50 dark:bg-red-950/10 border-red-100 dark:border-red-900/20",
+                      isSaturday &&
+                        isSameMonth(day, currentMonth) &&
+                        "bg-blue-50/50 dark:bg-blue-950/10 border-blue-100 dark:border-blue-900/20",
+                      pendingRequest &&
+                        "bg-yellow-50/50 dark:bg-yellow-950/10 border-yellow-100 dark:border-yellow-900/20"
+                    )}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-between mb-2 w-full">
+                      <div className="flex items-center gap-1.5">
                         {isMissingEntry && (
-                          <div className="w-2 h-2 rounded-full bg-red-500" title="Mancato inserimento"></div>
+                          <div
+                            className="w-2 h-2 rounded-full bg-destructive animate-pulse"
+                            title="Mancato inserimento"
+                          ></div>
                         )}
-                        <span className={`text-xs sm:text-sm font-semibold ${highlight ? "text-blue-600" : "text-gray-700"}`}>
+                        <span
+                          className={cn(
+                            "text-xs sm:text-sm font-semibold",
+                            highlight
+                              ? "text-primary"
+                              : "text-muted-foreground group-hover:text-foreground"
+                          )}
+                        >
                           {format(day, "d")}
                         </span>
                       </div>
                       <div className="flex gap-1">
-                        {isFerie && <span className="text-xs font-bold text-blue-600">F</span>}
-                        {isMalattia && <span className="text-xs font-bold text-red-600">M</span>}
-                        {isPermesso && <span className="text-xs font-bold text-yellow-600">P</span>}
+                        {isFerie && (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                            F
+                          </span>
+                        )}
+                        {isMalattia && (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-900/30 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                            M
+                          </span>
+                        )}
+                        {isPermesso && (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-[10px] font-bold text-yellow-600 dark:text-yellow-400">
+                            P
+                          </span>
+                        )}
                       </div>
                     </div>
+
                     {hasEntries ? (
-                      <div className="flex-1 flex flex-col justify-center items-center gap-1.5">
+                      <div className="flex-1 flex flex-col justify-center items-center gap-1 w-full">
                         <div className="flex flex-col items-center">
-                          <div className="text-2xl sm:text-3xl font-bold tracking-tight text-blue-600">
+                          <div className="text-xl sm:text-2xl font-bold tracking-tight text-primary">
                             {totalHours.toFixed(1)}
                           </div>
-                          <div className="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
+                          <div className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                             ore
                           </div>
                         </div>
                         {dayEntry?.notes && (
-                          <div className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2 break-words px-1 text-center">
-                            {dayEntry.notes}
+                          <div className="w-full max-w-full">
+                            <p className="text-[10px] text-muted-foreground truncate w-full text-center opacity-70 px-1">
+                              {dayEntry.notes}
+                            </p>
                           </div>
                         )}
                       </div>
                     ) : pendingRequest ? (
                       <div className="flex-1 flex flex-col justify-center items-center">
-                        <span className="text-xs font-medium text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
+                        <span className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded-full border border-yellow-200 dark:border-yellow-800">
                           In Attesa
                         </span>
                       </div>
                     ) : (
-                      <div className="flex-1 flex items-center justify-center">
-                        <span className="text-[10px] sm:text-xs text-gray-300">
-                          {editable ? "+" : ""}
+                      <div className="flex-1 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-xs text-muted-foreground/50">
+                          {editable ? (
+                            <Plus className="h-5 w-5" />
+                          ) : null}
                         </span>
                       </div>
                     )}
@@ -974,22 +1018,33 @@ export default function TimesheetCalendar({
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto" onClick={() => setIsModalOpen(false)}>
-          <div className="w-full max-w-lg my-8 rounded-2xl border border-gray-200 bg-white shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <form onSubmit={handleModalSubmit} className="flex flex-col min-h-0 flex-1">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-y-auto"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg my-8 rounded-xl border border-border bg-card shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <form
+              onSubmit={handleModalSubmit}
+              className="flex flex-col min-h-0 flex-1"
+            >
               {/* Modal Header */}
-              <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex-shrink-0">
-                <h2 className="text-lg font-semibold text-white">
-                  {selectedDate && format(new Date(`${selectedDate}T12:00:00`), "EEEE, MMM d, yyyy")}
+              <div className="flex items-center justify-between bg-primary px-6 py-4 flex-shrink-0">
+                <h2 className="text-lg font-semibold text-primary-foreground">
+                  {selectedDate &&
+                    format(
+                      new Date(`${selectedDate}T12:00:00`),
+                      "EEEE, MMM d, yyyy"
+                    )}
                 </h2>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-lg p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
+                  className="rounded-lg p-1 text-primary-foreground/80 transition hover:bg-primary-foreground/20 hover:text-primary-foreground"
                 >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <XCircle className="h-5 w-5" />
                 </button>
               </div>
 
@@ -997,11 +1052,21 @@ export default function TimesheetCalendar({
               <div className="space-y-5 p-6 pb-5 overflow-y-auto flex-1">
                 {/* Day type selector */}
                 <label className="flex flex-col gap-2">
-                  <span className="text-sm font-semibold text-gray-700">Tipo di giornata</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    Tipo di giornata
+                  </span>
                   <select
                     value={modalForm.dayType}
-                    onChange={(e) => setModalForm(f => ({ ...f, dayType: e.target.value as "normal" | "ferie" | "malattia" }))}
-                    className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                    onChange={(e) =>
+                      setModalForm((f) => ({
+                        ...f,
+                        dayType: e.target.value as
+                          | "normal"
+                          | "ferie"
+                          | "malattia",
+                      }))
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <option value="normal">Normale</option>
                     <option value="ferie">Ferie</option>
@@ -1012,183 +1077,278 @@ export default function TimesheetCalendar({
                 {/* Medical certificate input - only show for malattia */}
                 {modalForm.dayType === "malattia" && (
                   <label className="flex flex-col gap-2">
-                    <span className="text-sm font-semibold text-gray-700">Numero certificato medico</span>
+                    <span className="text-sm font-semibold text-foreground">
+                      Numero certificato medico
+                    </span>
                     <input
                       type="text"
                       value={modalForm.medicalCertificate}
-                      onChange={(e) => setModalForm(f => ({ ...f, medicalCertificate: e.target.value }))}
+                      onChange={(e) =>
+                        setModalForm((f) => ({
+                          ...f,
+                          medicalCertificate: e.target.value,
+                        }))
+                      }
                       placeholder="Inserisci il numero del certificato..."
-                      className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </label>
                 )}
                 {modalForm.dayType === "normal" && (
                   <>
                     {/* Morning shift */}
-                    <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 shadow-sm">
+                    <div className="rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 p-4 shadow-sm">
                       <div className="mb-3 flex items-center gap-2">
-                        <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        <h3 className="text-sm font-bold text-blue-900">Turno Mattina</h3>
+                        <Sun className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <h3 className="text-sm font-bold text-blue-900 dark:text-blue-100">
+                          Turno Mattina
+                        </h3>
                       </div>
                       <div className="mb-3">
                         <label className="flex items-center gap-2">
                           <input
                             type="checkbox"
                             checked={modalForm.isMorningPermesso}
-                            onChange={(e) => setModalForm(f => ({ ...f, isMorningPermesso: e.target.checked }))}
-                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            onChange={(e) =>
+                              setModalForm((f) => ({
+                                ...f,
+                                isMorningPermesso: e.target.checked,
+                              }))
+                            }
+                            className="h-4 w-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <span className="text-xs font-medium text-blue-800">Permesso (non conteggiato come lavoro)</span>
+                          <span className="text-xs font-medium text-blue-800 dark:text-blue-200">
+                            Permesso (non conteggiato come lavoro)
+                          </span>
                         </label>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <label className="flex flex-col gap-2">
-                          <span className="text-xs font-semibold text-blue-800">Ora inizio</span>
+                          <span className="text-xs font-semibold text-blue-800 dark:text-blue-200">
+                            Ora inizio
+                          </span>
                           <select
                             value={modalForm.morningStart}
-                            onChange={(e) => setModalForm(f => ({ ...f, morningStart: e.target.value }))}
+                            onChange={(e) =>
+                              setModalForm((f) => ({
+                                ...f,
+                                morningStart: e.target.value,
+                              }))
+                            }
                             disabled={modalForm.isMorningPermesso}
-                            className="rounded-lg border border-blue-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex h-9 w-full rounded-md border border-blue-200 dark:border-blue-800 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {TIME_OPTIONS.map(time => (
-                              <option key={`morning-start-${time}`} value={time}>{time}</option>
+                            {TIME_OPTIONS.map((time) => (
+                              <option
+                                key={`morning-start-${time}`}
+                                value={time}
+                              >
+                                {time}
+                              </option>
                             ))}
                           </select>
                         </label>
                         <label className="flex flex-col gap-2">
-                          <span className="text-xs font-semibold text-blue-800">Ora fine</span>
+                          <span className="text-xs font-semibold text-blue-800 dark:text-blue-200">
+                            Ora fine
+                          </span>
                           <select
                             value={modalForm.morningEnd}
-                            onChange={(e) => setModalForm(f => ({ ...f, morningEnd: e.target.value }))}
+                            onChange={(e) =>
+                              setModalForm((f) => ({
+                                ...f,
+                                morningEnd: e.target.value,
+                              }))
+                            }
                             disabled={modalForm.isMorningPermesso}
-                            className="rounded-lg border border-blue-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex h-9 w-full rounded-md border border-blue-200 dark:border-blue-800 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {TIME_OPTIONS.map(time => (
-                              <option key={`morning-end-${time}`} value={time}>{time}</option>
+                            {TIME_OPTIONS.map((time) => (
+                              <option key={`morning-end-${time}`} value={time}>
+                                {time}
+                              </option>
                             ))}
                           </select>
                         </label>
                       </div>
                       {!modalForm.isMorningPermesso && (
                         <p className="mt-3 flex items-center justify-between text-xs">
-                          <span className="font-medium text-blue-700">Durata:</span>
-                          <span className="font-bold text-blue-900">{calculatedHours.morning.toFixed(2)} ore</span>
+                          <span className="font-medium text-blue-700 dark:text-blue-300">
+                            Durata:
+                          </span>
+                          <span className="font-bold text-blue-900 dark:text-blue-100">
+                            {calculatedHours.morning.toFixed(2)} ore
+                          </span>
                         </p>
                       )}
                       {modalForm.isMorningPermesso && (
-                        <p className="mt-2 text-xs text-blue-700">Queste ore saranno conteggiate come permesso.</p>
+                        <p className="mt-2 text-xs text-blue-700 dark:text-blue-300">
+                          Queste ore saranno conteggiate come permesso.
+                        </p>
                       )}
                     </div>
 
                     {/* Afternoon shift */}
-                    <div className="rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 p-4 shadow-sm">
+                    <div className="rounded-xl bg-orange-50/50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20 p-4 shadow-sm">
                       <div className="mb-3 flex items-center gap-2">
-                        <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
-                        <h3 className="text-sm font-bold text-orange-900">Turno Pomeriggio</h3>
+                        <Sun className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                        <h3 className="text-sm font-bold text-orange-900 dark:text-orange-100">
+                          Turno Pomeriggio
+                        </h3>
                       </div>
                       <div className="mb-3">
                         <label className="flex items-center gap-2">
                           <input
                             type="checkbox"
                             checked={modalForm.isAfternoonPermesso}
-                            onChange={(e) => setModalForm(f => ({ ...f, isAfternoonPermesso: e.target.checked }))}
-                            className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                            onChange={(e) =>
+                              setModalForm((f) => ({
+                                ...f,
+                                isAfternoonPermesso: e.target.checked,
+                              }))
+                            }
+                            className="h-4 w-4 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
                           />
-                          <span className="text-xs font-medium text-orange-800">Permesso (non conteggiato come lavoro)</span>
+                          <span className="text-xs font-medium text-orange-800 dark:text-orange-200">
+                            Permesso (non conteggiato come lavoro)
+                          </span>
                         </label>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <label className="flex flex-col gap-2">
-                          <span className="text-xs font-semibold text-orange-800">Ora inizio</span>
+                          <span className="text-xs font-semibold text-orange-800 dark:text-orange-200">
+                            Ora inizio
+                          </span>
                           <select
                             value={modalForm.afternoonStart}
-                            onChange={(e) => setModalForm(f => ({ ...f, afternoonStart: e.target.value }))}
+                            onChange={(e) =>
+                              setModalForm((f) => ({
+                                ...f,
+                                afternoonStart: e.target.value,
+                              }))
+                            }
                             disabled={modalForm.isAfternoonPermesso}
-                            className="rounded-lg border border-orange-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex h-9 w-full rounded-md border border-orange-200 dark:border-orange-800 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {TIME_OPTIONS.map(time => (
-                              <option key={`afternoon-start-${time}`} value={time}>{time}</option>
+                            {TIME_OPTIONS.map((time) => (
+                              <option
+                                key={`afternoon-start-${time}`}
+                                value={time}
+                              >
+                                {time}
+                              </option>
                             ))}
                           </select>
                         </label>
                         <label className="flex flex-col gap-2">
-                          <span className="text-xs font-semibold text-orange-800">Ora fine</span>
+                          <span className="text-xs font-semibold text-orange-800 dark:text-orange-200">
+                            Ora fine
+                          </span>
                           <select
                             value={modalForm.afternoonEnd}
-                            onChange={(e) => setModalForm(f => ({ ...f, afternoonEnd: e.target.value }))}
+                            onChange={(e) =>
+                              setModalForm((f) => ({
+                                ...f,
+                                afternoonEnd: e.target.value,
+                              }))
+                            }
                             disabled={modalForm.isAfternoonPermesso}
-                            className="rounded-lg border border-orange-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex h-9 w-full rounded-md border border-orange-200 dark:border-orange-800 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {TIME_OPTIONS.map(time => (
-                              <option key={`afternoon-end-${time}`} value={time}>{time}</option>
+                            {TIME_OPTIONS.map((time) => (
+                              <option key={`afternoon-end-${time}`} value={time}>
+                                {time}
+                              </option>
                             ))}
                           </select>
                         </label>
                       </div>
                       {!modalForm.isAfternoonPermesso && (
                         <p className="mt-3 flex items-center justify-between text-xs">
-                          <span className="font-medium text-orange-700">Durata:</span>
-                          <span className="font-bold text-orange-900">{calculatedHours.afternoon.toFixed(2)} ore</span>
+                          <span className="font-medium text-orange-700 dark:text-orange-300">
+                            Durata:
+                          </span>
+                          <span className="font-bold text-orange-900 dark:text-orange-100">
+                            {calculatedHours.afternoon.toFixed(2)} ore
+                          </span>
                         </p>
                       )}
                       {modalForm.isAfternoonPermesso && (
-                        <p className="mt-2 text-xs text-orange-700">Queste ore saranno conteggiate come permesso.</p>
+                        <p className="mt-2 text-xs text-orange-700 dark:text-orange-300">
+                          Queste ore saranno conteggiate come permesso.
+                        </p>
                       )}
                     </div>
                   </>
                 )}
 
                 {modalForm.dayType === "ferie" && (
-                  <div className="rounded-xl bg-gradient-to-br from-green-50 to-green-100 p-4 shadow-sm">
+                  <div className="rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 p-4 shadow-sm">
                     <div className="flex items-center gap-2 mb-2">
-                      <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                      <h3 className="text-sm font-bold text-green-900">Ferie</h3>
+                      <Sun className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
+                        Ferie
+                      </h3>
                     </div>
-                    <p className="text-sm text-green-800">Giornata di ferie completa - 8 ore di ferie.</p>
+                    <p className="text-sm text-emerald-800 dark:text-emerald-200">
+                      Giornata di ferie completa - 8 ore di ferie.
+                    </p>
                   </div>
                 )}
 
                 {modalForm.dayType === "malattia" && (
-                  <div className="rounded-xl bg-gradient-to-br from-red-50 to-red-100 p-4 shadow-sm">
+                  <div className="rounded-xl bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/20 p-4 shadow-sm">
                     <div className="flex items-center gap-2 mb-2">
-                      <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <h3 className="text-sm font-bold text-red-900">Malattia</h3>
+                      <Stethoscope className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                      <h3 className="text-sm font-bold text-rose-900 dark:text-rose-100">
+                        Malattia
+                      </h3>
                     </div>
-                    <p className="text-sm text-red-800">Giornata di malattia - 8 ore di malattia.</p>
+                    <p className="text-sm text-rose-800 dark:text-rose-200">
+                      Giornata di malattia - 8 ore di malattia.
+                    </p>
                   </div>
                 )}
 
                 {modalForm.dayType === "normal" && (
                   <>
                     {/* Summary */}
-                    <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm">
+                    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between items-center">
-                          <span className="font-semibold text-gray-700">Ore totali:</span>
-                          <span className="text-2xl font-bold text-blue-600">{calculatedHours.totalWorked.toFixed(2)}</span>
+                          <span className="font-semibold text-foreground">
+                            Ore totali:
+                          </span>
+                          <span className="text-2xl font-bold text-primary">
+                            {calculatedHours.totalWorked.toFixed(2)}
+                          </span>
                         </div>
-                        <div className="flex justify-between items-center border-t border-blue-100 pt-2">
-                          <span className="font-medium text-gray-600">Ore regolari:</span>
-                          <span className="font-bold text-gray-900">{calculatedHours.regular.toFixed(2)}</span>
+                        <div className="flex justify-between items-center border-t border-border pt-2">
+                          <span className="font-medium text-muted-foreground">
+                            Ore regolari:
+                          </span>
+                          <span className="font-bold text-foreground">
+                            {calculatedHours.regular.toFixed(2)}
+                          </span>
                         </div>
                         {calculatedHours.overtime > 0 && (
-                          <div className="flex justify-between items-center border-t border-orange-100 pt-2">
-                            <span className="font-medium text-orange-700">Straordinario:</span>
-                            <span className="font-bold text-orange-600">{calculatedHours.overtime.toFixed(2)}</span>
+                          <div className="flex justify-between items-center border-t border-orange-100 dark:border-orange-900/20 pt-2">
+                            <span className="font-medium text-orange-700 dark:text-orange-300">
+                              Straordinario:
+                            </span>
+                            <span className="font-bold text-orange-600 dark:text-orange-400">
+                              {calculatedHours.overtime.toFixed(2)}
+                            </span>
                           </div>
                         )}
                         {calculatedHours.permesso > 0 && (
-                          <div className="flex justify-between items-center border-t border-yellow-100 pt-2">
-                            <span className="font-medium text-yellow-700">Permesso:</span>
-                            <span className="font-bold text-yellow-600">{calculatedHours.permesso.toFixed(2)}</span>
+                          <div className="flex justify-between items-center border-t border-yellow-100 dark:border-yellow-900/20 pt-2">
+                            <span className="font-medium text-yellow-700 dark:text-yellow-300">
+                              Permesso:
+                            </span>
+                            <span className="font-bold text-yellow-600 dark:text-yellow-400">
+                              {calculatedHours.permesso.toFixed(2)}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -1198,55 +1358,79 @@ export default function TimesheetCalendar({
 
                 {/* Notes */}
                 <label className="flex flex-col gap-2">
-                  <span className="text-sm font-semibold text-gray-700">Note (opzionali)</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    Note (opzionali)
+                  </span>
                   <textarea
                     value={modalForm.notes}
-                    onChange={(e) => setModalForm(f => ({ ...f, notes: e.target.value }))}
+                    onChange={(e) =>
+                      setModalForm((f) => ({ ...f, notes: e.target.value }))
+                    }
                     placeholder="Aggiungi note sul tuo lavoro..."
                     rows={3}
-                    className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-200 resize-none"
-                    style={{ backgroundColor: 'white' }}
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                   />
                 </label>
 
                 {modalError && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                  <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3">
                     <div className="flex items-center gap-2">
-                      <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-sm font-medium text-red-800">{modalError}</p>
+                      <AlertCircle className="h-5 w-5 text-destructive" />
+                      <p className="text-sm font-medium text-destructive">
+                        {modalError}
+                      </p>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Modal Footer */}
-              <div className="flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 pt-6 rounded-b-2xl flex-shrink-0">
+              <div className="flex gap-3 border-t border-border bg-muted/50 px-6 py-4 pt-6 rounded-b-xl flex-shrink-0">
                 {/* Show delete button only if entry exists */}
-                {selectedDate && entries.find(e => e.workDate === selectedDate) && (
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isSaving}
-                    className="rounded-lg border-2 border-red-300 bg-white px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSaving ? "Eliminazione..." : "Elimina"}
-                  </button>
-                )}
+                {selectedDate &&
+                  entries.find((e) => e.workDate === selectedDate) && (
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={isSaving}
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-destructive bg-background hover:bg-destructive hover:text-destructive-foreground h-10 px-4 py-2 text-destructive"
+                    >
+                      {isSaving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Elimina"
+                      )}
+                    </button>
+                  )}
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 hover:border-gray-400"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 flex-1"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
-                  disabled={isSaving || (modalForm.dayType === "normal" && calculatedHours.totalWorked === 0 && calculatedHours.permesso === 0)}
-                  className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
+                  disabled={
+                    isSaving ||
+                    (modalForm.dayType === "normal" &&
+                      calculatedHours.totalWorked === 0 &&
+                      calculatedHours.permesso === 0)
+                  }
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 flex-1 shadow-md"
                 >
-                  {isSaving ? "Salvataggio..." : modalForm.dayType === "ferie" ? "Salva Ferie" : modalForm.dayType === "malattia" ? "Salva Malattia" : "Salva"}
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvataggio...
+                    </>
+                  ) : modalForm.dayType === "ferie" ? (
+                    "Salva Ferie"
+                  ) : modalForm.dayType === "malattia" ? (
+                    "Salva Malattia"
+                  ) : (
+                    "Salva"
+                  )}
                 </button>
               </div>
             </form>
@@ -1258,7 +1442,7 @@ export default function TimesheetCalendar({
       {contextMenu?.visible && (
         <div
           ref={contextMenuRef}
-          className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg py-1"
+          className="fixed z-50 bg-popover border border-border rounded-md shadow-md py-1 min-w-[8rem] animate-in fade-in zoom-in-95 duration-100"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={() => setContextMenu(null)}
         >
@@ -1270,7 +1454,7 @@ export default function TimesheetCalendar({
               setSelectedDate(contextMenu.date);
               handleFerie(contextMenu.date);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+            className="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
           >
             Ferie
           </button>
@@ -1281,7 +1465,7 @@ export default function TimesheetCalendar({
               setSelectedDate(contextMenu.date);
               handleMalattia(contextMenu.date);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+            className="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
           >
             Malattia
           </button>
@@ -1290,13 +1474,18 @@ export default function TimesheetCalendar({
               e.stopPropagation();
               setContextMenu(null);
               const date = contextMenu.date;
-              const entry = entries.find(e => e.workDate === date);
+              const entry = entries.find((e) => e.workDate === date);
               if (!entry) return;
-              if (!confirm("Sei sicuro di voler eliminare questo inserimento?")) return;
+              if (
+                !confirm("Sei sicuro di voler eliminare questo inserimento?")
+              )
+                return;
               fetch(`/api/hours?id=${entry.id}`, { method: "DELETE" })
-                .then(response => {
+                .then((response) => {
                   if (response.ok) {
-                    setEntries(current => current.filter(e => e.id !== entry.id));
+                    setEntries((current) =>
+                      current.filter((e) => e.id !== entry.id)
+                    );
                     setTimeout(() => setIsRefetching(true), 200);
                   } else {
                     alert("Errore nell'eliminazione");
@@ -1304,7 +1493,7 @@ export default function TimesheetCalendar({
                 })
                 .catch(() => alert("Errore nell'eliminazione"));
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100 cursor-pointer"
+            className="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-destructive/10 hover:text-destructive text-destructive data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
           >
             Elimina
           </button>

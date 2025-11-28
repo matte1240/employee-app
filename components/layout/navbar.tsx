@@ -5,6 +5,20 @@ import { usePathname } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
+import {
+  LayoutDashboard,
+  Users,
+  Calendar,
+  FileText,
+  ClipboardList,
+  Server,
+  User,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type NavbarProps = {
   userRole: string;
@@ -13,7 +27,12 @@ type NavbarProps = {
   userImage?: string | null;
 };
 
-export default function Navbar({ userRole, userName, userEmail, userImage }: NavbarProps) {
+export default function Navbar({
+  userRole,
+  userName,
+  userEmail,
+  userImage,
+}: NavbarProps) {
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,11 +45,6 @@ export default function Navbar({ userRole, userName, userEmail, userImage }: Nav
 
   // Close mobile menu on route change
   useEffect(() => {
-    // Avoid calling setState directly if it's already false, but here we want to ensure it's closed
-    // The linter warning is about synchronous setState in effect causing cascading renders
-    // But here we are responding to pathname change.
-    // We can use a ref to track if it's open or just ignore if we are sure.
-    // Or we can use setTimeout to defer the update.
     const t = setTimeout(() => setIsMobileMenuOpen(false), 0);
     return () => clearTimeout(t);
   }, [pathname]);
@@ -60,32 +74,32 @@ export default function Navbar({ userRole, userName, userEmail, userImage }: Nav
     {
       href: "/dashboard/admin",
       label: "Overview",
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+      icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
       href: "/dashboard/users",
       label: "Utenti",
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+      icon: <Users className="w-4 h-4" />,
     },
     {
       href: "/dashboard/calendar",
       label: "Calendario",
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+      icon: <Calendar className="w-4 h-4" />,
     },
     {
       href: "/dashboard/reports",
       label: "Report",
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+      icon: <FileText className="w-4 h-4" />,
     },
     {
       href: "/dashboard/requests",
       label: "Richieste",
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+      icon: <ClipboardList className="w-4 h-4" />,
     },
     {
       href: "/dashboard/manage-server",
       label: "Manage Server",
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" /></svg>
+      icon: <Server className="w-4 h-4" />,
     },
   ];
 
@@ -93,22 +107,22 @@ export default function Navbar({ userRole, userName, userEmail, userImage }: Nav
     {
       href: "/dashboard/calendar",
       label: "Calendario",
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+      icon: <Calendar className="w-4 h-4" />,
     },
     {
       href: "/dashboard/reports",
       label: "Report",
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+      icon: <FileText className="w-4 h-4" />,
     },
     {
       href: "/dashboard/requests",
       label: "Richieste",
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+      icon: <ClipboardList className="w-4 h-4" />,
     },
     {
       href: "/dashboard/profile",
       label: "Profilo",
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+      icon: <User className="w-4 h-4" />,
     },
   ];
 
@@ -116,18 +130,16 @@ export default function Navbar({ userRole, userName, userEmail, userImage }: Nav
 
   return (
     <>
-      <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+      <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               aria-label="Open menu"
             >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <Menu className="h-6 w-6" />
             </button>
 
             {/* Logo/Brand */}
@@ -151,11 +163,12 @@ export default function Navbar({ userRole, userName, userEmail, userImage }: Nav
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={cn(
+                      "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-blue-100 text-blue-700"
-                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    )}
                   >
                     {link.icon}
                     {link.label}
@@ -166,18 +179,27 @@ export default function Navbar({ userRole, userName, userEmail, userImage }: Nav
 
             {/* Desktop User Menu */}
             <div className="hidden md:flex items-center space-x-4">
-              <Link href="/dashboard/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity group">
+              <ThemeToggle />
+              <Link
+                href="/dashboard/profile"
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
+              >
                 <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                  <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
                     {userName || userEmail}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     {userRole === "ADMIN" ? "Amministratore" : "Dipendente"}
                   </div>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold overflow-hidden relative border border-gray-200 shadow-sm">
+                <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-accent-foreground font-semibold overflow-hidden relative border border-border">
                   {userImage ? (
-                    <Image src={userImage} alt="Profile" fill className="object-cover" />
+                    <Image
+                      src={userImage}
+                      alt="Profile"
+                      fill
+                      className="object-cover"
+                    />
                   ) : (
                     (userName || userEmail || "U").charAt(0).toUpperCase()
                   )}
@@ -186,71 +208,83 @@ export default function Navbar({ userRole, userName, userEmail, userImage }: Nav
               <button
                 onClick={handleLogout}
                 disabled={isPending}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-destructive-foreground bg-destructive hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-destructive disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
               >
                 {isPending ? "..." : "Esci"}
               </button>
             </div>
 
             {/* Mobile Logout Button */}
-            <button
-              onClick={handleLogout}
-              disabled={isPending}
-              className="md:hidden inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 cursor-pointer transition-colors"
-            >
-              {isPending ? "..." : "Esci"}
-            </button>
+            <div className="flex items-center gap-2 md:hidden">
+              <ThemeToggle />
+              <button
+                onClick={handleLogout}
+                disabled={isPending}
+                className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-destructive-foreground bg-destructive hover:bg-destructive/90 disabled:opacity-50 cursor-pointer transition-colors"
+              >
+                {isPending ? "..." : "Esci"}
+              </button>
+            </div>
           </div>
         </div>
       </nav>
 
       {/* Mobile Sidebar Drawer */}
       <div
-        className={`fixed inset-0 z-50 md:hidden transition-opacity duration-300 ${
+        className={cn(
+          "fixed inset-0 z-50 md:hidden transition-opacity duration-300",
           isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+        )}
       >
         {/* Overlay */}
         <div
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          className="absolute inset-0 bg-background/80 backdrop-blur-sm"
           onClick={() => setIsMobileMenuOpen(false)}
         />
 
         {/* Drawer */}
         <div
-          className={`absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl transform transition-transform duration-300 ease-out ${
+          className={cn(
+            "absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-background border-r border-border shadow-2xl transform transition-transform duration-300 ease-out",
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+          )}
         >
           {/* Drawer Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
-            <Link href="/dashboard/profile" className="flex items-center space-x-3 hover:opacity-80 transition-opacity" onClick={() => setIsMobileMenuOpen(false)}>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 overflow-hidden relative border border-gray-200">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent overflow-hidden relative border border-border">
                 {userImage ? (
-                  <Image src={userImage} alt="Profile" fill className="object-cover" />
+                  <Image
+                    src={userImage}
+                    alt="Profile"
+                    fill
+                    className="object-cover"
+                  />
                 ) : (
-                  <span className="text-lg font-bold text-gray-700">
+                  <span className="text-lg font-bold text-foreground">
                     {(userName || userEmail || "U").charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div>
-                <div className="text-sm font-semibold text-gray-900">
+                <div className="text-sm font-semibold text-foreground">
                   {userName || userEmail}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground">
                   {userRole === "ADMIN" ? "Amministratore" : "Dipendente"}
                 </div>
               </div>
             </Link>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               aria-label="Close menu"
             >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="h-6 w-6" />
             </button>
           </div>
 
@@ -262,13 +296,16 @@ export default function Navbar({ userRole, userName, userEmail, userImage }: Nav
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all",
                     isActive
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  )}
                 >
-                  <span className="w-5 h-5 flex items-center justify-center">{link.icon}</span>
+                  <span className="w-5 h-5 flex items-center justify-center">
+                    {link.icon}
+                  </span>
                   <span>{link.label}</span>
                 </Link>
               );
@@ -276,15 +313,13 @@ export default function Navbar({ userRole, userName, userEmail, userImage }: Nav
           </nav>
 
           {/* Drawer Footer */}
-          <div className="border-t border-gray-200 px-4 py-4">
+          <div className="border-t border-border px-4 py-4">
             <button
               onClick={handleLogout}
               disabled={isPending}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border border-transparent text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all shadow-md"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border border-transparent text-sm font-semibold rounded-lg text-destructive-foreground bg-destructive hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-destructive disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all shadow-md"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+              <LogOut className="h-5 w-5" />
               {isPending ? "Disconnessione..." : "Esci"}
             </button>
           </div>

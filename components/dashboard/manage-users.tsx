@@ -5,6 +5,19 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { User, UserRole } from "@/types/models";
+import { 
+  Plus, 
+  CheckCircle, 
+  AlertCircle, 
+  Edit, 
+  Key, 
+  Trash2, 
+  X, 
+  Info, 
+  AlertTriangle,
+  Loader2
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type ManageUsersProps = {
   users: User[];
@@ -285,7 +298,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
       {/* Header with Create Button */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-foreground">
             Gestione Utenti
           </h2>
         </div>
@@ -295,68 +308,62 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
             setError(null);
             setSuccess(null);
           }}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 cursor-pointer"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
+          <Plus className="h-5 w-5" />
           Crea Utente
         </button>
       </div>
 
       {/* Success Message */}
       {success && (
-        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
+        <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 p-4">
           <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-sm font-medium text-green-800">{success}</p>
+            <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">{success}</p>
           </div>
         </div>
       )}
 
       {/* Error Message */}
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+        <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
           <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-sm font-medium text-red-800">{error}</p>
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <p className="text-sm font-medium text-destructive">{error}</p>
           </div>
         </div>
       )}
 
       {/* Users Table */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted/50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Nome
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Email
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Ruolo
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Registrato
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Azioni
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
+            <tbody className="divide-y divide-border bg-card">
               {users.map((user) => (
-                <tr key={user.id} className="transition hover:bg-gray-50">
+                <tr key={user.id} className="transition hover:bg-muted/50">
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="flex items-center">
-                      <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600 overflow-hidden">
+                      <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground overflow-hidden">
                         {user.image ? (
                           <Image src={user.image} alt={user.name || "User"} fill className="object-cover" />
                         ) : (
@@ -364,35 +371,34 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                         )}
                       </div>
                       <div className="ml-3">
-                        <p className="font-semibold text-gray-900">{user.name ?? "Non assegnato"}</p>
+                        <p className="font-semibold text-foreground">{user.name ?? "Non assegnato"}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                     {user.email}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                    <span className={cn(
+                      "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
                       user.role === "ADMIN"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-blue-100 text-blue-700"
-                    }`}>
+                        ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                        : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                    )}>
                       {user.role === "ADMIN" ? "Amministratore" : "Dipendente"}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                     {format(user.createdAt, "MMM d, yyyy")}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleEditClick(user)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-secondary px-3 py-2 text-sm font-semibold text-secondary-foreground transition hover:bg-secondary/80 cursor-pointer"
                         title="Modifica utente"
                       >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
+                        <Edit className="h-4 w-4" />
                         Modifica
                       </button>
                       <button
@@ -402,12 +408,10 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                           setError(null);
                           setSuccess(null);
                         }}
-                        className="inline-flex items-center gap-1 rounded-lg bg-yellow-50 px-3 py-2 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-100 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 transition hover:bg-amber-200 dark:hover:bg-amber-900/50 cursor-pointer"
                         title="Reimposta password"
                       >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                        </svg>
+                        <Key className="h-4 w-4" />
                         Reimposta
                       </button>
                       <button
@@ -417,12 +421,10 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                           setSuccess(null);
                         }}
                         disabled={user.id === currentUserId}
-                        className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive transition hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                         title={user.id === currentUserId ? "Non puoi eliminare il tuo account" : "Elimina utente"}
                       >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <Trash2 className="h-4 w-4" />
                         Elimina
                       </button>
                     </div>
@@ -436,11 +438,11 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
 
       {/* Crea Utente Modal */}
       {isCreatingUserModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
-            <div className="border-b border-gray-200 bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 rounded-t-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-xl bg-card border border-border shadow-2xl">
+            <div className="border-b border-border bg-primary px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Crea Nuovo Utente</h2>
+                <h2 className="text-lg font-semibold text-primary-foreground">Crea Nuovo Utente</h2>
                 <button
                   onClick={() => {
                     setIsCreatingUserModalOpen(false);
@@ -455,18 +457,16 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="rounded-lg p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
+                  className="rounded-lg p-1 text-primary-foreground/80 transition hover:bg-primary-foreground/20 hover:text-primary-foreground"
                 >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
             <form onSubmit={handleCreateUser} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
                   Nome Completo
                 </label>
                 <input
@@ -474,13 +474,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   value={createForm.name}
                   onChange={(e) => setCreateForm(f => ({ ...f, name: e.target.value }))}
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="Mario Rossi"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
                   Indirizzo Email
                 </label>
                 <input
@@ -488,19 +488,19 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   value={createForm.email}
                   onChange={(e) => setCreateForm(f => ({ ...f, email: e.target.value }))}
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="mario.rossi@esempio.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
                   Ruolo
                 </label>
                 <select
                   value={createForm.role}
                   onChange={(e) => setCreateForm(f => ({ ...f, role: e.target.value as UserRole }))}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
                 >
                   <option value="EMPLOYEE">Dipendente</option>
                   <option value="ADMIN">Amministratore</option>
@@ -508,19 +508,19 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
               </div>
 
               {/* Manual Password Toggle */}
-              <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-3 p-4 bg-muted border border-border rounded-lg">
                 <input
                   type="checkbox"
                   id="manualPasswordCreate"
                   checked={manualPasswordCreate}
                   onChange={(e) => setManualPasswordCreate(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  className="w-5 h-5 text-primary border-input rounded focus:ring-2 focus:ring-primary cursor-pointer"
                 />
                 <label htmlFor="manualPasswordCreate" className="flex-1 cursor-pointer">
-                  <span className="text-sm font-semibold text-blue-900">
+                  <span className="text-sm font-semibold text-foreground">
                     Imposta password manualmente
                   </span>
-                  <p className="text-xs text-blue-700 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Quando attivo, puoi impostare la password direttamente senza inviare email all&apos;utente
                   </p>
                 </label>
@@ -529,7 +529,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
               {manualPasswordCreate && (
                 <>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-foreground mb-2">
                       Password
                     </label>
                     <input
@@ -538,13 +538,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                       onChange={(e) => setCreateForm(f => ({ ...f, password: e.target.value }))}
                       required
                       minLength={8}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                       placeholder="Almeno 8 caratteri"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-foreground mb-2">
                       Conferma Password
                     </label>
                     <input
@@ -553,21 +553,19 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                       onChange={(e) => setCreateForm(f => ({ ...f, confirmPassword: e.target.value }))}
                       required
                       minLength={8}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                       placeholder="Ripeti la password"
                     />
                   </div>
 
                   {/* Info Box */}
-                  <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+                  <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 rounded-lg">
+                    <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-semibold text-amber-900 mb-1">
+                      <p className="font-semibold text-amber-900 dark:text-amber-300 mb-1">
                         Modalità DEV Attiva
                       </p>
-                      <p className="text-amber-800">
+                      <p className="text-amber-800 dark:text-amber-400">
                         Imposti manualmente la password. Nessuna email verrà inviata all&apos;utente.
                         Questa modalità è da usare solo per test e sviluppo.
                       </p>
@@ -577,12 +575,10 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
               )}
 
               {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
                   <div className="flex items-center gap-2">
-                    <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-sm font-medium text-red-800">{error}</p>
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <p className="text-sm font-medium text-destructive">{error}</p>
                   </div>
                 </div>
               )}
@@ -603,15 +599,16 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
+                  className="flex-1 rounded-lg border border-input bg-background px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted cursor-pointer"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="flex-1 rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-green-700 hover:to-green-800 disabled:cursor-not-allowed disabled:from-green-300 disabled:to-green-400 cursor-pointer"
+                  className="flex-1 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                 >
+                  {isCreating && <Loader2 className="h-4 w-4 animate-spin" />}
                   {isCreating ? "Creazione..." : "Crea Utente"}
                 </button>
               </div>
@@ -622,29 +619,27 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
 
       {/* Modifica Utente Modal */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
-            <div className="border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-xl bg-card border border-border shadow-2xl">
+            <div className="border-b border-border bg-primary px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Modifica Utente</h2>
+                <h2 className="text-lg font-semibold text-primary-foreground">Modifica Utente</h2>
                 <button
                   onClick={() => {
                     setEditingUser(null);
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="rounded-lg p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
+                  className="rounded-lg p-1 text-primary-foreground/80 transition hover:bg-primary-foreground/20 hover:text-primary-foreground"
                 >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
             <form onSubmit={handleEditUser} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
                   Nome Completo
                 </label>
                 <input
@@ -652,13 +647,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   value={editForm.name}
                   onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))}
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="Mario Rossi"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
                   Indirizzo Email
                 </label>
                 <input
@@ -666,38 +661,36 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   value={editForm.email}
                   onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))}
                   required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="mario.rossi@esempio.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
                   Ruolo
                 </label>
                 <select
                   value={editForm.role}
                   onChange={(e) => setEditForm(f => ({ ...f, role: e.target.value as UserRole }))}
                   disabled={editingUser?.id === currentUserId}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <option value="EMPLOYEE">Dipendente</option>
                   <option value="ADMIN">Amministratore</option>
                 </select>
                 {editingUser?.id === currentUserId && (
-                  <p className="mt-2 text-xs text-amber-600">
+                  <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
                     Non puoi modificare il tuo ruolo per evitare di perdere l&apos;accesso amministratore
                   </p>
                 )}
               </div>
 
               {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
                   <div className="flex items-center gap-2">
-                    <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-sm font-medium text-red-800">{error}</p>
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <p className="text-sm font-medium text-destructive">{error}</p>
                   </div>
                 </div>
               )}
@@ -710,15 +703,16 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
+                  className="flex-1 rounded-lg border border-input bg-background px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted cursor-pointer"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400 cursor-pointer"
+                  className="flex-1 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                 >
+                  {isUpdating && <Loader2 className="h-4 w-4 animate-spin" />}
                   {isUpdating ? "Aggiornamento..." : "Aggiorna Utente"}
                 </button>
               </div>
@@ -729,48 +723,42 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
 
       {/* Elimina Utente Modal */}
       {deletingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
-            <div className="border-b border-gray-200 bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 rounded-t-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-xl bg-card border border-border shadow-2xl">
+            <div className="border-b border-border bg-destructive px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Elimina Utente</h2>
+                <h2 className="text-lg font-semibold text-destructive-foreground">Elimina Utente</h2>
                 <button
                   onClick={() => {
                     setDeletingUser(null);
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="rounded-lg p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
+                  className="rounded-lg p-1 text-destructive-foreground/80 transition hover:bg-destructive-foreground/20 hover:text-destructive-foreground"
                 >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
             <div className="p-6">
               <div className="flex items-center gap-4 mb-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-                  <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                  <Trash2 className="h-6 w-6 text-destructive" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">Sei sicuro?</h3>
-                  <p className="mt-1 text-sm text-gray-600">
-                    Questo eliminerà permanentemente l&apos;utente <span className="font-semibold">{deletingUser.email}</span> e tutte le sue registrazioni orarie. Questa azione non può essere annullata.
+                  <h3 className="text-lg font-semibold text-foreground">Sei sicuro?</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Questo eliminerà permanentemente l&apos;utente <span className="font-semibold text-foreground">{deletingUser.email}</span> e tutte le sue registrazioni orarie. Questa azione non può essere annullata.
                   </p>
                 </div>
               </div>
 
               {error && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+                <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
                   <div className="flex items-center gap-2">
-                    <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-sm font-medium text-red-800">{error}</p>
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <p className="text-sm font-medium text-destructive">{error}</p>
                   </div>
                 </div>
               )}
@@ -783,15 +771,16 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
+                  className="flex-1 rounded-lg border border-input bg-background px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted cursor-pointer"
                 >
                   Annulla
                 </button>
                 <button
                   onClick={handleDeleteUser}
                   disabled={isDeleting}
-                  className="flex-1 rounded-lg bg-gradient-to-r from-red-600 to-red-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-red-700 hover:to-red-800 disabled:cursor-not-allowed disabled:from-red-300 disabled:to-red-400 cursor-pointer"
+                  className="flex-1 rounded-lg bg-destructive px-4 py-3 text-sm font-semibold text-destructive-foreground shadow-md transition hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                 >
+                  {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {isDeleting ? "Eliminazione..." : "Elimina Utente"}
                 </button>
               </div>
@@ -802,9 +791,9 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
 
       {/* Reimposta Password Modal */}
       {resettingPasswordUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
-            <div className="border-b border-gray-200 bg-gradient-to-r from-yellow-600 to-yellow-700 px-6 py-4 rounded-t-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-xl bg-card border border-border shadow-2xl">
+            <div className="border-b border-border bg-amber-600 px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">Reimposta Password</h2>
                 <button
@@ -817,25 +806,21 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   }}
                   className="rounded-lg p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
                 >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
             <form onSubmit={handleResetPassword} className="p-6 space-y-4">
               <div className="mb-4">
-                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 rounded-lg">
+                  <Info className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div className="text-sm">
-                    <p className="font-semibold text-amber-900 mb-1">
+                    <p className="font-semibold text-amber-900 dark:text-amber-300 mb-1">
                       Reimpostazione password per:
                     </p>
-                    <p className="text-amber-800 font-medium">{resettingPasswordUser.email}</p>
-                    <p className="text-amber-700 mt-2">
+                    <p className="text-amber-800 dark:text-amber-400 font-medium">{resettingPasswordUser.email}</p>
+                    <p className="text-amber-700 dark:text-amber-500 mt-2">
                       {manualPasswordReset
                           ? "Imposta manualmente la nuova password. Nessuna email verrà inviata."
                           : "Verrà inviata un'email con il link per reimpostare la password."}
@@ -845,19 +830,19 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
               </div>
 
               {/* Manual Password Toggle */}
-              <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-3 p-4 bg-muted border border-border rounded-lg">
                 <input
                   type="checkbox"
                   id="manualPasswordReset"
                   checked={manualPasswordReset}
                   onChange={(e) => setManualPasswordReset(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  className="w-5 h-5 text-primary border-input rounded focus:ring-2 focus:ring-primary cursor-pointer"
                 />
                 <label htmlFor="manualPasswordReset" className="flex-1 cursor-pointer">
-                  <span className="text-sm font-semibold text-blue-900">
+                  <span className="text-sm font-semibold text-foreground">
                     Imposta password manualmente
                   </span>
-                  <p className="text-xs text-blue-700 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Quando attivo, puoi impostare la password direttamente senza inviare email all&apos;utente
                   </p>
                 </label>
@@ -866,7 +851,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
               {manualPasswordReset && (
                 <>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-foreground mb-2">
                       Nuova Password
                     </label>
                     <input
@@ -875,13 +860,13 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                       onChange={(e) => setResetPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
                       required
                       minLength={8}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                       placeholder="Almeno 8 caratteri"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-foreground mb-2">
                       Conferma Nuova Password
                     </label>
                     <input
@@ -890,7 +875,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                       onChange={(e) => setResetPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
                       required
                       minLength={8}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-black placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                       placeholder="Ripeti la password"
                     />
                   </div>
@@ -898,12 +883,10 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
               )}
 
               {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
                   <div className="flex items-center gap-2">
-                    <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-sm font-medium text-red-800">{error}</p>
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <p className="text-sm font-medium text-destructive">{error}</p>
                   </div>
                 </div>
               )}
@@ -918,15 +901,16 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
+                  className="flex-1 rounded-lg border border-input bg-background px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted cursor-pointer"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isResettingPassword}
-                  className="flex-1 rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-yellow-700 hover:to-yellow-800 disabled:cursor-not-allowed disabled:from-yellow-300 disabled:to-yellow-400 cursor-pointer"
+                  className="flex-1 rounded-lg bg-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                 >
+                  {isResettingPassword && <Loader2 className="h-4 w-4 animate-spin" />}
                   {isResettingPassword 
                     ? "Reimpostazione..." 
                     : manualPasswordReset 

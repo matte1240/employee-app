@@ -3,6 +3,19 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { 
+  CheckCircle, 
+  XCircle, 
+  Edit, 
+  Trash2, 
+  Clock, 
+  Calendar, 
+  AlertCircle,
+  Loader2,
+  Save,
+  X
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type LeaveRequest = {
   id: string;
@@ -119,43 +132,55 @@ export default function PendingRequests() {
     }
   };
 
-  if (isLoading) return <div>Loading requests...</div>;
+  if (isLoading) return (
+    <div className="flex items-center justify-center p-8">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+  
   if (requests.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-gray-900">
-        Richieste in Attesa
-      </h2>
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center gap-2 mb-6">
+        <AlertCircle className="h-5 w-5 text-primary" />
+        <h2 className="text-lg font-semibold text-foreground">
+          Richieste in Attesa
+        </h2>
+        <span className="ml-auto rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+          {requests.length}
+        </span>
+      </div>
+      
       <div className="space-y-4">
         {requests.map((req) => (
           <div
             key={req.id}
-            className="rounded-lg border border-gray-100 bg-gray-50 p-4"
+            className="rounded-lg border border-border bg-muted/30 p-4 transition-all hover:bg-muted/50"
           >
             {editingId === req.id ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">
                       Data Inizio
                     </label>
                     <input
                       type="date"
-                      className="w-full rounded border border-gray-300 p-2 text-sm"
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       value={editForm.startDate || ""}
                       onChange={(e) =>
                         setEditForm({ ...editForm, startDate: e.target.value })
                       }
                     />
                   </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">
                       Data Fine
                     </label>
                     <input
                       type="date"
-                      className="w-full rounded border border-gray-300 p-2 text-sm"
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                       value={editForm.endDate || ""}
                       onChange={(e) =>
                         setEditForm({ ...editForm, endDate: e.target.value })
@@ -164,12 +189,13 @@ export default function PendingRequests() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">
+                
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">
                     Tipo
                   </label>
                   <select
-                    className="w-full rounded border border-gray-300 p-2 text-sm"
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     value={editForm.type || ""}
                     onChange={(e) =>
                       setEditForm({ 
@@ -184,28 +210,29 @@ export default function PendingRequests() {
                     <option value="SICKNESS">Malattia</option>
                   </select>
                 </div>
+                
                 {editForm.type === "PERMESSO" && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-700">
+                  <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">
                         Ora Inizio
                       </label>
                       <input
                         type="time"
-                        className="w-full rounded border border-gray-300 p-2 text-sm"
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         value={editForm.startTime || ""}
                         onChange={(e) =>
                           setEditForm({ ...editForm, startTime: e.target.value })
                         }
                       />
                     </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-700">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">
                         Ora Fine
                       </label>
                       <input
                         type="time"
-                        className="w-full rounded border border-gray-300 p-2 text-sm"
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         value={editForm.endTime || ""}
                         onChange={(e) =>
                           setEditForm({ ...editForm, endTime: e.target.value })
@@ -214,12 +241,13 @@ export default function PendingRequests() {
                     </div>
                   </div>
                 )}
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">
+                
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">
                     Motivazione
                   </label>
                   <textarea
-                    className="w-full rounded border border-gray-300 p-2 text-sm"
+                    className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                     rows={2}
                     value={editForm.reason || ""}
                     onChange={(e) =>
@@ -227,66 +255,95 @@ export default function PendingRequests() {
                     }
                   />
                 </div>
-                <div className="flex gap-2">
+                
+                <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => saveEdit(req.id)}
-                    className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
                   >
+                    <Save className="mr-2 h-4 w-4" />
                     Salva
                   </button>
                   <button
                     onClick={cancelEdit}
-                    className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
                   >
+                    <X className="mr-2 h-4 w-4" />
                     Annulla
                   </button>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {req.user.name || req.user.email}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {req.type} • {format(new Date(req.startDate), "d MMM", { locale: it })} -{" "}
-                    {format(new Date(req.endDate), "d MMM yyyy", { locale: it })}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-foreground">
+                      {req.user.name || req.user.email}
+                    </p>
+                    <span className={cn(
+                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                      req.type === "VACATION" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                      req.type === "SICKNESS" && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                      req.type === "PERMESSO" && "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                    )}>
+                      {req.type === "VACATION" ? "Ferie" : req.type === "SICKNESS" ? "Malattia" : "Permesso"}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span>
+                      {format(new Date(req.startDate), "d MMM", { locale: it })} -{" "}
+                      {format(new Date(req.endDate), "d MMM yyyy", { locale: it })}
+                    </span>
                     {req.type === "PERMESSO" && req.startTime && req.endTime && (
-                      <span className="ml-2 text-xs">
-                        ({req.startTime} - {req.endTime})
-                      </span>
+                      <>
+                        <span className="text-muted-foreground/50">•</span>
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>
+                          {req.startTime} - {req.endTime}
+                        </span>
+                      </>
                     )}
-                  </p>
+                  </div>
+                  
                   {req.reason && (
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground italic mt-1">
                       "{req.reason}"
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2">
+                
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => startEdit(req)}
-                    className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0"
+                    title="Modifica"
                   >
-                    Modifica
+                    <Edit className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleAction(req.id, "APPROVED")}
-                    className="rounded-lg bg-green-100 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-200"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50 h-8 px-3"
+                    title="Approva"
                   >
+                    <CheckCircle className="mr-1.5 h-4 w-4" />
                     Approva
                   </button>
                   <button
                     onClick={() => handleAction(req.id, "REJECTED")}
-                    className="rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-900/50 h-8 px-3"
+                    title="Rifiuta"
                   >
+                    <XCircle className="mr-1.5 h-4 w-4" />
                     Rifiuta
                   </button>
                   <button
                     onClick={() => deleteRequest(req.id)}
-                    className="rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-100"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 h-8 w-8 p-0"
+                    title="Elimina"
                   >
-                    Elimina
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>

@@ -2,6 +2,18 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { 
+  Database, 
+  Download, 
+  Upload, 
+  RefreshCw, 
+  AlertTriangle, 
+  CheckCircle, 
+  FileText,
+  Loader2,
+  HardDrive
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Backup {
   filename: string;
@@ -181,21 +193,24 @@ export function ManageServer() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">
-            Gestione Server
-          </h1>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Database className="w-6 h-6 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold text-foreground">
+              Gestione Server
+            </h1>
+          </div>
 
           {/* Alerts */}
           {error && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+            <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
               <div className="flex items-center gap-2">
-                <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm font-medium text-red-800">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <p className="text-sm font-medium text-destructive">
                   <strong>Errore:</strong> {error}
                 </p>
               </div>
@@ -203,12 +218,10 @@ export function ManageServer() {
           )}
 
           {success && (
-            <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4">
+            <div className="mb-6 rounded-lg border border-green-500/20 bg-green-500/10 p-4">
               <div className="flex items-center gap-2">
-                <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm font-medium text-green-800">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <p className="text-sm font-medium text-green-800 dark:text-green-300">
                   <strong>Successo:</strong> {success}
                 </p>
               </div>
@@ -217,47 +230,52 @@ export function ManageServer() {
 
           {/* Actions */}
           <div className="mb-8 space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <HardDrive className="w-5 h-5 text-muted-foreground" />
               Azioni Database
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Create Backup */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">
+              <div className="border border-border rounded-xl p-6 bg-card hover:bg-muted/50 transition-colors">
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <Download className="w-4 h-4 text-primary" />
                   Crea Backup
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   Crea un dump completo del database PostgreSQL
                 </p>
                 <button
                   onClick={handleCreateBackup}
                   disabled={loading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   {loading ? "Creazione in corso..." : "Crea Backup"}
                 </button>
               </div>
 
               {/* Restore Backup */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">
+              <div className="border border-border rounded-xl p-6 bg-card hover:bg-muted/50 transition-colors">
+                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-destructive" />
                   Ripristina Database
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   Carica un file .sql per ripristinare il database
                 </p>
-                <label className="block">
+                <label className="block cursor-pointer">
                   <input
                     type="file"
                     accept=".sql"
                     onChange={handleRestoreBackup}
                     disabled={loading}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-destructive/10 file:text-destructive hover:file:bg-destructive/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   />
                 </label>
-                <p className="text-xs text-red-600 mt-2">
-                  ⚠️ Attenzione: questa operazione sovrascriverà tutti i dati!
+                <p className="text-xs text-destructive mt-2 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Attenzione: questa operazione sovrascriverà tutti i dati!
                 </p>
               </div>
             </div>
@@ -266,67 +284,74 @@ export function ManageServer() {
           {/* Backups List */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">
+              <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <FileText className="w-5 h-5 text-muted-foreground" />
                 Backup Disponibili ({backups.length})
               </h2>
               <button
                 onClick={fetchBackups}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                className="text-primary hover:text-primary/80 font-medium text-sm flex items-center gap-1 transition-colors cursor-pointer"
               >
+                <RefreshCw className="w-4 h-4" />
                 Aggiorna Lista
               </button>
             </div>
 
             {backups.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>Nessun backup disponibile</p>
-                <p className="text-sm mt-2">
+              <div className="text-center py-12 border-2 border-dashed border-border rounded-xl bg-muted/30">
+                <Database className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="text-muted-foreground font-medium">Nessun backup disponibile</p>
+                <p className="text-sm text-muted-foreground mt-1">
                   Crea il primo backup usando il pulsante sopra
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Nome File
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Dimensione
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Data Creazione
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Azioni
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {backups.map((backup) => (
-                      <tr key={backup.filename} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {backup.filename}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {backup.sizeFormatted}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(backup.created)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => handleDownloadBackup(backup.filename)}
-                            className="text-blue-600 hover:text-blue-900 mr-4"
-                          >
-                            Scarica
-                          </button>
-                        </td>
+              <div className="overflow-hidden rounded-xl border border-border bg-card">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-border">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Nome File
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Dimensione
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Data Creazione
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Azioni
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-card divide-y divide-border">
+                      {backups.map((backup) => (
+                        <tr key={backup.filename} className="hover:bg-muted/50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-muted-foreground" />
+                            {backup.filename}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                            {backup.sizeFormatted}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                            {formatDate(backup.created)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => handleDownloadBackup(backup.filename)}
+                              className="text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <Download className="w-4 h-4" />
+                              Scarica
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

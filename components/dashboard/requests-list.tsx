@@ -4,6 +4,18 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import RequestLeaveModal from "./request-leave-modal";
+import { cn } from "@/lib/utils";
+import { 
+  CheckCircle2, 
+  XCircle, 
+  Clock, 
+  MoreHorizontal, 
+  Edit2, 
+  Trash2, 
+  Check, 
+  X,
+  Filter
+} from "lucide-react";
 
 type LeaveRequest = {
   id: string;
@@ -118,11 +130,26 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "APPROVED":
-        return <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Approvata</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Approvata
+          </span>
+        );
       case "REJECTED":
-        return <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">Rifiutata</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive border border-destructive/20">
+            <XCircle className="h-3.5 w-3.5" />
+            Rifiutata
+          </span>
+        );
       default:
-        return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">In Attesa</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 px-2.5 py-0.5 text-xs font-medium text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800">
+            <Clock className="h-3.5 w-3.5" />
+            In Attesa
+          </span>
+        );
     }
   };
 
@@ -136,93 +163,108 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-      <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-muted/30">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-foreground">
             Gestione Richieste
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             {isAdmin
               ? "Gestisci le richieste di ferie e permessi dei dipendenti."
               : "Visualizza lo stato delle tue richieste di ferie e permessi."}
           </p>
         </div>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="ALL">Tutti gli stati</option>
-          <option value="PENDING">In Attesa</option>
-          <option value="APPROVED">Approvate</option>
-          <option value="REJECTED">Rifiutate</option>
-        </select>
+        <div className="relative">
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="pl-9 pr-4 h-10 rounded-md border border-input bg-background text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value="ALL">Tutti gli stati</option>
+            <option value="PENDING">In Attesa</option>
+            <option value="APPROVED">Approvate</option>
+            <option value="REJECTED">Rifiutate</option>
+          </select>
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 text-gray-500">Caricamento...</div>
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <p className="text-sm">Caricamento richieste...</p>
+          </div>
+        </div>
       ) : requests.length === 0 ? (
-        <div className="p-8 text-center text-gray-500">
-          Nessuna richiesta trovata.
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+          <div className="rounded-full bg-muted p-4 mb-3">
+            <Clock className="h-8 w-8 text-muted-foreground/50" />
+          </div>
+          <p className="text-sm font-medium">Nessuna richiesta trovata</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted/50">
               <tr>
                 {isAdmin && (
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Utente
                   </th>
                 )}
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Tipo
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Periodo
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Stato
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Motivazione
                 </th>
                 {isAdmin && (
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Azioni
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-border bg-card">
               {requests.map((req) => (
-                <tr key={req.id}>
+                <tr key={req.id} className="hover:bg-muted/30 transition-colors">
                   {isAdmin && (
                     <td className="whitespace-nowrap px-6 py-4">
                       <div className="flex items-center">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-foreground">
                           {req.user.name || req.user.email}
                         </div>
                       </div>
                     </td>
                   )}
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                     {getTypeLabel(req.type)}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {format(new Date(req.startDate), "d MMM", { locale: it })} -{" "}
-                    {format(new Date(req.endDate), "d MMM yyyy", { locale: it })}
-                    {req.type === "PERMESSO" && req.startTime && req.endTime && (
-                      <div className="text-xs text-gray-400 mt-1">
-                        {req.startTime} - {req.endTime}
-                      </div>
-                    )}
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
+                    <div className="flex flex-col">
+                      <span>
+                        {format(new Date(req.startDate), "d MMM", { locale: it })} -{" "}
+                        {format(new Date(req.endDate), "d MMM yyyy", { locale: it })}
+                      </span>
+                      {req.type === "PERMESSO" && req.startTime && req.endTime && (
+                        <span className="text-xs text-muted-foreground/70 mt-0.5">
+                          {req.startTime} - {req.endTime}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     {getStatusBadge(req.status)}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={req.reason}>
+                  <td className="px-6 py-4 text-sm text-muted-foreground max-w-xs truncate" title={req.reason}>
                     {req.reason || "-"}
                   </td>
                   {isAdmin && (
@@ -230,31 +272,35 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => startEdit(req)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                          title="Modifica"
                         >
-                          Modifica
+                          <Edit2 className="h-4 w-4" />
                         </button>
                         {req.status === "PENDING" && (
                           <>
                             <button
                               onClick={() => handleAction(req.id, "APPROVED")}
-                              className="text-green-600 hover:text-green-900"
+                              className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-md transition-colors"
+                              title="Approva"
                             >
-                              Approva
+                              <Check className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleAction(req.id, "REJECTED")}
-                              className="text-red-600 hover:text-red-900"
+                              className="p-1.5 text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-md transition-colors"
+                              title="Rifiuta"
                             >
-                              Rifiuta
+                              <X className="h-4 w-4" />
                             </button>
                           </>
                         )}
                         <button
                           onClick={() => deleteRequest(req.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                          title="Elimina"
                         >
-                          Elimina
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </td>

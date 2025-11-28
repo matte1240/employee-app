@@ -5,6 +5,15 @@ import { format } from "date-fns";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import type { User } from "@/types/models";
+import { 
+  Camera, 
+  Loader2, 
+  CheckCircle, 
+  AlertCircle, 
+  Shield,
+  User as UserIcon
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type EmployeeProfileProps = {
   user: User;
@@ -107,11 +116,11 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Profile Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-32"></div>
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden mb-6">
+        <div className="bg-gradient-to-r from-primary/80 to-primary h-32"></div>
         <div className="px-6 pb-6">
           <div className="flex items-end -mt-16 mb-4">
-            <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-white shadow-lg border-4 border-white overflow-hidden group">
+            <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-background shadow-lg border-4 border-background overflow-hidden group">
               {avatarUrl ? (
                 <Image
                   src={avatarUrl}
@@ -120,9 +129,11 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
                   className="object-cover"
                 />
               ) : (
-                <span className="text-5xl font-bold text-blue-600">
-                  {(user.name || user.email).charAt(0).toUpperCase()}
-                </span>
+                <div className="flex h-full w-full items-center justify-center bg-muted">
+                  <span className="text-5xl font-bold text-muted-foreground">
+                    {(user.name || user.email).charAt(0).toUpperCase()}
+                  </span>
+                </div>
               )}
               
               {/* Overlay for upload */}
@@ -131,15 +142,9 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
                 onClick={() => !isUploading && fileInputRef.current?.click()}
               >
                 {isUploading ? (
-                  <svg className="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <Loader2 className="h-8 w-8 animate-spin text-white" />
                 ) : (
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                  <Camera className="w-8 h-8 text-white" />
                 )}
               </div>
               <input 
@@ -153,14 +158,15 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
             </div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{user.name || "N/A"}</h1>
-            <p className="text-gray-600">{user.email}</p>
+            <h1 className="text-2xl font-bold text-foreground">{user.name || "N/A"}</h1>
+            <p className="text-muted-foreground">{user.email}</p>
             <div className="mt-2">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+              <span className={cn(
+                "inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold",
                 user.role === "ADMIN"
-                  ? "bg-purple-100 text-purple-700"
-                  : "bg-blue-100 text-blue-700"
-              }`}>
+                  ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+              )}>
                 {user.role === "ADMIN" ? "Amministratore" : "Dipendente"}
               </span>
             </div>
@@ -170,46 +176,45 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="mb-6 rounded-lg bg-green-50 border border-green-200 p-4">
+        <div className="mb-6 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 p-4">
           <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-sm font-medium text-green-800">{success}</span>
+            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-medium text-green-800 dark:text-green-300">{success}</span>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
+        <div className="mb-6 rounded-lg bg-destructive/10 border border-destructive/20 p-4">
           <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-sm font-medium text-red-800">{error}</span>
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <span className="text-sm font-medium text-destructive">{error}</span>
           </div>
         </div>
       )}
 
       {/* Profile Information */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Informazioni Profilo</h2>
+      <div className="bg-card rounded-xl shadow-sm border border-border p-6 mb-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <UserIcon className="w-5 h-5 text-muted-foreground" />
+          Informazioni Profilo
+        </h2>
         <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
-            <dt className="text-sm font-medium text-gray-500">Nome completo</dt>
-            <dd className="mt-1 text-sm text-gray-900">{user.name || "N/A"}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Nome completo</dt>
+            <dd className="mt-1 text-sm text-foreground">{user.name || "N/A"}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Email</dt>
-            <dd className="mt-1 text-sm text-gray-900">{user.email}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Email</dt>
+            <dd className="mt-1 text-sm text-foreground">{user.email}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Ruolo</dt>
-            <dd className="mt-1 text-sm text-gray-900">{user.role === "ADMIN" ? "Amministratore" : "Dipendente"}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Ruolo</dt>
+            <dd className="mt-1 text-sm text-foreground">{user.role === "ADMIN" ? "Amministratore" : "Dipendente"}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Data registrazione</dt>
-            <dd className="mt-1 text-sm text-gray-900">
+            <dt className="text-sm font-medium text-muted-foreground">Data registrazione</dt>
+            <dd className="mt-1 text-sm text-foreground">
               {format(new Date(user.createdAt), "dd MMMM yyyy")}
             </dd>
           </div>
@@ -217,16 +222,19 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
       </div>
 
       {/* Security Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Sicurezza</h2>
-            <p className="text-sm text-gray-600 mt-1">Gestisci la tua password</p>
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Shield className="w-5 h-5 text-muted-foreground" />
+              Sicurezza
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">Gestisci la tua password</p>
           </div>
           {!isEditingPassword && (
             <button
               onClick={() => setIsEditingPassword(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors cursor-pointer"
             >
               Cambia Password
             </button>
@@ -234,9 +242,9 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
         </div>
 
         {isEditingPassword && (
-          <form onSubmit={handlePasswordChange} className="border-t border-gray-200 pt-4 space-y-4">
+          <form onSubmit={handlePasswordChange} className="border-t border-border pt-4 space-y-4">
             <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="newPassword" className="block text-sm font-medium text-foreground">
                 Nuova Password
               </label>
               <input
@@ -245,13 +253,13 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Minimo 8 caratteri"
               />
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground">
                 Conferma Password
               </label>
               <input
@@ -260,7 +268,7 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Ripeti la password"
               />
             </div>
@@ -269,7 +277,7 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
               <button
                 type="submit"
                 disabled={isUpdating}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 {isUpdating ? "Salvataggio..." : "Salva Password"}
               </button>
@@ -281,7 +289,7 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
                   setConfirmPassword("");
                   setError(null);
                 }}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                className="inline-flex items-center px-4 py-2 border border-input text-sm font-medium rounded-lg text-foreground bg-background hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors cursor-pointer"
               >
                 Annulla
               </button>
@@ -290,8 +298,8 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
         )}
 
         {!isEditingPassword && (
-          <div className="border-t border-gray-200 pt-4">
-            <p className="text-sm text-gray-600">
+          <div className="border-t border-border pt-4">
+            <p className="text-sm text-muted-foreground">
               Password configurata. Usa il pulsante sopra per cambiarla.
             </p>
           </div>

@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
+import { it } from "date-fns/locale";
+import { 
+  ChevronDown, 
+  AlertCircle, 
+  Loader2, 
+  Download,
+  FileText
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type EmployeeReportsProps = {
   userId: string;
@@ -73,8 +82,8 @@ export default function UserReports({
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Month Selector */}
       <div className="mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <label className="block text-sm font-medium text-foreground mb-3">
             Seleziona mese:
           </label>
 
@@ -82,27 +91,18 @@ export default function UserReports({
             <button
               type="button"
               onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
-              className="relative w-full sm:w-64 cursor-pointer rounded-lg border border-gray-300 bg-white py-3 pl-4 pr-10 text-left shadow-sm transition hover:border-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="relative w-full sm:w-64 cursor-pointer rounded-lg border border-input bg-background py-3 pl-4 pr-10 text-left shadow-sm transition hover:bg-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
-              <span className="block truncate font-medium text-gray-900">
-                {format(new Date(selectedMonth + "-15"), "MMMM yyyy")}
+              <span className="block truncate font-medium text-foreground">
+                {format(new Date(selectedMonth + "-15"), "MMMM yyyy", { locale: it })}
               </span>
               <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <svg
-                  className={`h-5 w-5 text-gray-400 transition-transform ${
-                    isMonthPickerOpen ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                <ChevronDown
+                  className={cn(
+                    "h-5 w-5 text-muted-foreground transition-transform",
+                    isMonthPickerOpen && "rotate-180"
+                  )}
+                />
               </span>
             </button>
 
@@ -112,7 +112,7 @@ export default function UserReports({
                   className="fixed inset-0 z-10"
                   onClick={() => setIsMonthPickerOpen(false)}
                 />
-                <div className="absolute z-20 mt-1 w-80 rounded-lg bg-white p-4 shadow-lg ring-1 ring-black ring-opacity-5">
+                <div className="absolute z-20 mt-1 w-80 rounded-lg bg-popover p-4 shadow-lg ring-1 ring-black ring-opacity-5 border border-border animate-in fade-in zoom-in-95 duration-200">
                   {/* Year selector */}
                   <select
                     value={pickerYear}
@@ -121,7 +121,7 @@ export default function UserReports({
                       setSelectedMonth(newMonth);
                       setIsMonthPickerOpen(false);
                     }}
-                    className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     {years.map((year) => (
                       <option key={year} value={year}>
@@ -144,11 +144,12 @@ export default function UserReports({
                             setSelectedMonth(monthValue);
                             setIsMonthPickerOpen(false);
                           }}
-                          className={`rounded-md px-3 py-2 text-sm font-medium transition ${
+                          className={cn(
+                            "rounded-md px-3 py-2 text-sm font-medium transition",
                             isSelected
-                              ? "bg-blue-600 text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-foreground hover:bg-muted/80"
+                          )}
                         >
                           {month}
                         </button>
@@ -164,70 +165,39 @@ export default function UserReports({
 
       {/* Error Message */}
       {error && (
-        <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
+        <div className="mb-6 rounded-lg bg-destructive/10 border border-destructive/20 p-4">
           <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-sm font-medium text-red-800">{error}</span>
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <span className="text-sm font-medium text-destructive">{error}</span>
           </div>
         </div>
       )}
 
-      {/* Top stats cards removed as requested */}
-
       {/* Export Section */}
-      <div className="rounded-lg border border-gray-200 bg-white shadow-sm p-6">
+      <div className="rounded-xl border border-border bg-card shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Esporta Report</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Scarica il report delle tue ore lavorate per {format(new Date(selectedMonth + "-15"), "MMMM yyyy")}
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <FileText className="w-5 h-5 text-muted-foreground" />
+              Esporta Report
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Scarica il report delle tue ore lavorate per {format(new Date(selectedMonth + "-15"), "MMMM yyyy", { locale: it })}
             </p>
           </div>
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             {isExporting ? (
               <>
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
+                <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
                 Esportazione...
               </>
             ) : (
               <>
-                <svg
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
+                <Download className="h-5 w-5 mr-2" />
                 Scarica Excel
               </>
             )}
@@ -235,15 +205,15 @@ export default function UserReports({
         </div>
 
         {/* User Info */}
-        <div className="border-t border-gray-200 pt-4">
+        <div className="border-t border-border pt-4">
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <dt className="text-sm font-medium text-gray-500">Nome</dt>
-              <dd className="mt-1 text-sm text-gray-900">{userName}</dd>
+              <dt className="text-sm font-medium text-muted-foreground">Nome</dt>
+              <dd className="mt-1 text-sm text-foreground">{userName}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">Email</dt>
-              <dd className="mt-1 text-sm text-gray-900">{userEmail}</dd>
+              <dt className="text-sm font-medium text-muted-foreground">Email</dt>
+              <dd className="mt-1 text-sm text-foreground">{userEmail}</dd>
             </div>
           </dl>
         </div>

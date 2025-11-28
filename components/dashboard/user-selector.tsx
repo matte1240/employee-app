@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type User = {
   id: string;
@@ -28,15 +30,16 @@ export default function UserSelector({ users, selectedUserId }: UserSelectorProp
   };
 
   return (
-    <div className="mb-6 flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <label htmlFor="user-select" className="text-sm font-medium text-gray-700">
+    <div className="mb-6 flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+      <label htmlFor="user-select" className="text-sm font-medium text-foreground flex items-center gap-2">
+        <Users className="w-4 h-4 text-muted-foreground" />
         Visualizza calendario di:
       </label>
       <select
         id="user-select"
         value={selectedUserId}
         onChange={(e) => handleUserChange(e.target.value)}
-        className="block w-64 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-base font-medium text-gray-900"
+        className="block w-64 rounded-lg border border-input bg-background px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-base font-medium text-foreground"
       >
         {users.map((user) => (
           <option key={user.id} value={user.id}>
