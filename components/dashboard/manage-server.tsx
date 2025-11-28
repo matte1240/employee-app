@@ -8,12 +8,11 @@ import {
   Upload, 
   RefreshCw, 
   AlertTriangle, 
-  CheckCircle, 
   FileText,
-  Loader2,
   HardDrive
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { downloadBlob } from "@/lib/utils";
+import { Card, Alert, Spinner } from "@/components/ui";
 
 interface Backup {
   filename: string;
@@ -107,16 +106,9 @@ export function ManageServer() {
         throw new Error(data.error || "Failed to download backup");
       }
 
-      // Create a blob from the response
+      // Download the blob
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      downloadBlob(blob, filename);
 
       setSuccess(`Backup scaricato: ${filename}`);
     } catch (err) {
@@ -195,7 +187,7 @@ export function ManageServer() {
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+        <Card>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-primary/10 rounded-lg">
               <Database className="w-6 h-6 text-primary" />
@@ -207,25 +199,11 @@ export function ManageServer() {
 
           {/* Alerts */}
           {error && (
-            <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-                <p className="text-sm font-medium text-destructive">
-                  <strong>Errore:</strong> {error}
-                </p>
-              </div>
-            </div>
+            <Alert variant="error" className="mb-6" title="Errore">{error}</Alert>
           )}
 
           {success && (
-            <div className="mb-6 rounded-lg border border-green-500/20 bg-green-500/10 p-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                  <strong>Successo:</strong> {success}
-                </p>
-              </div>
-            </div>
+            <Alert variant="success" className="mb-6" title="Successo">{success}</Alert>
           )}
 
           {/* Actions */}
@@ -250,7 +228,7 @@ export function ManageServer() {
                   disabled={loading}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {loading ? <Spinner size="sm" /> : <Download className="w-4 h-4" />}
                   {loading ? "Creazione in corso..." : "Crea Backup"}
                 </button>
               </div>
@@ -355,7 +333,7 @@ export function ManageServer() {
               </div>
             )}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

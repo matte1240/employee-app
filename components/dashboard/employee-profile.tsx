@@ -7,13 +7,11 @@ import { useSession } from "next-auth/react";
 import type { User } from "@/types/models";
 import { 
   Camera, 
-  Loader2, 
-  CheckCircle, 
-  AlertCircle, 
   Shield,
   User as UserIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card, Alert, Spinner } from "@/components/ui";
 
 type EmployeeProfileProps = {
   user: User;
@@ -142,7 +140,7 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
                 onClick={() => !isUploading && fileInputRef.current?.click()}
               >
                 {isUploading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-white" />
+                  <Spinner size="lg" className="text-white" />
                 ) : (
                   <Camera className="w-8 h-8 text-white" />
                 )}
@@ -176,25 +174,15 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="mb-6 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 p-4">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <span className="text-sm font-medium text-green-800 dark:text-green-300">{success}</span>
-          </div>
-        </div>
+        <Alert variant="success" className="mb-6">{success}</Alert>
       )}
 
       {error && (
-        <div className="mb-6 rounded-lg bg-destructive/10 border border-destructive/20 p-4">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-destructive" />
-            <span className="text-sm font-medium text-destructive">{error}</span>
-          </div>
-        </div>
+        <Alert variant="error" className="mb-6">{error}</Alert>
       )}
 
       {/* Profile Information */}
-      <div className="bg-card rounded-xl shadow-sm border border-border p-6 mb-6">
+      <Card className="mb-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <UserIcon className="w-5 h-5 text-muted-foreground" />
           Informazioni Profilo
@@ -219,10 +207,10 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
             </dd>
           </div>
         </dl>
-      </div>
+      </Card>
 
       {/* Security Section */}
-      <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+      <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -304,7 +292,7 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
             </p>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

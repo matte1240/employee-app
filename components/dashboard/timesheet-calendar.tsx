@@ -753,9 +753,9 @@ export default function TimesheetCalendar({
           hideHeader ? "w-full pb-8" : "mx-auto w-full max-w-7xl px-4 sm:px-6 py-8"
         )}
       >
-        {/* Stats cards */}
+        {/* Stats cards - on mobile, show after calendar */}
         {!hideStats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 order-2 sm:order-1">
             <StatsCard
               title="Totale Mese"
               value={totalHours.toFixed(1)}
@@ -791,7 +791,7 @@ export default function TimesheetCalendar({
         )}
 
         {error && (
-          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 animate-in fade-in slide-in-from-top-2">
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 animate-in fade-in slide-in-from-top-2 order-3 sm:order-2">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-destructive" />
               <p className="text-sm font-medium text-destructive">{error}</p>
@@ -800,7 +800,7 @@ export default function TimesheetCalendar({
         )}
 
         {/* Calendar section */}
-        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden order-1 sm:order-3">
           <div className="border-b border-border px-4 sm:px-6 py-4 bg-muted/30">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="relative z-20">

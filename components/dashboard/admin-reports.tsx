@@ -2,13 +2,9 @@
 
 import { useState, useTransition, useEffect } from "react";
 import type { User, TimeEntryDTO } from "@/types/models";
-import { 
-  Calendar, 
-  Download, 
-  AlertCircle, 
-  Loader2
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Download } from "lucide-react";
+import { cn, downloadBlob } from "@/lib/utils";
+import { Card, Alert, MonthPicker, Spinner } from "@/components/ui";
 
 type UserWithHours = User & {
   regularHours: number;
@@ -31,7 +27,6 @@ export default function AdminReports({ users }: ExportDataProps) {
   const [usersWithMonthHours, setUsersWithMonthHours] = useState<UserWithHours[]>([]);
   const [isLoadingMonthHours, setIsLoadingMonthHours] = useState(false);
   const [isExporting, startExporting] = useTransition();
-  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch users with hours for selected month
@@ -123,14 +118,7 @@ export default function AdminReports({ users }: ExportDataProps) {
         }
 
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `hours_export_${selectedMonth}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        downloadBlob(blob, `hours_export_${selectedMonth}.xlsx`);
       } catch (err) {
         console.error('Errore durante l\'esportazione:', err);
         setError('Errore durante l\'esportazione. Riprova per favore.');
@@ -167,86 +155,14 @@ export default function AdminReports({ users }: ExportDataProps) {
         </p>
       </div>
 
-      {/* Top stats cards removed as requested */}
-
-      <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-sm">
+      <Card>
         {/* Selettore mese */}
         <div className="mb-6">
           <label className="block text-sm font-semibold text-foreground mb-2">
             Seleziona mese
           </label>
-          <div className="relative w-full max-w-xs">
-            <button
-              type="button"
-              onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
-              className="w-full cursor-pointer rounded-lg border border-input bg-background px-4 py-3 text-left text-sm text-foreground font-medium outline-none transition hover:bg-muted focus:ring-2 focus:ring-primary/20 flex items-center justify-between"
-            >
-              <span>
-                {selectedMonth ? new Date(selectedMonth + '-01').toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }) : 'Seleziona un mese'}
-              </span>
-              <Calendar className="w-5 h-5 text-muted-foreground" />
-            </button>
-
-            {isMonthPickerOpen && (
-              <div className="absolute z-10 mt-2 w-full bg-popover border border-border rounded-lg shadow-lg p-4 animate-in fade-in zoom-in-95 duration-200">
-                <div className="mb-3">
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Anno</label>
-                  <select
-                    value={selectedMonth.split('-')[0] || new Date().getFullYear()}
-                    onChange={(e) => {
-                      const year = e.target.value;
-                      const month = selectedMonth.split('-')[1] || '01';
-                      setSelectedMonth(`${year}-${month}`);
-                    }}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground font-medium shadow-sm transition-all hover:bg-accent/50 focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
-                  >
-                    {(() => {
-                      const currentYear = new Date().getFullYear();
-                      const startYear = currentYear - 3;
-                      const endYear = currentYear + 3;
-                      return Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i).reverse().map(year => (
-                        <option key={year} value={year}>{year}</option>
-                      ));
-                    })()}
-                  </select>
-                </div>
-                <div className="mb-3">
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Mese</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'].map((monthName, idx) => {
-                      const monthNum = String(idx + 1).padStart(2, '0');
-                      const year = selectedMonth.split('-')[0] || new Date().getFullYear();
-                      const isSelected = selectedMonth === `${year}-${monthNum}`;
-                      return (
-                        <button
-                          key={monthName}
-                          type="button"
-                          onClick={() => {
-                            setSelectedMonth(`${year}-${monthNum}`);
-                            setIsMonthPickerOpen(false);
-                          }}
-                          className={cn(
-                            "px-3 py-2 text-sm font-semibold rounded transition",
-                            isSelected
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-foreground hover:bg-muted/80"
-                          )}
-                        >
-                          {monthName}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsMonthPickerOpen(false)}
-                  className="w-full mt-2 px-3 py-2 text-sm font-medium text-foreground bg-muted hover:bg-muted/80 rounded transition"
-                >
-                  Chiudi
-                </button>
-              </div>
-            )}
+          <div className="w-full max-w-xs">
+            <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
           </div>
         </div>
 
@@ -276,7 +192,7 @@ export default function AdminReports({ users }: ExportDataProps) {
           {isLoadingMonthHours ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <Loader2 className="inline-block h-8 w-8 animate-spin text-primary" />
+                <Spinner size="lg" />
                 <p className="mt-4 text-sm text-muted-foreground">Caricamento ore...</p>
               </div>
             </div>
@@ -346,22 +262,17 @@ export default function AdminReports({ users }: ExportDataProps) {
                 disabled={isExporting}
                 className="rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
-                {isExporting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
+                {isExporting ? <Spinner size="sm" /> : <Download className="h-5 w-5" />}
                 {isExporting ? 'Esportazione...' : 'Esporta in Excel'}
               </button>
             </div>
           )}
 
           {error && (
-            <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                <p className="text-sm font-medium text-destructive">{error}</p>
-              </div>
-            </div>
+            <Alert variant="error" className="mt-4">{error}</Alert>
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
