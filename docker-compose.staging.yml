@@ -43,6 +43,8 @@ services:
     networks:
       - app-network-staging
     healthcheck:
+      # Using hardcoded defaults since env var expansion doesn't work in CMD-SHELL context
+      # These match the POSTGRES_USER and POSTGRES_DB defaults above
       test: ["CMD-SHELL", "pg_isready -U app -d employee_tracker"]
       interval: 10s
       timeout: 5s
