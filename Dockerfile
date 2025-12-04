@@ -27,6 +27,10 @@ COPY package.json package-lock.json* ./
 # Copy Prisma schema
 COPY prisma ./prisma
 
+# Copy dev entrypoint script
+COPY docker-entrypoint-dev.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expose port
 EXPOSE 3000
 
@@ -36,7 +40,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000
 
-# Default command (can be overridden in docker-compose)
+# Set entrypoint and default command
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
 # Stage 3: Builder
@@ -73,6 +78,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Copy entrypoint script (as root before switching users)
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Copy necessary files from builder
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
@@ -105,5 +114,6 @@ ENV PORT=3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000/api/auth/session', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start the application
+# Set entrypoint and default command
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]
