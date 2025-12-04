@@ -53,18 +53,6 @@ services:
       - ./backups/database:/app/backups/database
     networks:
       - app-network-dev
-    command: >
-      sh -c "
-        echo '🔧 Development mode started' &&
-        echo 'Waiting for database...' &&
-        sleep 3 &&
-        echo 'Running Prisma migrations...' &&
-        npx prisma migrate deploy &&
-        echo 'Generating Prisma client...' &&
-        npx prisma generate &&
-        echo 'Starting Next.js dev server with hot reload...' &&
-        npm run dev
-      "
 
 networks:
   app-network-dev:

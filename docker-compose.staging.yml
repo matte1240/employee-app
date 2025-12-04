@@ -22,15 +22,6 @@ services:
       - ./backups/database:/app/backups/database
     networks:
       - app-network-staging
-    command: >
-      sh -c "
-        echo 'Waiting for database...' &&
-        sleep 5 &&
-        echo 'Running Prisma migrations...' &&
-        npx prisma migrate deploy &&
-        echo 'Starting application...' &&
-        node server.js
-      "
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
