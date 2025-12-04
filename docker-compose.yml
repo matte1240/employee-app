@@ -16,7 +16,10 @@ services:
     networks:
       - employee-tracker-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-employee_tracker}"]
+      test: ["CMD-SHELL", "pg_isready -U app -d employee_tracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   # Next.js Application
   app:
     build:
