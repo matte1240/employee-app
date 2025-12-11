@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AuthSessionProvider from "@/components/auth/session-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -23,13 +23,6 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Hours Tracker",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover",
-  },
   icons: {
     icon: [
       { url: "/logo40.png", type: "image/png" },
@@ -39,6 +32,14 @@ export const metadata: Metadata = {
       { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
