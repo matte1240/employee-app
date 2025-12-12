@@ -7,14 +7,20 @@ import { writeFile, unlink } from "fs/promises";
 import fs from "fs";
 import path from "path";
 import { isAdmin } from "@/lib/utils/user-utils";
+import prisma from "@/lib/prisma";
 
 const execAsync = promisify(exec);
 
 export async function POST(req: NextRequest) {
   try {
-    // Always require admin authentication for database restore
+    // Check if system is in setup mode (no users)
+    const userCount = await prisma.user.count();
+    const isSetupMode = userCount === 0;
+
+    // Require admin authentication unless in setup mode
     const session = await getServerSession(authOptions);
-    if (!session?.user || !isAdmin(session)) {
+    
+    if (!isSetupMode && (!session?.user || !isAdmin(session))) {
       return NextResponse.json(
         { error: "Unauthorized - Admin access required" },
         { status: 401 }

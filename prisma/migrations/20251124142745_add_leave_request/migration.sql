@@ -1,11 +1,19 @@
 -- CreateEnum
-CREATE TYPE "RequestStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+DO $$ BEGIN
+    CREATE TYPE "RequestStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "LeaveType" AS ENUM ('VACATION', 'SICKNESS', 'PERMESSO');
+DO $$ BEGIN
+    CREATE TYPE "LeaveType" AS ENUM ('VACATION', 'SICKNESS', 'PERMESSO');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- CreateTable
-CREATE TABLE "LeaveRequest" (
+CREATE TABLE IF NOT EXISTS "LeaveRequest" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
@@ -20,7 +28,11 @@ CREATE TABLE "LeaveRequest" (
 );
 
 -- CreateIndex
-CREATE INDEX "workdate_idx" ON "TimeEntry"("workDate");
+CREATE INDEX IF NOT EXISTS "workdate_idx" ON "TimeEntry"("workDate");
 
 -- AddForeignKey
-ALTER TABLE "LeaveRequest" ADD CONSTRAINT "LeaveRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "LeaveRequest" ADD CONSTRAINT "LeaveRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
