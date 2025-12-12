@@ -17,6 +17,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 60, // 30 minutes in seconds
   },
+  useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https") ?? false,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -131,8 +132,6 @@ export const authOptions: NextAuthOptions = {
     signIn: "/",
   },
   secret: process.env.NEXTAUTH_SECRET,
-  // Enable secure cookies in production (HTTPS)
-  useSecureCookies: process.env.NODE_ENV === "production",
 };
 
 export const getAuthSession = () => getServerSession(authOptions);
