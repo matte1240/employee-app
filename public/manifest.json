@@ -4,6 +4,7 @@
   "description": "Employee time tracking with admin oversight",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["standalone"],
   "background_color": "#f8fafc",
   "theme_color": "#0f172a",
   "orientation": "portrait-primary",

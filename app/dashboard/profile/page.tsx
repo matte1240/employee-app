@@ -10,10 +10,6 @@ export default async function ProfilePage() {
     redirect("/");
   }
 
-  if (session.user.role !== "EMPLOYEE") {
-    redirect("/dashboard");
-  }
-
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -21,6 +17,7 @@ export default async function ProfilePage() {
       name: true,
       email: true,
       role: true,
+      image: true,
       createdAt: true,
     },
   });
@@ -36,6 +33,7 @@ export default async function ProfilePage() {
         name: user.name,
         email: user.email,
         role: user.role,
+        image: user.image,
         createdAt: user.createdAt,
       }}
     />

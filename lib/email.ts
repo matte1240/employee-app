@@ -1,6 +1,4 @@
 import nodemailer from "nodemailer";
-import { getWelcomeEmailTemplate } from "./email-templates/welcome";
-import { getPasswordResetEmailTemplate } from "./email-templates/password-reset";
 import { getWelcomeSetupEmailTemplate } from "./email-templates/welcome-setup";
 import { getPasswordResetLinkEmailTemplate } from "./email-templates/password-reset-link";
 import { getBackupEmailTemplate } from "./email-templates/backup";
@@ -25,68 +23,6 @@ export async function verifyEmailConnection() {
   } catch (error) {
     console.error("❌ Errore connessione email:", error);
     return false;
-  }
-}
-
-// Template email per nuovo utente
-export async function sendWelcomeEmail(
-  to: string,
-  username: string,
-  temporaryPassword: string
-) {
-  const loginUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const { html, text } = getWelcomeEmailTemplate(
-    username,
-    temporaryPassword,
-    loginUrl
-  );
-
-  const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
-    to,
-    subject: "Benvenuto - Credenziali di accesso",
-    html,
-    text,
-  };
-
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("✅ Email di benvenuto inviata:", info.messageId);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error("❌ Errore invio email benvenuto:", error);
-    throw error;
-  }
-}
-
-// Template email per reset password
-export async function sendPasswordResetEmail(
-  to: string,
-  username: string,
-  newPassword: string
-) {
-  const loginUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const { html, text } = getPasswordResetEmailTemplate(
-    username,
-    newPassword,
-    loginUrl
-  );
-
-  const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
-    to,
-    subject: "Reset Password - Nuova password temporanea",
-    html,
-    text,
-  };
-
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("✅ Email reset password inviata:", info.messageId);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error("❌ Errore invio email reset:", error);
-    throw error;
   }
 }
 
@@ -186,7 +122,7 @@ export async function sendBackupEmail(
 
   const { html } = getBackupEmailTemplate(success, filename, errorMessage);
 
-  const mailOptions: any = {
+  const mailOptions: nodemailer.SendMailOptions = {
     from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
     to,
     subject,

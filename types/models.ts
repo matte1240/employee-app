@@ -12,6 +12,7 @@ export type User = {
   name: string | null;
   email: string;
   role: UserRole;
+  image?: string | null;
   createdAt: Date;
 };
 

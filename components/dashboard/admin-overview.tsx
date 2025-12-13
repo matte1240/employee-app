@@ -3,9 +3,18 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { User, TimeEntryDTO } from "@/types/models";
+import Image from "next/image";
+import { useMemo } from "react";
+import type { User } from "@/types/models";
 import StatsCard from "./stats-card";
+import { 
+  Clock, 
+  Briefcase, 
+  Calendar, 
+  Stethoscope, 
+  UserCog 
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type UserAggregate = User & {
   regularHours: number;
@@ -23,236 +32,184 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
   const now = new Date();
   const currentMonth = format(now, "MMMM yyyy", { locale: it });
 
-  // Leaderboard (mese corrente)
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-  const [topHoursUser, setTopHoursUser] = useState<{ id: string; name: string; value: number } | null>(null);
-  const [topOvertimeUser, setTopOvertimeUser] = useState<{ id: string; name: string; value: number } | null>(null);
-  const [topPermessoUser, setTopPermessoUser] = useState<{ id: string; name: string; value: number } | null>(null);
-  const [topSicknessUser, setTopSicknessUser] = useState<{ id: string; name: string; value: number } | null>(null);
+  // Calculate leaderboard using useMemo to avoid setState in effect
+  const leaderboardData = useMemo(() => {
+    let maxHours = -1; let maxHoursId: string | null = null;
+    let maxOver = -1; let maxOverId: string | null = null;
+    let maxPerm = -1; let maxPermId: string | null = null;
+    let maxSick = -1; let maxSickId: string | null = null;
 
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      setLeaderboardLoading(true);
-      try {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1;
-        const from = `${year}-${String(month).padStart(2, '0')}-01`;
-        const lastDay = new Date(year, month, 0).getDate();
-        const to = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
-        const response = await fetch(`/api/hours?userId=all&from=${from}&to=${to}`);
-        if (!response.ok) {
-          setLeaderboardLoading(false);
-          return;
-        }
-
-        const entries = await response.json();
-        const agg = new Map<string, { regular: number; overtime: number; permesso: number; sickness: number; vacation: number }>();
-
-        entries.forEach((entry: TimeEntryDTO) => {
-          const id = entry.userId;
-          // Skip if userId is missing (should not happen for valid entries)
-          if (!id) return;
-          
-          const cur = agg.get(id) || { regular: 0, overtime: 0, permesso: 0, sickness: 0, vacation: 0 };
-          cur.regular += entry.hoursWorked || 0;
-          cur.overtime += entry.overtimeHours || 0;
-          cur.permesso += entry.permessoHours || 0;
-          cur.sickness += entry.sicknessHours || 0;
-          cur.vacation += entry.vacationHours || 0;
-          agg.set(id, cur);
-        });
-
-        let maxHours = -1; let maxHoursId: string | null = null;
-        let maxOver = -1; let maxOverId: string | null = null;
-        let maxPerm = -1; let maxPermId: string | null = null;
-        let maxSick = -1; let maxSickId: string | null = null;
-
-        for (const [id, v] of agg.entries()) {
-          const total = v.regular + v.overtime;
-          if (total > maxHours) { maxHours = total; maxHoursId = id; }
-          if (v.overtime > maxOver) { maxOver = v.overtime; maxOverId = id; }
-          const permsum = v.permesso + v.vacation;
-          if (permsum > maxPerm) { maxPerm = permsum; maxPermId = id; }
-          if (v.sickness > maxSick) { maxSick = v.sickness; maxSickId = id; }
-        }
-
-        const findName = (id: string | null) => {
-          if (!id) return '—';
-          const u = users.find((x) => x.id === id);
-          return u ? (u.name || u.email) : id;
-        };
-
-        setTopHoursUser(maxHoursId ? { id: maxHoursId, name: findName(maxHoursId), value: Math.max(0, maxHours) } : null);
-        setTopOvertimeUser(maxOverId ? { id: maxOverId, name: findName(maxOverId), value: Math.max(0, maxOver) } : null);
-        setTopPermessoUser(maxPermId ? { id: maxPermId, name: findName(maxPermId), value: Math.max(0, maxPerm) } : null);
-        setTopSicknessUser(maxSickId ? { id: maxSickId, name: findName(maxSickId), value: Math.max(0, maxSick) } : null);
-      } catch (err) {
-        console.error('Error fetching leaderboard:', err);
-      } finally {
-        setLeaderboardLoading(false);
+    for (const user of users) {
+      const total = user.regularHours + user.overtimeHours;
+      if (total > maxHours) { 
+        maxHours = total; 
+        maxHoursId = user.id; 
       }
+      if (user.overtimeHours > maxOver) { 
+        maxOver = user.overtimeHours; 
+        maxOverId = user.id; 
+      }
+      const permsum = user.permessoHours + user.vacationHours;
+      if (permsum > maxPerm) { 
+        maxPerm = permsum; 
+        maxPermId = user.id; 
+      }
+      if (user.sicknessHours > maxSick) { 
+        maxSick = user.sicknessHours; 
+        maxSickId = user.id; 
+      }
+    }
+
+    const findName = (id: string | null) => {
+      if (!id) return '—';
+      const u = users.find((x) => x.id === id);
+      return u ? (u.name || u.email) : id;
     };
 
-    fetchLeaderboard();
+    return {
+      topHoursUser: maxHoursId ? { id: maxHoursId, name: findName(maxHoursId), value: Math.max(0, maxHours) } : null,
+      topOvertimeUser: maxOverId ? { id: maxOverId, name: findName(maxOverId), value: Math.max(0, maxOver) } : null,
+      topPermessoUser: maxPermId ? { id: maxPermId, name: findName(maxPermId), value: Math.max(0, maxPerm) } : null,
+      topSicknessUser: maxSickId ? { id: maxSickId, name: findName(maxSickId), value: Math.max(0, maxSick) } : null,
+    };
   }, [users]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
       {/* Leaderboard Cards (mese corrente) */}
-      <div className="grid gap-6 md:grid-cols-4 mb-8">
+      <div className="grid gap-6 md:grid-cols-4 order-2 md:order-1">
         <StatsCard
           title={`Più Ore (${currentMonth})`}
-          value={topHoursUser ? topHoursUser.name : '—'}
+          value={leaderboardData.topHoursUser ? leaderboardData.topHoursUser.name : '—'}
           color="green"
-          isLoading={leaderboardLoading}
-          icon={
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+          icon={<Clock className="h-6 w-6" />}
         />
 
         <StatsCard
           title="Più Straordinarie"
-          value={topOvertimeUser ? topOvertimeUser.name : '—'}
+          value={leaderboardData.topOvertimeUser ? leaderboardData.topOvertimeUser.name : '—'}
           color="orange"
-          isLoading={leaderboardLoading}
-          icon={
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          }
+          icon={<Briefcase className="h-6 w-6" />}
         />
 
         <StatsCard
           title="Più Perm/Ferie"
-          value={topPermessoUser ? topPermessoUser.name : '—'}
+          value={leaderboardData.topPermessoUser ? leaderboardData.topPermessoUser.name : '—'}
           color="purple"
-          isLoading={leaderboardLoading}
-          icon={
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          }
+          icon={<Calendar className="h-6 w-6" />}
         />
 
         <StatsCard
           title="Più Malattia (ore)"
-          value={topSicknessUser ? topSicknessUser.name : '—'}
+          value={leaderboardData.topSicknessUser ? leaderboardData.topSicknessUser.name : '—'}
           color="red"
-          isLoading={leaderboardLoading}
-          icon={
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          }
+          icon={<Stethoscope className="h-6 w-6" />}
         />
       </div>
 
       {/* Users Table */}
-      <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Utenti e Ore Lavorate</h2>
-            <Link
-              href="/dashboard/users"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-            >
-              <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Gestisci Utenti
-            </Link>
-          </div>
+      <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm overflow-hidden order-1 md:order-2">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground">Utenti e Ore Lavorate</h2>
+          <Link
+            href="/dashboard/users"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 transition-colors shadow-sm"
+          >
+            <UserCog className="h-4 w-4 mr-2" />
+            Gestisci Utenti
+          </Link>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted/50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Utente
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
                   Email
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
                   Ruolo
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Ore Totali
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Ore Straordinarie
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Ore Perm/Ferie
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Ore Malattia
                 </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Azioni
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-border">
               {users.map((user) => {
                 const totalUserHours = user.regularHours + user.overtimeHours;
                 return (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={user.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-blue-600 font-semibold text-sm">
-                            {(user.name || user.email).charAt(0).toUpperCase()}
-                          </span>
+                        <div className="relative flex-shrink-0 h-10 w-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                          {user.image ? (
+                            <Image src={user.image} alt={user.name || "User"} fill className="object-cover" />
+                          ) : (
+                            <span className="text-muted-foreground font-semibold text-sm">
+                              {(user.name || user.email || "?").charAt(0).toUpperCase()}
+                            </span>
+                          )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-foreground">
                             {user.name || "N/A"}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                      <div className="text-sm text-gray-900">{user.email}</div>
+                      <div className="text-sm text-muted-foreground">{user.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      <span className={cn(
+                        "px-2 inline-flex text-xs leading-5 font-semibold rounded-full",
                         user.role === "ADMIN"
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-blue-100 text-blue-700"
-                      }`}>
+                          ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                          : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      )}>
                         {user.role === "ADMIN" ? "Amministratore" : "Dipendente"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm font-semibold text-gray-900">
+                      <div className="text-sm font-semibold text-foreground">
                         {totalUserHours.toFixed(1)}h
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm text-orange-600 font-medium">
+                      <div className="text-sm text-orange-600 dark:text-orange-400 font-medium">
                         {user.overtimeHours.toFixed(1)}h
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm text-purple-600 font-medium">
+                      <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">
                         {(user.permessoHours + user.vacationHours).toFixed(1)}h
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm text-red-600 font-medium">
+                      <div className="text-sm text-red-600 dark:text-red-400 font-medium">
                         {user.sicknessHours.toFixed(1)}h
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <Link
                         href={`/dashboard/calendar?userId=${user.id}`}
-                        className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                        className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
                       >
                         Vedi Calendario
                       </Link>

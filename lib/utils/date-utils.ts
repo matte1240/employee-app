@@ -15,6 +15,11 @@ import { isHoliday } from "./holiday-utils";
  * @returns true if the date is editable, false otherwise
  */
 export function isDateEditable(date: Date, isAdmin = false): boolean {
+  // Admins can edit any date, past or future
+  if (isAdmin) {
+    return true;
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const checkDate = new Date(date);

@@ -15,12 +15,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-background">
       <ActivityTracker />
       <Navbar
         userRole={session.user.role}
         userName={session.user.name}
         userEmail={session.user.email}
+        userImage={session.user.image}
       />
       <main>{children}</main>
     </div>

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import AdminOverview from "@/components/dashboard/admin-overview";
+import PendingRequests from "@/components/dashboard/admin/pending-requests";
 import type { User } from "@/types/models";
 
 type UserAggregate = User & {
@@ -26,17 +27,6 @@ export default async function AdminDashboardPage() {
     redirect("/dashboard");
   }
 
-  const users = (await prisma.user.findMany({
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      createdAt: true,
-    },
-  })) as UserRow[];
-
   // Filter by current month only (to match calendar view)
   const now = new Date();
   const year = now.getFullYear();
@@ -45,21 +35,34 @@ export default async function AdminDashboardPage() {
   const lastDay = new Date(year, month, 0).getDate();
   const lastDayDate = new Date(`${year}-${month.toString().padStart(2, '0')}-${lastDay}T23:59:59.999Z`);
 
-  const totals = await prisma.timeEntry.groupBy({
-    by: ["userId"],
-    _sum: { hoursWorked: true, overtimeHours: true, permessoHours: true, sicknessHours: true, vacationHours: true },
-    where: {
-      workDate: {
-        gte: firstDay,
-        lte: lastDayDate,
+  // Run all queries in parallel for better performance
+  const [users, totals, lastEntries] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        image: true,
+        createdAt: true,
       },
-    },
-  });
-
-  const lastEntries = await prisma.timeEntry.groupBy({
-    by: ["userId"],
-    _max: { workDate: true },
-  });
+    }) as Promise<UserRow[]>,
+    prisma.timeEntry.groupBy({
+      by: ["userId"],
+      _sum: { hoursWorked: true, overtimeHours: true, permessoHours: true, sicknessHours: true, vacationHours: true },
+      where: {
+        workDate: {
+          gte: firstDay,
+          lte: lastDayDate,
+        },
+      },
+    }),
+    prisma.timeEntry.groupBy({
+      by: ["userId"],
+      _max: { workDate: true },
+    }),
+  ]);
 
   const regularHoursMap = new Map<string, number>();
   const overtimeHoursMap = new Map<string, number>();
@@ -101,5 +104,12 @@ export default async function AdminDashboardPage() {
     lastEntry: lastEntryMap.get(user.id) ?? null,
   }));
 
-  return <AdminOverview users={rows} />;
+  return (
+    <div className="space-y-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
+        <PendingRequests />
+      </div>
+      <AdminOverview users={rows} />
+    </div>
+  );
 }

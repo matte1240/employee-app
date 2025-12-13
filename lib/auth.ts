@@ -8,6 +8,7 @@ import prisma from "./prisma";
 
 type CredentialsUser = AdapterUser & {
   role: string;
+  tokenVersion?: number;
 };
 
 export const authOptions: NextAuthOptions = {
@@ -16,6 +17,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 60, // 30 minutes in seconds
   },
+  useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https") ?? false,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -49,6 +51,7 @@ export const authOptions: NextAuthOptions = {
           emailVerified: user.emailVerified,
           image: user.image ?? undefined,
           role: user.role,
+          tokenVersion: user.tokenVersion,
         };
 
         return authUser;
@@ -61,14 +64,11 @@ export const authOptions: NextAuthOptions = {
         const credentialsUser = user as CredentialsUser;
         token.id = credentialsUser.id;
         token.role = credentialsUser.role;
+        token.picture = credentialsUser.image;
         token.lastActivity = Date.now();
         
-        // Salva la tokenVersion al login
-        const dbUser = await prisma.user.findUnique({
-          where: { id: credentialsUser.id },
-          select: { tokenVersion: true },
-        });
-        token.tokenVersion = dbUser?.tokenVersion || 0;
+        // Get tokenVersion from user object (already fetched in authorize)
+        token.tokenVersion = credentialsUser.tokenVersion || 0;
       } else if (token.email) {
         // Check if session is expired (30 minutes of inactivity)
         const lastActivity = (token.lastActivity as number) || 0;
@@ -83,34 +83,38 @@ export const authOptions: NextAuthOptions = {
         // Update lastActivity on token refresh (triggered by client)
         if (trigger === "update") {
           token.lastActivity = now;
+          
+          // Only validate tokenVersion on explicit updates (not on every request)
+          // This reduces database queries significantly while still maintaining security
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email },
+            select: { tokenVersion: true, image: true },
+          });
+          
+          if (dbUser) {
+            // Update image in token
+            token.picture = dbUser.image;
+
+            const tokenVersionInToken = (token.tokenVersion as number) || 0;
+            if (dbUser.tokenVersion !== tokenVersionInToken) {
+              console.log(`🔒 Token invalidated for ${token.email} - password changed`);
+              return {}; // Invalidate the token
+            }
+          }
         }
         
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email },
-          select: { id: true, role: true, tokenVersion: true },
-        });
-
-        if (dbUser) {
-          // Verifica che la tokenVersion corrisponda
-          const tokenVersionInToken = (token.tokenVersion as number) || 0;
-          if (dbUser.tokenVersion !== tokenVersionInToken) {
-            console.log(`🔒 Token invalidated for ${token.email} - password changed`);
-            return {}; // Invalida il token
-          }
-          
-          token.id = dbUser.id;
-          token.role = dbUser.role;
-        }
+        // Keep existing id and role from token (no DB query needed)
       }
       return token;
     },
     async session({ session, token }) {
       if (token && token.id) {
-        const typedToken = token as JWT & { id?: string; role?: string; lastActivity?: number };
+        const typedToken = token as JWT & { id?: string; role?: string; lastActivity?: number; picture?: string };
         session.user = {
           id: typedToken.id ?? session.user?.id ?? "",
           email: session.user?.email ?? typedToken.email ?? "",
           name: session.user?.name ?? (typedToken.name as string | undefined),
+          image: typedToken.picture,
           role: typedToken.role ?? "EMPLOYEE",
         };
         // Add lastActivity to session for client-side tracking
@@ -128,8 +132,6 @@ export const authOptions: NextAuthOptions = {
     signIn: "/",
   },
   secret: process.env.NEXTAUTH_SECRET,
-  // Trust host header to support dynamic URLs (localhost, LAN IPs, production domains)
-  useSecureCookies: false, // Set to false when using HTTP (not HTTPS)
 };
 
 export const getAuthSession = () => getServerSession(authOptions);

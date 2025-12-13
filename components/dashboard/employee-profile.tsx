@@ -1,20 +1,74 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { format } from "date-fns";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
 import type { User } from "@/types/models";
+import { 
+  Camera, 
+  Shield,
+  User as UserIcon
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Card, Alert, Spinner } from "@/components/ui";
 
 type EmployeeProfileProps = {
   user: User;
 };
 
 export default function EmployeeProfile({ user }: EmployeeProfileProps) {
+  const { update } = useSession();
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isUpdating, startUpdating] = useTransition();
+  
+  // Image upload state
+  const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(user.image);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setError(null);
+    setSuccess(null);
+    
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch(`/api/users/${user.id}/image`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Upload failed");
+      }
+
+      const data = await response.json();
+      setAvatarUrl(data.imageUrl);
+      setSuccess("Immagine profilo aggiornata!");
+      
+      // Update session to reflect new image in navbar
+      await update();
+      
+      // Force a router refresh to update server components if needed
+      window.location.reload(); 
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Errore durante il caricamento dell'immagine");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,25 +114,57 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Profile Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-32"></div>
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden mb-6">
+        <div className="bg-gradient-to-r from-primary/80 to-primary h-32"></div>
         <div className="px-6 pb-6">
           <div className="flex items-end -mt-16 mb-4">
-            <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white shadow-lg border-4 border-white">
-              <span className="text-5xl font-bold text-blue-600">
-                {(user.name || user.email).charAt(0).toUpperCase()}
-              </span>
+            <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-background shadow-lg border-4 border-background overflow-hidden group">
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt={user.name || "Profile"}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-muted">
+                  <span className="text-5xl font-bold text-muted-foreground">
+                    {(user.name || user.email).charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              
+              {/* Overlay for upload */}
+              <div 
+                className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                onClick={() => !isUploading && fileInputRef.current?.click()}
+              >
+                {isUploading ? (
+                  <Spinner size="lg" className="text-white" />
+                ) : (
+                  <Camera className="w-8 h-8 text-white" />
+                )}
+              </div>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isUploading}
+              />
             </div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{user.name || "N/A"}</h1>
-            <p className="text-gray-600">{user.email}</p>
+            <h1 className="text-2xl font-bold text-foreground">{user.name || "N/A"}</h1>
+            <p className="text-muted-foreground">{user.email}</p>
             <div className="mt-2">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+              <span className={cn(
+                "inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold",
                 user.role === "ADMIN"
-                  ? "bg-purple-100 text-purple-700"
-                  : "bg-blue-100 text-blue-700"
-              }`}>
+                  ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+              )}>
                 {user.role === "ADMIN" ? "Amministratore" : "Dipendente"}
               </span>
             </div>
@@ -88,71 +174,55 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="mb-6 rounded-lg bg-green-50 border border-green-200 p-4">
-          <div className="flex">
-            <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className="ml-3 text-sm font-medium text-green-800">{success}</span>
-          </div>
-        </div>
+        <Alert variant="success" className="mb-6">{success}</Alert>
       )}
 
       {error && (
-        <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
-          <div className="flex">
-            <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className="ml-3 text-sm font-medium text-red-800">{error}</span>
-          </div>
-        </div>
+        <Alert variant="error" className="mb-6">{error}</Alert>
       )}
 
       {/* Profile Information */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Informazioni Profilo</h2>
+      <Card className="mb-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <UserIcon className="w-5 h-5 text-muted-foreground" />
+          Informazioni Profilo
+        </h2>
         <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
-            <dt className="text-sm font-medium text-gray-500">Nome completo</dt>
-            <dd className="mt-1 text-sm text-gray-900">{user.name || "N/A"}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Nome completo</dt>
+            <dd className="mt-1 text-sm text-foreground">{user.name || "N/A"}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Email</dt>
-            <dd className="mt-1 text-sm text-gray-900">{user.email}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Email</dt>
+            <dd className="mt-1 text-sm text-foreground">{user.email}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Ruolo</dt>
-            <dd className="mt-1 text-sm text-gray-900">{user.role === "ADMIN" ? "Amministratore" : "Dipendente"}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Ruolo</dt>
+            <dd className="mt-1 text-sm text-foreground">{user.role === "ADMIN" ? "Amministratore" : "Dipendente"}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Data registrazione</dt>
-            <dd className="mt-1 text-sm text-gray-900">
+            <dt className="text-sm font-medium text-muted-foreground">Data registrazione</dt>
+            <dd className="mt-1 text-sm text-foreground">
               {format(new Date(user.createdAt), "dd MMMM yyyy")}
             </dd>
           </div>
         </dl>
-      </div>
+      </Card>
 
       {/* Security Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Sicurezza</h2>
-            <p className="text-sm text-gray-600 mt-1">Gestisci la tua password</p>
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Shield className="w-5 h-5 text-muted-foreground" />
+              Sicurezza
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">Gestisci la tua password</p>
           </div>
           {!isEditingPassword && (
             <button
               onClick={() => setIsEditingPassword(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors cursor-pointer"
             >
               Cambia Password
             </button>
@@ -160,9 +230,9 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
         </div>
 
         {isEditingPassword && (
-          <form onSubmit={handlePasswordChange} className="border-t border-gray-200 pt-4 space-y-4">
+          <form onSubmit={handlePasswordChange} className="border-t border-border pt-4 space-y-4">
             <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="newPassword" className="block text-sm font-medium text-foreground">
                 Nuova Password
               </label>
               <input
@@ -171,13 +241,13 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Minimo 8 caratteri"
               />
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground">
                 Conferma Password
               </label>
               <input
@@ -186,7 +256,7 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Ripeti la password"
               />
             </div>
@@ -195,7 +265,7 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
               <button
                 type="submit"
                 disabled={isUpdating}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 {isUpdating ? "Salvataggio..." : "Salva Password"}
               </button>
@@ -207,7 +277,7 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
                   setConfirmPassword("");
                   setError(null);
                 }}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                className="inline-flex items-center px-4 py-2 border border-input text-sm font-medium rounded-lg text-foreground bg-background hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors cursor-pointer"
               >
                 Annulla
               </button>
@@ -216,13 +286,13 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
         )}
 
         {!isEditingPassword && (
-          <div className="border-t border-gray-200 pt-4">
-            <p className="text-sm text-gray-600">
+          <div className="border-t border-border pt-4">
+            <p className="text-sm text-muted-foreground">
               Password configurata. Usa il pulsante sopra per cambiarla.
             </p>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

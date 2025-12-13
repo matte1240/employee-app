@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import ExcelJS from "exceljs";
-import { isAdmin } from "@/lib/utils/user-utils";
+import { requireAuth, isAdmin } from "@/lib/api-middleware";
+import { badRequestResponse, forbiddenResponse, handleError } from "@/lib/api-responses";
+import { decimalToNumber } from "@/lib/utils/serialization";
 
 const exportSchema = z.object({
   userIds: z.array(z.string()),
@@ -11,17 +12,14 @@ const exportSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   const body = await request.json();
   const parsed = exportSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return badRequestResponse("Invalid payload");
   }
 
   const { userIds, month } = parsed.data;
@@ -29,7 +27,7 @@ export async function POST(request: Request) {
   // Check permissions: admin can export any users, employees can only export themselves
   if (!isAdmin(session)) {
     if (userIds.length !== 1 || userIds[0] !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return forbiddenResponse("Unauthorized");
     }
   }
   const [year, monthNum] = month.split("-");
@@ -43,21 +41,170 @@ export async function POST(request: Request) {
     workbook.creator = "Employee Time Tracker";
     workbook.created = new Date();
 
-    // Function to add a worksheet for a user
-    const addUserSheet = async (userId: string) => {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user) throw new Error("User not found");
-
-      const entries = await prisma.timeEntry.findMany({
+    // Batch fetch all users and entries in parallel to avoid N+1 queries
+    // Select only the fields we need to reduce memory usage
+    const [users, allEntries] = await Promise.all([
+      prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      }),
+      prisma.timeEntry.findMany({
         where: {
-          userId,
+          userId: { in: userIds },
           workDate: {
             gte: startDate,
             lte: endDate,
           },
         },
+        select: {
+          userId: true,
+          workDate: true,
+          hoursWorked: true,
+          overtimeHours: true,
+          permessoHours: true,
+          sicknessHours: true,
+          vacationHours: true,
+          morningStart: true,
+          morningEnd: true,
+          afternoonStart: true,
+          afternoonEnd: true,
+          medicalCertificate: true,
+          notes: true,
+        },
         orderBy: { workDate: "asc" },
+      }),
+    ]);
+
+    // Create a map of userId to user for O(1) lookup
+    const userMap = new Map(users.map(user => [user.id, user]));
+    
+    // Group entries by userId for O(1) lookup
+    const entriesByUser = new Map<string, typeof allEntries>();
+    for (const entry of allEntries) {
+      if (!entriesByUser.has(entry.userId)) {
+        entriesByUser.set(entry.userId, []);
+      }
+      entriesByUser.get(entry.userId)!.push(entry);
+    }
+
+    // Add summary sheet if multiple users are selected
+    if (userIds.length > 1) {
+      const summarySheet = workbook.addWorksheet("Riepilogo");
+
+      // Set columns
+      summarySheet.columns = [
+        { key: "name", width: 30 },
+        { key: "hoursWorked", width: 15 },
+        { key: "overtime", width: 15 },
+        { key: "permFerieHours", width: 15 },
+        { key: "sicknessHours", width: 15 },
+        { key: "totalHours", width: 15 },
+      ];
+
+      // Format month for title (Italian)
+      const [y, m] = month.split("-");
+      const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1);
+      const monthName = dateObj.toLocaleString("it-IT", { month: "long" });
+      const capitalizedMonth =
+        monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+      const titleRow = summarySheet.addRow([
+        `Riepilogo Ore - ${capitalizedMonth} ${y}`,
+      ]);
+      titleRow.font = { size: 16, bold: true };
+      summarySheet.mergeCells("A1:F1");
+      titleRow.alignment = { horizontal: "center", vertical: "middle" };
+      titleRow.height = 30;
+
+      // Header
+      const headerRow = summarySheet.addRow([
+        "Dipendente",
+        "Ore Ordinarie",
+        "Straordinario",
+        "Ore Perm/Ferie",
+        "Ore Malattia",
+        "Totale Ore",
+      ]);
+
+      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      headerRow.alignment = { horizontal: "center", vertical: "middle" };
+      headerRow.height = 20;
+
+      for (let i = 1; i <= 6; i++) {
+        headerRow.getCell(i).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF4472C4" },
+        };
+      }
+
+      // Data rows
+      for (const userId of userIds) {
+        const user = userMap.get(userId);
+        if (!user) continue;
+
+        const entries = entriesByUser.get(userId) || [];
+
+        let totalHoursWorked = 0;
+        let totalOvertime = 0;
+        let totalPermFerie = 0;
+        let totalSickness = 0;
+
+        entries.forEach((entry) => {
+          const hoursWorked = decimalToNumber(entry.hoursWorked);
+          const overtime = decimalToNumber(entry.overtimeHours);
+          const permessoHours = decimalToNumber(entry.permessoHours);
+          const vacationHours = decimalToNumber(entry.vacationHours);
+          const sicknessHours = decimalToNumber(entry.sicknessHours);
+
+          totalHoursWorked += hoursWorked;
+          totalOvertime += overtime;
+          totalPermFerie += permessoHours + vacationHours;
+          totalSickness += sicknessHours;
+        });
+
+        const row = summarySheet.addRow({
+          name: user.name || user.email,
+          hoursWorked: totalHoursWorked,
+          overtime: totalOvertime,
+          permFerieHours: totalPermFerie,
+          sicknessHours: totalSickness,
+          totalHours: totalHoursWorked + totalOvertime,
+        });
+
+        // Formatting
+        row.getCell(2).numFmt = "0.00";
+        row.getCell(3).numFmt = "0.00";
+        row.getCell(4).numFmt = "0.00";
+        row.getCell(5).numFmt = "0.00";
+        row.getCell(6).numFmt = "0.00";
+      }
+
+      // Add borders
+      summarySheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1) {
+          row.eachCell((cell) => {
+            cell.border = {
+              top: { style: "thin" },
+              left: { style: "thin" },
+              bottom: { style: "thin" },
+              right: { style: "thin" },
+            };
+          });
+        }
       });
+    }
+
+    // Function to add a worksheet for a user
+    const addUserSheet = (userId: string) => {
+      const user = userMap.get(userId);
+      if (!user) throw new Error("User not found");
+
+      const entries = entriesByUser.get(userId) || [];
 
       // Check if this specific user has any medical certificates in this month
       const includeMedicalCertificate = entries.some(
@@ -147,17 +294,11 @@ export async function POST(request: Request) {
       let totalSicknessSum = 0;
 
       entries.forEach((entry) => {
-        const hoursWorked = parseFloat(entry.hoursWorked.toString());
-        const overtime = parseFloat(entry.overtimeHours.toString());
-        const permessoHours = entry.permessoHours
-          ? parseFloat(entry.permessoHours.toString())
-          : 0;
-        const sicknessHours = entry.sicknessHours
-          ? parseFloat(entry.sicknessHours.toString())
-          : 0;
-        const vacationHours = entry.vacationHours
-          ? parseFloat(entry.vacationHours.toString())
-          : 0;
+        const hoursWorked = decimalToNumber(entry.hoursWorked);
+        const overtime = decimalToNumber(entry.overtimeHours);
+        const permessoHours = decimalToNumber(entry.permessoHours);
+        const sicknessHours = decimalToNumber(entry.sicknessHours);
+        const vacationHours = decimalToNumber(entry.vacationHours);
         const permFerieHours = permessoHours + vacationHours;
         const totalHours = hoursWorked + overtime;
 
@@ -298,7 +439,7 @@ export async function POST(request: Request) {
 
     // Add a sheet for each user
     for (const userId of userIds) {
-      await addUserSheet(userId);
+      addUserSheet(userId);
     }
 
     // Generate Excel file buffer
@@ -314,10 +455,6 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Export error:", error);
-    return NextResponse.json(
-      { error: "Failed to export data" },
-      { status: 500 }
-    );
+    return handleError(error, "exporting data");
   }
 }
