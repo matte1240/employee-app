@@ -6,6 +6,8 @@ import { performBackup } from "@/lib/db-backup";
 import path from "path";
 import fs from "fs";
 
+export const runtime = 'nodejs';
+
 export async function POST() {
   try {
     // Check authentication and admin role
