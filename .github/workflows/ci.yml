@@ -1,9 +1,10 @@
-name: Main - Build
+name: CI/CD
 
 on:
   push:
     branches:
       - main
+      - develop
   workflow_dispatch:
 
 env:
@@ -11,13 +12,12 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Job 1: Build - Build and push Docker image
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,9 +38,13 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest
-            type=raw,value=production
-            type=sha,prefix=prod-
+            # Main branch tags
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=production,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=prod-,enable=${{ github.ref == 'refs/heads/main' }}
+            # Develop branch tags
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=sha,prefix=dev-,enable=${{ github.ref == 'refs/heads/develop' }}
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -56,7 +60,7 @@ jobs:
       
       - name: Summary
         run: |
-          echo "### ✅ Docker Build Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Build Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -64,4 +68,3 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
