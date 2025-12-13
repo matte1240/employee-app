@@ -1,4 +1,4 @@
-name: Deploy to Staging
+name: Build Staging
 
 on:
   push:
@@ -52,79 +52,4 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-  
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to staging server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
-          port: ${{ secrets.STAGING_PORT || 22 }}
-          script: |
-            set -e
-            echo "🚀 Starting deployment to staging..."
-            
-            # Navigate to app directory
-            cd ${{ secrets.STAGING_APP_DIR || '/opt/employee-app' }}
-            
-            # Pull latest changes
-            git fetch origin
-            git checkout staging
-            git pull origin staging
-            
-            # Log in to GitHub Container Registry
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Pull latest image
-            docker compose -f docker-compose.staging.yml pull
-            
-            # Stop and remove old containers
-            docker compose -f docker-compose.staging.yml down
-            
-            # Start new containers (migrations run automatically in container)
-            docker compose -f docker-compose.staging.yml up -d
-            
-            # Wait for health check
-            echo "⏳ Waiting for services to be healthy..."
-            sleep 10
-            
-            # Check if app is running
-            if docker compose -f docker-compose.staging.yml ps | grep -q "Up"; then
-              echo "✅ Deployment successful!"
-              docker compose -f docker-compose.staging.yml ps
-            else
-              echo "❌ Deployment failed!"
-              docker compose -f docker-compose.staging.yml logs --tail=50
-              exit 1
-            fi
-            
-            # Cleanup old images (including unused tagged images)
-            docker image prune -a -f
-            
-            echo "🎉 Staging deployment completed!"
-      
-      - name: Deployment Summary
-        if: success()
-        run: |
-          echo "### ✅ Staging Deployment Successful!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** Staging" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Server:** \`${{ secrets.STAGING_HOST }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Images deployed:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ needs.build.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-      
-      - name: Notify on failure
-        if: failure()
-        run: |
-          echo "### ❌ Staging Deployment Failed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Check the logs above for details." >> $GITHUB_STEP_SUMMARY
+
