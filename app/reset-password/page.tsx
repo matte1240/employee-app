@@ -4,7 +4,6 @@ import { useState, useTransition, FormEvent, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Lock, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 function ResetPasswordForm() {
   const router = useRouter();

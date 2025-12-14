@@ -16,6 +16,7 @@ import {
   X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LeaveType } from "@/types/models";
 
 type LeaveRequest = {
   id: string;
@@ -200,7 +201,7 @@ export default function PendingRequests() {
                     onChange={(e) =>
                       setEditForm({ 
                         ...editForm, 
-                        type: e.target.value as any,
+                        type: e.target.value as LeaveType,
                         endDate: e.target.value === "PERMESSO" ? editForm.startDate : editForm.endDate 
                       })
                     }
@@ -309,7 +310,7 @@ export default function PendingRequests() {
                   
                   {req.reason && (
                     <p className="text-xs text-muted-foreground italic mt-1">
-                      "{req.reason}"
+                      &quot;{req.reason}&quot;
                     </p>
                   )}
                 </div>

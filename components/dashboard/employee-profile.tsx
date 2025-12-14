@@ -11,7 +11,9 @@ import {
   User as UserIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Card, Alert, Spinner } from "@/components/ui";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
 
 type EmployeeProfileProps = {
   user: User;

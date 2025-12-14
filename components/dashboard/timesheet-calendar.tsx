@@ -31,19 +31,15 @@ import {
   Clock,
   Briefcase,
   AlertCircle,
-  Trash2,
-  MoreVertical,
   Sun,
   Stethoscope,
-  FileText,
-  CheckCircle2,
   XCircle,
   Loader2,
   Plus,
 } from "lucide-react";
 import LogoutButton from "@/components/auth/logout-button";
 import StatsCard from "./stats-card";
-import type { TimeEntryDTO } from "@/types/models";
+import type { TimeEntryDTO, LeaveRequestDTO } from "@/types/models";
 import { calculateHours, TIME_OPTIONS } from "@/lib/utils/time-utils";
 import { isDateEditable as isDateEditableUtil } from "@/lib/utils/date-utils";
 import { isHoliday, getHolidayName } from "@/lib/utils/holiday-utils";
@@ -100,7 +96,7 @@ export default function TimesheetCalendar({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [isRefetching, setIsRefetching] = useState(false);
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<LeaveRequestDTO[]>([]);
   const [modalForm, setModalForm] = useState<ModalFormState>({
     morningStart: "08:00",
     morningEnd: "12:00",
@@ -334,7 +330,7 @@ export default function TimesheetCalendar({
     const morningWorked = modalForm.isMorningPermesso ? 0 : calculateHours(modalForm.morningStart, modalForm.morningEnd);
     const afternoonWorked = modalForm.isAfternoonPermesso ? 0 : calculateHours(modalForm.afternoonStart, modalForm.afternoonEnd);
     
-    let totalWorked = morningWorked + afternoonWorked;
+    const totalWorked = morningWorked + afternoonWorked;
     let overlap = 0;
 
     // Check for approved permission requests for this day

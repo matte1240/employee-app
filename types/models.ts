@@ -33,3 +33,24 @@ export type TimeEntryDTO = {
   medicalCertificate?: string | null;
   notes?: string | null;
 };
+
+export type LeaveType = "VACATION" | "SICKNESS" | "PERMESSO";
+export type RequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type LeaveRequestDTO = {
+  id: string;
+  userId: string;
+  startDate: string;
+  endDate: string;
+  type: LeaveType;
+  status: RequestStatus;
+  reason?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  createdAt: string;
+  user?: {
+    name: string | null;
+    email: string;
+  };
+};
+

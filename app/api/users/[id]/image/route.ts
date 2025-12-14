@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { writeFile, mkdir, unlink } from "fs/promises";
+import fs from "fs";
 import path from "path";
 import sharp from "sharp";
 import { requireAuth } from "@/lib/api-middleware";
@@ -110,7 +111,6 @@ export async function POST(
     await writeFile(filePath, processedBuffer);
 
     // Verify write
-    const fs = require('fs');
     if (fs.existsSync(filePath)) {
       console.log(`[Upload] File successfully written: ${filePath}`);
       console.log(`[Upload] Directory contents:`, fs.readdirSync(uploadDir));

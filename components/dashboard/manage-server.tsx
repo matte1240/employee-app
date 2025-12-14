@@ -11,8 +11,10 @@ import {
   FileText,
   HardDrive
 } from "lucide-react";
-import { downloadBlob } from "@/lib/utils";
-import { Card, Alert, Spinner } from "@/components/ui";
+import { downloadBlob } from "@/lib/utils/file-utils";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Backup {
   filename: string;
@@ -32,7 +34,7 @@ export function ManageServer() {
   const fetchBackups = useCallback(async () => {
     try {
       setError(null);
-      const response = await fetch("/api/db/list");
+      const response = await fetch("/api/admin/backups");
 
       if (response.status === 401) {
         router.push("/");
@@ -62,7 +64,7 @@ export function ManageServer() {
       setError(null);
       setSuccess(null);
 
-      const response = await fetch("/api/db/backup", {
+      const response = await fetch("/api/admin/backups", {
         method: "POST",
       });
 
@@ -93,7 +95,7 @@ export function ManageServer() {
       setSuccess(null);
 
       const response = await fetch(
-        `/api/db/backup?filename=${encodeURIComponent(filename)}`
+        `/api/admin/backups?filename=${encodeURIComponent(filename)}`
       );
 
       if (response.status === 401) {
@@ -147,7 +149,7 @@ export function ManageServer() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/db/restore", {
+      const response = await fetch("/api/admin/backups/restore", {
         method: "POST",
         body: formData,
       });

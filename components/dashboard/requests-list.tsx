@@ -9,7 +9,6 @@ import {
   CheckCircle2, 
   XCircle, 
   Clock, 
-  MoreHorizontal, 
   Edit2, 
   Trash2, 
   Check, 
@@ -35,10 +34,9 @@ type LeaveRequest = {
 
 type RequestsListProps = {
   isAdmin: boolean;
-  userId?: string;
 };
 
-export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
+export default function RequestsList({ isAdmin }: RequestsListProps) {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
@@ -69,6 +67,7 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
 
   useEffect(() => {
     fetchRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStatus]);
 
   const handleAction = async (id: string, status: "APPROVED" | "REJECTED") => {
@@ -102,10 +101,6 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingRequest(null);
-  };
-
-  const handleSaveEdit = () => {
-    fetchRequests();
   };
 
   const deleteRequest = async (id: string) => {
@@ -355,7 +350,7 @@ export default function RequestsList({ isAdmin, userId }: RequestsListProps) {
                   )}
                   {req.reason && (
                     <p className="text-xs italic mt-2 border-l-2 border-muted pl-2">
-                      "{req.reason}"
+                      &quot;{req.reason}&quot;
                     </p>
                   )}
                 </div>

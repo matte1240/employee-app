@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RequestStatus } from "@/types/models";
 
 const VALID_TIME_SLOTS = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00",
@@ -94,8 +95,8 @@ export default function RequestLeaveModal({ isOpen, onClose, editRequest }: Requ
           onClose();
           router.refresh();
         }, 1500);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Si è verificato un errore");
       }
     });
   };
@@ -247,7 +248,7 @@ export default function RequestLeaveModal({ isOpen, onClose, editRequest }: Requ
                 className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-accent/50 cursor-pointer"
                 value={formData.status}
                 onChange={(e) =>
-                  setFormData({ ...formData, status: e.target.value as any })
+                  setFormData({ ...formData, status: e.target.value as RequestStatus })
                 }
               >
                 <option value="PENDING">In Attesa</option>

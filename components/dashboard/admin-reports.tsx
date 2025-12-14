@@ -3,8 +3,12 @@
 import { useState, useTransition, useEffect } from "react";
 import type { User, TimeEntryDTO } from "@/types/models";
 import { Download } from "lucide-react";
-import { cn, downloadBlob } from "@/lib/utils";
-import { Card, Alert, MonthPicker, Spinner } from "@/components/ui";
+import { cn } from "@/lib/utils";
+import { downloadBlob } from "@/lib/utils/file-utils";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
+import { MonthPicker } from "@/components/ui/month-picker";
+import { Spinner } from "@/components/ui/spinner";
 
 type UserWithHours = User & {
   regularHours: number;
