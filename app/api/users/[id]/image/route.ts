@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { requireAuth } from "@/lib/api-middleware";
 import {
@@ -13,29 +13,29 @@ import {
 // Validate image file by checking magic bytes (file signature)
 function validateImageMagicBytes(buffer: Buffer): boolean {
   if (buffer.length < 8) return false;
-  
+
   // JPEG: FF D8 FF
   if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
     return true;
   }
-  
+
   // PNG: 89 50 4E 47 0D 0A 1A 0A
   if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47 &&
-      buffer[4] === 0x0D && buffer[5] === 0x0A && buffer[6] === 0x1A && buffer[7] === 0x0A) {
+    buffer[4] === 0x0D && buffer[5] === 0x0A && buffer[6] === 0x1A && buffer[7] === 0x0A) {
     return true;
   }
-  
+
   // GIF: 47 49 46 38
   if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) {
     return true;
   }
-  
+
   // WebP: 52 49 46 46 ... 57 45 42 50
   if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
-      buffer.length > 11 && buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) {
+    buffer.length > 11 && buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -84,7 +84,22 @@ export async function POST(
   const filePath = path.join(uploadDir, filename);
 
   try {
+    console.log(`[Upload] Preparing to write to: ${uploadDir}`);
+    console.log(`[Upload] File path: ${filePath}`);
+    console.log(`[Upload] Buffer size: ${buffer.length}`);
+
+    await mkdir(uploadDir, { recursive: true });
     await writeFile(filePath, buffer);
+
+    // Verify write
+    const fs = require('fs');
+    if (fs.existsSync(filePath)) {
+      console.log(`[Upload] File successfully written: ${filePath}`);
+      console.log(`[Upload] Directory contents:`, fs.readdirSync(uploadDir));
+    } else {
+      console.error(`[Upload] CRITICAL: File not found after write: ${filePath}`);
+    }
+
     const imageUrl = `/uploads/${filename}`;
 
     await prisma.user.update({
@@ -94,6 +109,7 @@ export async function POST(
 
     return successResponse({ imageUrl });
   } catch (error) {
+    console.error("[Upload] Error:", error);
     return handleError(error, "uploading file");
   }
 }

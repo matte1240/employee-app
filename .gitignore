@@ -70,3 +70,6 @@ build.log
 /public/workbox-*.js.map
 /public/fallback-*.js
 
+# user content
+/public/uploads
+
