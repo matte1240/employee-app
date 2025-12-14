@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
+import fs from "fs";
 import path from "path";
+import sharp from "sharp";
 import { requireAuth } from "@/lib/api-middleware";
 import {
   successResponse,
@@ -53,6 +55,12 @@ export async function POST(
     return forbiddenResponse("Forbidden");
   }
 
+  // Fetch current user to get old image
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { image: true },
+  });
+
   const formData = await req.formData();
   const file = formData.get("image") as File | null;
 
@@ -77,22 +85,32 @@ export async function POST(
   if (!isValidImage) {
     return badRequestResponse("Invalid image file");
   }
-  // Sanitize filename or generate a new one to prevent directory traversal or overwrites
-  const ext = path.extname(file.name);
-  const filename = `${userId}-${Date.now()}${ext}`;
+  
+  // Generate filename with .webp extension
+  const filename = `${userId}-${Date.now()}.webp`;
   const uploadDir = path.join(process.cwd(), "public/uploads");
   const filePath = path.join(uploadDir, filename);
 
   try {
     console.log(`[Upload] Preparing to write to: ${uploadDir}`);
-    console.log(`[Upload] File path: ${filePath}`);
-    console.log(`[Upload] Buffer size: ${buffer.length}`);
-
+    
     await mkdir(uploadDir, { recursive: true });
-    await writeFile(filePath, buffer);
+
+    // Process image with Sharp: Resize to 500x500 cover, convert to WebP
+    const processedBuffer = await sharp(buffer)
+      .resize(500, 500, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    console.log(`[Upload] Original size: ${buffer.length}, Processed size: ${processedBuffer.length}`);
+    console.log(`[Upload] File path: ${filePath}`);
+
+    await writeFile(filePath, processedBuffer);
 
     // Verify write
-    const fs = require('fs');
     if (fs.existsSync(filePath)) {
       console.log(`[Upload] File successfully written: ${filePath}`);
       console.log(`[Upload] Directory contents:`, fs.readdirSync(uploadDir));
@@ -106,6 +124,26 @@ export async function POST(
       where: { id: userId },
       data: { image: imageUrl },
     });
+
+    // Delete old image if exists
+    if (currentUser?.image) {
+      // Remove leading slash if present to join correctly
+      const relativePath = currentUser.image.startsWith('/') 
+        ? currentUser.image.slice(1) 
+        : currentUser.image;
+        
+      const oldImagePath = path.join(process.cwd(), "public", relativePath);
+      
+      try {
+        // Check if file exists before trying to delete
+        if (fs.existsSync(oldImagePath)) {
+          await unlink(oldImagePath);
+          console.log(`[Upload] Deleted old image: ${oldImagePath}`);
+        }
+      } catch (error) {
+        console.warn(`[Upload] Failed to delete old image:`, error);
+      }
+    }
 
     return successResponse({ imageUrl });
   } catch (error) {

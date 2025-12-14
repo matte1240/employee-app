@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Users } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 type User = {
   id: string;

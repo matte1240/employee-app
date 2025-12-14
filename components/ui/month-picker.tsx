@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Calendar, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect, forwardRef } from "react";
 
 export interface MonthPickerProps {

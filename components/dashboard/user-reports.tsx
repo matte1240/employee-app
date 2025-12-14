@@ -4,8 +4,11 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Download, FileText } from "lucide-react";
-import { downloadBlob } from "@/lib/utils";
-import { Card, Alert, MonthPicker, Spinner } from "@/components/ui";
+import { downloadBlob } from "@/lib/utils/file-utils";
+import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
+import { MonthPicker } from "@/components/ui/month-picker";
+import { Spinner } from "@/components/ui/spinner";
 
 type EmployeeReportsProps = {
   userId: string;

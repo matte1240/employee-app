@@ -3,7 +3,6 @@
 import { useState, useTransition, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, Upload, Loader2, FileText } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const initialState = {
   name: "",
@@ -37,7 +36,7 @@ export default function SetupForm() {
       const formData = new FormData();
       formData.append("file", restoreFile);
 
-      const response = await fetch("/api/db/restore", {
+      const response = await fetch("/api/admin/backups/restore", {
         method: "POST",
         body: formData,
       });
