@@ -12,7 +12,7 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backups/database:/backups
+      - app_backups:/backups
     networks:
       - employee-tracker-network
     healthcheck:
@@ -23,12 +23,6 @@ services:
 
   # Next.js Application
   app:
-    # Build context is optional here if we always pull image in prod, 
-    # but keeping it allows 'docker compose build' to work.
-    # In dev, we will override this to target 'dev' stage if needed.
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: ghcr.io/matte1240/employee-app:${TAG:-latest}
     container_name: employee-tracker-app
     restart: unless-stopped
@@ -63,8 +57,9 @@ services:
     ports:
       - "${APP_PORT:-3000}:3000"
     volumes:
-      - ./logs:/app/logs
-      - ./backups/database:/app/backups/database
+      - app_logs:/app/logs
+      - app_backups:/app/backups/database
+      - app_uploads:/app/public/uploads
     networks:
       - employee-tracker-network
 
@@ -74,5 +69,11 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
+  app_logs:
+    driver: local
+  app_backups:
+    driver: local
+  app_uploads:
     driver: local
 

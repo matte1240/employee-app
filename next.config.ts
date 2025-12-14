@@ -21,6 +21,16 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  // Rewrite for uploads to bypass static file serving issues in Docker
+  async rewrites() {
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: '/api/uploads/:path*',
+      },
+    ];
+  },
 };
 
 export default withPWA({
