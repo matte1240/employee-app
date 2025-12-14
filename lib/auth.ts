@@ -13,6 +13,8 @@ type CredentialsUser = AdapterUser & {
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
   session: {
     strategy: "jwt",
     maxAge: 30 * 60, // 30 minutes in seconds
@@ -131,7 +133,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/",
   },
-  secret: process.env.NEXTAUTH_SECRET,
 };
 
 export const getAuthSession = () => getServerSession(authOptions);
