@@ -19,6 +19,8 @@ type UserRow = {
   email: string;
   role: UserRole;
   createdAt: Date;
+  hasPermesso104: boolean;
+  hasPaternityLeave: boolean;
 };
 
 const createUserSchema = z.object({
@@ -26,6 +28,8 @@ const createUserSchema = z.object({
   name: z.string().min(1).max(100),
   password: z.string().min(8).max(64),
   role: z.enum(["EMPLOYEE", "ADMIN"]).default("EMPLOYEE"),
+  hasPermesso104: z.boolean().optional().default(false),
+  hasPaternityLeave: z.boolean().optional().default(false),
 });
 
 export async function GET() {
@@ -41,6 +45,8 @@ export async function GET() {
         email: true,
         role: true,
         createdAt: true,
+        hasPermesso104: true,
+        hasPaternityLeave: true,
       },
     }) as Promise<UserRow[]>,
     prisma.timeEntry.groupBy({
@@ -88,6 +94,8 @@ export async function POST(request: Request) {
         name: parsed.data.name,
         passwordHash: await hash(parsed.data.password, 10),
         role: parsed.data.role,
+        hasPermesso104: parsed.data.hasPermesso104,
+        hasPaternityLeave: parsed.data.hasPaternityLeave,
       },
     });
 

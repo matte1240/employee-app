@@ -14,6 +14,8 @@ export type User = {
   role: UserRole;
   image?: string | null;
   createdAt: Date;
+  hasPermesso104?: boolean;
+  hasPaternityLeave?: boolean;
 };
 
 // Time entry data transfer object
@@ -26,6 +28,8 @@ export type TimeEntryDTO = {
   permessoHours?: number;
   sicknessHours?: number;
   vacationHours?: number;
+  permesso104Hours?: number;
+  paternityHours?: number;
   morningStart?: string | null;
   morningEnd?: string | null;
   afternoonStart?: string | null;

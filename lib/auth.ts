@@ -9,6 +9,8 @@ import prisma from "./prisma";
 type CredentialsUser = AdapterUser & {
   role: string;
   tokenVersion?: number;
+  hasPermesso104: boolean;
+  hasPaternityLeave: boolean;
 };
 
 export const authOptions: NextAuthOptions = {
@@ -54,6 +56,8 @@ export const authOptions: NextAuthOptions = {
           image: user.image ?? undefined,
           role: user.role,
           tokenVersion: user.tokenVersion,
+          hasPermesso104: user.hasPermesso104,
+          hasPaternityLeave: user.hasPaternityLeave,
         };
 
         return authUser;
@@ -67,6 +71,8 @@ export const authOptions: NextAuthOptions = {
         token.id = credentialsUser.id;
         token.role = credentialsUser.role;
         token.picture = credentialsUser.image;
+        token.hasPermesso104 = credentialsUser.hasPermesso104;
+        token.hasPaternityLeave = credentialsUser.hasPaternityLeave;
         token.lastActivity = Date.now();
         
         // Get tokenVersion from user object (already fetched in authorize)
@@ -90,12 +96,14 @@ export const authOptions: NextAuthOptions = {
           // This reduces database queries significantly while still maintaining security
           const dbUser = await prisma.user.findUnique({
             where: { email: token.email },
-            select: { tokenVersion: true, image: true },
+            select: { tokenVersion: true, image: true, hasPermesso104: true, hasPaternityLeave: true },
           });
           
           if (dbUser) {
             // Update image in token
             token.picture = dbUser.image;
+            token.hasPermesso104 = dbUser.hasPermesso104;
+            token.hasPaternityLeave = dbUser.hasPaternityLeave;
 
             const tokenVersionInToken = (token.tokenVersion as number) || 0;
             if (dbUser.tokenVersion !== tokenVersionInToken) {
@@ -111,13 +119,15 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && token.id) {
-        const typedToken = token as JWT & { id?: string; role?: string; lastActivity?: number; picture?: string };
+        const typedToken = token as JWT & { id?: string; role?: string; lastActivity?: number; picture?: string; hasPermesso104?: boolean; hasPaternityLeave?: boolean };
         session.user = {
           id: typedToken.id ?? session.user?.id ?? "",
           email: session.user?.email ?? typedToken.email ?? "",
           name: session.user?.name ?? (typedToken.name as string | undefined),
           image: typedToken.picture,
           role: typedToken.role ?? "EMPLOYEE",
+          hasPermesso104: typedToken.hasPermesso104 ?? false,
+          hasPaternityLeave: typedToken.hasPaternityLeave ?? false,
         };
         // Add lastActivity to session for client-side tracking
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

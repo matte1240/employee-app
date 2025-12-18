@@ -17,6 +17,8 @@ type PrismaEntry = {
   permessoHours: Decimal;
   vacationHours: Decimal;
   sicknessHours: Decimal;
+  permesso104Hours: Decimal;
+  paternityHours: Decimal;
   morningStart: string | null;
   morningEnd: string | null;
   afternoonStart: string | null;
@@ -28,6 +30,8 @@ type UserRow = {
   id: string;
   name: string | null;
   email: string;
+  hasPermesso104: boolean;
+  hasPaternityLeave: boolean;
 };
 
 const toDto = (entry: PrismaEntry): TimeEntryDTO => ({
@@ -39,6 +43,8 @@ const toDto = (entry: PrismaEntry): TimeEntryDTO => ({
   permessoHours: parseFloat(entry.permessoHours.toString()),
   vacationHours: parseFloat(entry.vacationHours.toString()),
   sicknessHours: parseFloat(entry.sicknessHours.toString()),
+  permesso104Hours: parseFloat(entry.permesso104Hours.toString()),
+  paternityHours: parseFloat(entry.paternityHours.toString()),
   morningStart: entry.morningStart,
   morningEnd: entry.morningEnd,
   afternoonStart: entry.afternoonStart,
@@ -69,6 +75,8 @@ export default async function CalendarPage({
     hoursWorked: true,
     overtimeHours: true,
     permessoHours: true,
+    permesso104Hours: true,
+    paternityHours: true,
     vacationHours: true,
     sicknessHours: true,
     morningStart: true,
@@ -81,6 +89,10 @@ export default async function CalendarPage({
   let users: UserRow[] = [];
   let targetUserId = session.user.id;
   let targetUserName = session.user.name ?? session.user.email;
+  let targetUserFeatures = {
+    hasPermesso104: session.user.hasPermesso104,
+    hasPaternityLeave: session.user.hasPaternityLeave,
+  };
 
   if (isAdmin) {
     // Get all users for the dropdown
@@ -90,6 +102,8 @@ export default async function CalendarPage({
         id: true,
         name: true,
         email: true,
+        hasPermesso104: true,
+        hasPaternityLeave: true,
       },
     })) as UserRow[];
 
@@ -99,6 +113,18 @@ export default async function CalendarPage({
       const targetUser = users.find((u) => u.id === targetUserId);
       if (targetUser) {
         targetUserName = targetUser.name ?? targetUser.email;
+        targetUserFeatures = {
+          hasPermesso104: targetUser.hasPermesso104,
+          hasPaternityLeave: targetUser.hasPaternityLeave,
+        };
+      }
+    } else {
+      const me = users.find((u) => u.id === session.user.id);
+      if (me) {
+        targetUserFeatures = {
+          hasPermesso104: me.hasPermesso104,
+          hasPaternityLeave: me.hasPaternityLeave,
+        };
       }
     }
   }
@@ -129,6 +155,7 @@ export default async function CalendarPage({
         userName={targetUserName}
         hideHeader={true}
         targetUserId={isAdmin ? targetUserId : undefined}
+        userFeatures={targetUserFeatures}
         isAdmin={isAdmin}
       />
     </div>

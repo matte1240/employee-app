@@ -15,6 +15,8 @@ const updateUserSchema = z.object({
   name: z.string().min(1, "Name is required").max(100).optional(),
   email: z.string().email("Invalid email address").optional(),
   role: z.enum(["EMPLOYEE", "ADMIN"]).optional(),
+  hasPermesso104: z.boolean().optional(),
+  hasPaternityLeave: z.boolean().optional(),
 });
 
 export async function PUT(
@@ -41,7 +43,7 @@ export async function PUT(
       return handleZodError(parsed.error);
     }
 
-    const { name, email, role } = parsed.data;
+    const { name, email, role, hasPermesso104, hasPaternityLeave } = parsed.data;
 
     // Prevent admin from removing their own admin privileges
     if (session.user.id === userId && role && role !== existingUser.role) {
@@ -64,6 +66,8 @@ export async function PUT(
         ...(name !== undefined && { name }),
         ...(email !== undefined && { email }),
         ...(role !== undefined && { role }),
+        ...(hasPermesso104 !== undefined && { hasPermesso104 }),
+        ...(hasPaternityLeave !== undefined && { hasPaternityLeave }),
       },
       select: {
         id: true,
@@ -71,6 +75,8 @@ export async function PUT(
         email: true,
         role: true,
         createdAt: true,
+        hasPermesso104: true,
+        hasPaternityLeave: true,
       },
     });
 

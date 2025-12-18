@@ -18,6 +18,8 @@ model User {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   tokenVersion  Int         @default(0)
+  hasPermesso104    Boolean   @default(false)
+  hasPaternityLeave Boolean   @default(false)
   accounts      Account[]
   sessions      Session[]
   timeEntries   TimeEntry[]
@@ -41,6 +43,8 @@ model TimeEntry {
   medicalCertificate String?
   sicknessHours      Decimal  @default(0)
   vacationHours      Decimal  @default(0)
+  permesso104Hours   Decimal  @default(0)
+  paternityHours     Decimal  @default(0)
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workDate], map: "user_workdate_unique")
