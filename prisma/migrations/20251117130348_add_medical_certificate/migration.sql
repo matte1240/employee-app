@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "TimeEntry" ADD COLUMN "medicalCertificate" TEXT;
+ALTER TABLE "TimeEntry" ADD COLUMN IF NOT EXISTS "medicalCertificate" TEXT;

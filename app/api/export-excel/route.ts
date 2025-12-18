@@ -68,6 +68,8 @@ export async function POST(request: Request) {
           permessoHours: true,
           sicknessHours: true,
           vacationHours: true,
+          permesso104Hours: true,
+          paternityHours: true,
           morningStart: true,
           morningEnd: true,
           afternoonStart: true,
@@ -102,6 +104,8 @@ export async function POST(request: Request) {
         { key: "overtime", width: 15 },
         { key: "permFerieHours", width: 15 },
         { key: "sicknessHours", width: 15 },
+        { key: "permesso104Hours", width: 15 },
+        { key: "paternityHours", width: 15 },
         { key: "totalHours", width: 15 },
       ];
 
@@ -116,7 +120,7 @@ export async function POST(request: Request) {
         `Riepilogo Ore - ${capitalizedMonth} ${y}`,
       ]);
       titleRow.font = { size: 16, bold: true };
-      summarySheet.mergeCells("A1:F1");
+      summarySheet.mergeCells("A1:H1");
       titleRow.alignment = { horizontal: "center", vertical: "middle" };
       titleRow.height = 30;
 
@@ -127,6 +131,8 @@ export async function POST(request: Request) {
         "Straordinario",
         "Ore Perm/Ferie",
         "Ore Malattia",
+        "Ore L.104",
+        "Ore Paternità",
         "Totale Ore",
       ]);
 
@@ -134,7 +140,7 @@ export async function POST(request: Request) {
       headerRow.alignment = { horizontal: "center", vertical: "middle" };
       headerRow.height = 20;
 
-      for (let i = 1; i <= 6; i++) {
+      for (let i = 1; i <= 8; i++) {
         headerRow.getCell(i).fill = {
           type: "pattern",
           pattern: "solid",
@@ -153,6 +159,8 @@ export async function POST(request: Request) {
         let totalOvertime = 0;
         let totalPermFerie = 0;
         let totalSickness = 0;
+        let totalPermesso104 = 0;
+        let totalPaternity = 0;
 
         entries.forEach((entry) => {
           const hoursWorked = decimalToNumber(entry.hoursWorked);
@@ -160,11 +168,15 @@ export async function POST(request: Request) {
           const permessoHours = decimalToNumber(entry.permessoHours);
           const vacationHours = decimalToNumber(entry.vacationHours);
           const sicknessHours = decimalToNumber(entry.sicknessHours);
+          const permesso104Hours = decimalToNumber(entry.permesso104Hours || 0);
+          const paternityHours = decimalToNumber(entry.paternityHours || 0);
 
           totalHoursWorked += hoursWorked;
           totalOvertime += overtime;
           totalPermFerie += permessoHours + vacationHours;
           totalSickness += sicknessHours;
+          totalPermesso104 += permesso104Hours;
+          totalPaternity += paternityHours;
         });
 
         const row = summarySheet.addRow({
@@ -173,6 +185,8 @@ export async function POST(request: Request) {
           overtime: totalOvertime,
           permFerieHours: totalPermFerie,
           sicknessHours: totalSickness,
+          permesso104Hours: totalPermesso104,
+          paternityHours: totalPaternity,
           totalHours: totalHoursWorked + totalOvertime,
         });
 
@@ -182,6 +196,8 @@ export async function POST(request: Request) {
         row.getCell(4).numFmt = "0.00";
         row.getCell(5).numFmt = "0.00";
         row.getCell(6).numFmt = "0.00";
+        row.getCell(7).numFmt = "0.00";
+        row.getCell(8).numFmt = "0.00";
       }
 
       // Add borders
@@ -226,6 +242,8 @@ export async function POST(request: Request) {
         { key: "overtime", width: 12 },
         { key: "permFerieHours", width: 15 },
         { key: "sicknessHours", width: 15 },
+        { key: "permesso104Hours", width: 15 },
+        { key: "paternityHours", width: 15 },
         { key: "totalHours", width: 12 },
       ];
 
@@ -248,7 +266,7 @@ export async function POST(request: Request) {
         `Presenze - ${user.name || user.email} - ${capitalizedMonth} ${y}`,
       ]);
       titleRow.font = { size: 14, bold: true };
-      const lastColumn = includeMedicalCertificate ? "K" : "J";
+      const lastColumn = includeMedicalCertificate ? "M" : "L";
       worksheet.mergeCells(`A1:${lastColumn}1`);
       titleRow.alignment = { horizontal: "left", vertical: "middle" };
       titleRow.height = 25;
@@ -264,6 +282,8 @@ export async function POST(request: Request) {
         "Straordinario",
         "Ore Perm/Ferie",
         "Ore Malattia",
+        "Ore 104",
+        "Ore Paternità",
         "Totale Ore",
       ];
 
@@ -292,6 +312,8 @@ export async function POST(request: Request) {
       let totalOvertimeSum = 0;
       let totalPermFerieSum = 0;
       let totalSicknessSum = 0;
+      let totalPermesso104Sum = 0;
+      let totalPaternitySum = 0;
 
       entries.forEach((entry) => {
         const hoursWorked = decimalToNumber(entry.hoursWorked);
@@ -299,6 +321,8 @@ export async function POST(request: Request) {
         const permessoHours = decimalToNumber(entry.permessoHours);
         const sicknessHours = decimalToNumber(entry.sicknessHours);
         const vacationHours = decimalToNumber(entry.vacationHours);
+        const permesso104Hours = decimalToNumber(entry.permesso104Hours);
+        const paternityHours = decimalToNumber(entry.paternityHours);
         const permFerieHours = permessoHours + vacationHours;
         const totalHours = hoursWorked + overtime;
 
@@ -309,6 +333,8 @@ export async function POST(request: Request) {
         totalOvertimeSum += overtime;
         totalPermFerieSum += permFerieHours;
         totalSicknessSum += sicknessHours;
+        totalPermesso104Sum += permesso104Hours;
+        totalPaternitySum += paternityHours;
 
         // Helper to remove "PERM" from time fields
         const cleanTimeValue = (val: string | null) => (val === "PERM" ? "" : val || "");
@@ -324,6 +350,8 @@ export async function POST(request: Request) {
           overtime: overtime,
           permFerieHours: permFerieHours,
           sicknessHours: sicknessHours,
+          permesso104Hours: permesso104Hours,
+          paternityHours: paternityHours,
           totalHours: totalHours,
         };
 
@@ -335,8 +363,8 @@ export async function POST(request: Request) {
 
         const row = worksheet.addRow(rowData);
 
-        // Set formula for Total Hours (Column J / 10) = F + G
-        row.getCell(10).value = {
+        // Set formula for Total Hours (Column L / 12) = F + G
+        row.getCell(12).value = {
           formula: `F${row.number}+G${row.number}`,
           result: totalHours,
         };
@@ -349,7 +377,9 @@ export async function POST(request: Request) {
         row.getCell(7).numFmt = "0.00"; // Overtime
         row.getCell(8).numFmt = "0.00"; // Perm/Ferie Hours
         row.getCell(9).numFmt = "0.00"; // Sickness Hours
-        row.getCell(10).numFmt = "0.00"; // Total Hours
+        row.getCell(10).numFmt = "0.00"; // Permesso 104 Hours
+        row.getCell(11).numFmt = "0.00"; // Paternity Hours
+        row.getCell(12).numFmt = "0.00"; // Total Hours
 
         // Alternate row colors
         if (worksheet.rowCount % 2 === 0) {
@@ -381,7 +411,9 @@ export async function POST(request: Request) {
         { formula: `SUM(G${firstDataRow}:G${lastDataRow})`, result: totalOvertimeSum },
         { formula: `SUM(H${firstDataRow}:H${lastDataRow})`, result: totalPermFerieSum },
         { formula: `SUM(I${firstDataRow}:I${lastDataRow})`, result: totalSicknessSum },
-        { formula: `SUM(J${firstDataRow}:J${lastDataRow})`, result: totalHoursSum + totalOvertimeSum },
+        { formula: `SUM(J${firstDataRow}:J${lastDataRow})`, result: totalPermesso104Sum },
+        { formula: `SUM(K${firstDataRow}:K${lastDataRow})`, result: totalPaternitySum },
+        { formula: `SUM(L${firstDataRow}:L${lastDataRow})`, result: totalHoursSum + totalOvertimeSum },
       ];
 
       if (includeMedicalCertificate) {
@@ -407,6 +439,8 @@ export async function POST(request: Request) {
       summaryRow.getCell(8).numFmt = "0.00";
       summaryRow.getCell(9).numFmt = "0.00";
       summaryRow.getCell(10).numFmt = "0.00";
+      summaryRow.getCell(11).numFmt = "0.00";
+      summaryRow.getCell(12).numFmt = "0.00";
 
       // Add borders to all cells
       worksheet.eachRow((row, rowNumber) => {
@@ -432,6 +466,10 @@ export async function POST(request: Request) {
       worksheet.getColumn(6).alignment = { horizontal: "right" };
       worksheet.getColumn(7).alignment = { horizontal: "right" };
       worksheet.getColumn(8).alignment = { horizontal: "right" };
+      worksheet.getColumn(9).alignment = { horizontal: "right" };
+      worksheet.getColumn(10).alignment = { horizontal: "right" };
+      worksheet.getColumn(11).alignment = { horizontal: "right" };
+      worksheet.getColumn(12).alignment = { horizontal: "right" };
       worksheet.getColumn(9).alignment = { horizontal: "right" };
       worksheet.getColumn(10).alignment = { horizontal: "right" };
       worksheet.getColumn(11).alignment = { horizontal: "right" };

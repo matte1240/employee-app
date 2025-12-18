@@ -18,6 +18,8 @@ const createHoursSchema = z.object({
   permessoHours: z.number().min(0).optional(),
   sicknessHours: z.number().min(0).optional(),
   vacationHours: z.number().min(0).optional(),
+  permesso104Hours: z.number().min(0).optional(),
+  paternityHours: z.number().min(0).optional(),
   morningStart: z.string().nullable().optional(),
   morningEnd: z.string().nullable().optional(),
   afternoonStart: z.string().nullable().optional(),
@@ -42,6 +44,8 @@ type RawEntry = {
   permessoHours: Decimal;
   sicknessHours: Decimal;
   vacationHours: Decimal;
+  permesso104Hours: Decimal;
+  paternityHours: Decimal;
   morningStart: string | null;
   morningEnd: string | null;
   afternoonStart: string | null;
@@ -165,23 +169,80 @@ export async function POST(request: Request) {
   let permessoHours = parsed.data.permessoHours ?? 0;
   const sicknessHours = parsed.data.sicknessHours ?? 0;
   const vacationHours = parsed.data.vacationHours ?? 0;
+  const permesso104Hours = parsed.data.permesso104Hours ?? 0;
+  const paternityHours = parsed.data.paternityHours ?? 0;
 
-  // Only auto-calculate permesso if not already provided and not vacation/sickness
-  if (!parsed.data.permessoHours && sicknessHours === 0 && vacationHours === 0) {
+  // Only auto-calculate permesso if not already provided and not vacation/sickness/104/paternity
+  if (!parsed.data.permessoHours && sicknessHours === 0 && vacationHours === 0 && permesso104Hours === 0 && paternityHours === 0) {
     if (isWeekday && hoursWorked < 8) {
       permessoHours = 8 - hoursWorked;
     }
   }
 
-  // Check if entry already exists for this date (using unique constraint for better performance)
   const existing = await prisma.timeEntry.findUnique({
     where: {
       userId_workDate: {
         userId: targetUserId,
-        workDate: new Date(`${workDate}T00:00:00.000Z`),
+        workDate: entryDate,
       },
     },
   });
+
+  // --- VALIDATION LOGIC ---
+  
+  // 1. Permesso 104 Validation (Max 24h/month)
+  if (permesso104Hours > 0) {
+    const entryDateObj = new Date(`${workDate}T00:00:00.000Z`);
+    const startOfMonth = new Date(Date.UTC(entryDateObj.getUTCFullYear(), entryDateObj.getUTCMonth(), 1));
+    const endOfMonth = new Date(Date.UTC(entryDateObj.getUTCFullYear(), entryDateObj.getUTCMonth() + 1, 0, 23, 59, 59));
+
+    const monthlyEntries = await prisma.timeEntry.findMany({
+      where: {
+        userId: targetUserId,
+        workDate: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+        // Exclude current entry if updating
+        ...(existing ? { id: { not: existing.id } } : {}),
+      },
+      select: {
+        permesso104Hours: true,
+      },
+    });
+
+    const currentTotal = monthlyEntries.reduce((sum, e) => sum + Number(e.permesso104Hours), 0);
+    
+    if (currentTotal + permesso104Hours > 24) {
+      return badRequestResponse(`Limite Permesso 104 superato. Hai già usato ${currentTotal}h questo mese. Massimo consentito: 24h.`);
+    }
+  }
+
+  // 2. Paternity Leave Validation (Max 10 days total)
+  if (paternityHours > 0) {
+    // Count distinct days with paternity leave
+    // Note: This is a simple total count. For "per event" logic, we'd need a more complex system linking leaves to events.
+    // Assuming "per event" means we just warn or block based on a reasonable history or manual reset, 
+    // but for now we implement a total count check.
+    
+    const paternityEntries = await prisma.timeEntry.findMany({
+      where: {
+        userId: targetUserId,
+        paternityHours: { gt: 0 },
+        // Exclude current entry if updating
+        ...(existing ? { id: { not: existing.id } } : {}),
+      },
+      select: {
+        id: true, // Just need to count rows
+      },
+    });
+
+    if (paternityEntries.length >= 10) {
+      return badRequestResponse(`Limite Congedo Paternità superato. Hai già usato ${paternityEntries.length} giorni. Massimo consentito: 10 giorni.`);
+    }
+  }
+
+  // --- END VALIDATION ---
 
   let entry: RawEntry;
 
@@ -195,6 +256,8 @@ export async function POST(request: Request) {
         permessoHours: permessoHours.toString(),
         sicknessHours: sicknessHours.toString(),
         vacationHours: vacationHours.toString(),
+        permesso104Hours: permesso104Hours.toString(),
+        paternityHours: paternityHours.toString(),
         morningStart,
         morningEnd,
         afternoonStart,
@@ -214,6 +277,8 @@ export async function POST(request: Request) {
         permessoHours: permessoHours.toString(),
         sicknessHours: sicknessHours.toString(),
         vacationHours: vacationHours.toString(),
+        permesso104Hours: permesso104Hours.toString(),
+        paternityHours: paternityHours.toString(),
         morningStart,
         morningEnd,
         afternoonStart,

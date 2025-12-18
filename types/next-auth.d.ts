@@ -9,6 +9,8 @@ declare module "next-auth" {
       name?: string | null;
       image?: string | null;
       role: string;
+      hasPermesso104: boolean;
+      hasPaternityLeave: boolean;
     };
   }
 
@@ -16,6 +18,8 @@ declare module "next-auth" {
     id: string;
     role: string;
     image?: string | null;
+    hasPermesso104: boolean;
+    hasPaternityLeave: boolean;
   }
 }
 
@@ -24,5 +28,7 @@ declare module "next-auth/jwt" {
     id?: string;
     role?: string;
     picture?: string | null;
+    hasPermesso104?: boolean;
+    hasPaternityLeave?: boolean;
   }
 }

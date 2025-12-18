@@ -57,6 +57,10 @@ type EmployeeDashboardProps = {
   targetUserId?: string; // If set, admin is editing this user's calendar
   onEntrySaved?: (updatedEntries: TimeEntryDTO[]) => void; // Callback when entry is saved/deleted (for admin refetch)
   isAdmin?: boolean; // If true, bypass Sunday restriction
+  userFeatures?: {
+    hasPermesso104: boolean;
+    hasPaternityLeave: boolean;
+  };
 };
 
 type ModalFormState = {
@@ -65,10 +69,11 @@ type ModalFormState = {
   afternoonStart: string;
   afternoonEnd: string;
   notes: string;
-  dayType: "normal" | "ferie" | "malattia";
+  dayType: "normal" | "ferie" | "malattia" | "paternity";
   medicalCertificate: string;
   isMorningPermesso: boolean;
   isAfternoonPermesso: boolean;
+  isPermesso104: boolean;
 };
 
 export default function TimesheetCalendar({
@@ -79,6 +84,7 @@ export default function TimesheetCalendar({
   targetUserId,
   onEntrySaved,
   isAdmin = false,
+  userFeatures = { hasPermesso104: false, hasPaternityLeave: false },
 }: EmployeeDashboardProps) {
   const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(() =>
@@ -107,6 +113,7 @@ export default function TimesheetCalendar({
     medicalCertificate: "",
     isMorningPermesso: false,
     isAfternoonPermesso: false,
+    isPermesso104: false,
   });
 
   // Context menu state
@@ -320,6 +327,11 @@ export default function TimesheetCalendar({
     [entries]
   );
 
+  const totalPermesso104 = useMemo(
+    () => entries.reduce((sum, entry) => sum + (entry.permesso104Hours ?? 0), 0),
+    [entries]
+  );
+
   const totalSickness = useMemo(
     () => entries.reduce((sum, entry) => sum + (entry.sicknessHours ?? 0), 0),
     [entries]
@@ -327,6 +339,10 @@ export default function TimesheetCalendar({
 
   // Calculate hours from modal form
   const calculatedHours = useMemo(() => {
+    if (modalForm.dayType === "paternity") {
+      return { morning: 0, afternoon: 0, totalWorked: 0, regular: 0, overtime: 0, permesso: 0, sickness: 0, vacation: 0, permesso104: 0, paternity: 8 }; // Assuming 8h for full day
+    }
+
     const morningWorked = modalForm.isMorningPermesso ? 0 : calculateHours(modalForm.morningStart, modalForm.morningEnd);
     const afternoonWorked = modalForm.isAfternoonPermesso ? 0 : calculateHours(modalForm.afternoonStart, modalForm.afternoonEnd);
     
@@ -369,6 +385,7 @@ export default function TimesheetCalendar({
     let regular = 0;
     let overtime = 0;
     let permesso = 0;
+    let permesso104 = 0;
     
     if (selectedDate && modalForm.dayType === "normal") {
       const dateObj = new Date(`${selectedDate}T12:00:00`);
@@ -385,7 +402,15 @@ export default function TimesheetCalendar({
         // Weekdays
         if (netWork < 8) {
           regular = netWork;
-          permesso = 8 - netWork;
+          const missingHours = 8 - netWork;
+          // If isPermesso104 flag is active, use 104 hours instead of regular permesso
+          if (modalForm.isPermesso104) {
+            permesso = 0;
+            permesso104 = missingHours;
+          } else {
+            permesso = missingHours;
+            permesso104 = 0;
+          }
           overtime = 0;
         } else {
           regular = 8;
@@ -401,9 +426,11 @@ export default function TimesheetCalendar({
       totalWorked: netWork, 
       regular, 
       overtime, 
-      permesso 
+      permesso,
+      permesso104,
+      paternity: 0
     };
-  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso, modalForm.dayType, selectedDate, approvedRequests]);
+  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso, modalForm.dayType, modalForm.isPermesso104, selectedDate, approvedRequests]);
 
   const activePerm = useMemo(() => {
     if (!selectedDate) return null;
@@ -468,17 +495,20 @@ export default function TimesheetCalendar({
     // Check if entry exists for this day and pre-fill
     const existingEntry = entries.find(e => e.workDate === dateStr);
     if (existingEntry) {
-      let dayType: "normal" | "ferie" | "malattia" = "normal";
+      let dayType: "normal" | "ferie" | "malattia" | "paternity" = "normal";
       let medicalCertificate = "";
       if ((existingEntry.vacationHours ?? 0) > 0) {
         dayType = "ferie";
       } else if ((existingEntry.sicknessHours ?? 0) > 0) {
         dayType = "malattia";
         medicalCertificate = existingEntry.medicalCertificate || "";
+      } else if ((existingEntry.paternityHours ?? 0) > 0) {
+        dayType = "paternity";
       }
       
       const isMorningPermesso = existingEntry.morningStart === "PERM";
       const isAfternoonPermesso = existingEntry.afternoonStart === "PERM";
+      const isPermesso104 = (existingEntry.permesso104Hours ?? 0) > 0;
       
       setModalForm({
         morningStart: isMorningPermesso ? "08:00" : (existingEntry.morningStart || "08:00"),
@@ -490,6 +520,7 @@ export default function TimesheetCalendar({
         medicalCertificate,
         isMorningPermesso,
         isAfternoonPermesso,
+        isPermesso104,
       });
     } else {
       setModalForm({
@@ -502,6 +533,7 @@ export default function TimesheetCalendar({
         medicalCertificate: "",
         isMorningPermesso: false,
         isAfternoonPermesso: false,
+        isPermesso104: false,
       });
     }
     
@@ -513,7 +545,7 @@ export default function TimesheetCalendar({
     event.preventDefault();
     setModalError(null);
 
-    if (modalForm.dayType === "normal" && calculatedHours.totalWorked === 0 && calculatedHours.permesso === 0) {
+    if (modalForm.dayType === "normal" && calculatedHours.totalWorked === 0 && calculatedHours.permesso === 0 && calculatedHours.permesso104 === 0) {
       setModalError("Inserisci ore di lavoro o permesso valide.");
       return;
     }
@@ -529,6 +561,8 @@ export default function TimesheetCalendar({
         permessoHours: 0,
         sicknessHours: 0,
         vacationHours: 8,
+        permesso104Hours: 0,
+        paternityHours: 0,
         notes: modalForm.notes.trim() || null,
         ...(targetUserId && { userId: targetUserId }),
       };
@@ -540,7 +574,22 @@ export default function TimesheetCalendar({
         permessoHours: 0,
         sicknessHours: 8,
         vacationHours: 0,
+        permesso104Hours: 0,
+        paternityHours: 0,
         medicalCertificate: modalForm.medicalCertificate || null,
+        notes: modalForm.notes.trim() || null,
+        ...(targetUserId && { userId: targetUserId }),
+      };
+    } else if (modalForm.dayType === "paternity") {
+      payload = {
+        workDate: selectedDate,
+        hoursWorked: 0,
+        overtimeHours: 0,
+        permessoHours: 0,
+        sicknessHours: 0,
+        vacationHours: 0,
+        permesso104Hours: 0,
+        paternityHours: 8, // Full day
         notes: modalForm.notes.trim() || null,
         ...(targetUserId && { userId: targetUserId }),
       };
@@ -550,6 +599,10 @@ export default function TimesheetCalendar({
         hoursWorked: calculatedHours.regular,
         overtimeHours: calculatedHours.overtime,
         permessoHours: calculatedHours.permesso,
+        sicknessHours: 0,
+        vacationHours: 0,
+        permesso104Hours: calculatedHours.permesso104,
+        paternityHours: 0,
         morningStart: modalForm.isMorningPermesso ? "PERM" : modalForm.morningStart || undefined,
         morningEnd: modalForm.isMorningPermesso ? "PERM" : modalForm.morningEnd || undefined,
         afternoonStart: modalForm.isAfternoonPermesso ? "PERM" : modalForm.afternoonStart || undefined,
@@ -775,6 +828,15 @@ export default function TimesheetCalendar({
               icon={<CalendarIcon className="h-5 w-5" />}
             />
 
+            {totalPermesso104 > 0 && (
+              <StatsCard
+                title="Permesso 104"
+                value={totalPermesso104.toFixed(1)}
+                color="purple"
+                icon={<CalendarIcon className="h-5 w-5" />}
+              />
+            )}
+
             {totalSickness > 0 && (
               <StatsCard
                 title="Malattia"
@@ -880,9 +942,10 @@ export default function TimesheetCalendar({
                 <button
                   type="button"
                   onClick={() => setIsRequestModalOpen(true)}
-                  className="hidden sm:inline-flex items-center justify-center rounded-lg text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 mr-2 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                  className="inline-flex items-center justify-center rounded-lg text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3 sm:px-4 py-2 mr-2 shadow-md hover:shadow-lg hover:-translate-y-0.5"
                 >
-                  Richiedi Ferie
+                  <span className="sm:hidden">Ferie</span>
+                  <span className="hidden sm:inline">Richiedi Ferie</span>
                 </button>
                 <div className="flex items-center gap-1 bg-card p-1 rounded-lg border border-border shadow-sm">
                   <button
@@ -993,6 +1056,8 @@ export default function TimesheetCalendar({
 
                 // Determine explicit permesso
                 const isPermesso = (hasEntries && permessoHours > 0) || !!approvedRequest;
+                const isPermesso104 = hasEntries && (dayEntry?.permesso104Hours ?? 0) > 0;
+                const isPaternity = hasEntries && (dayEntry?.paternityHours ?? 0) > 0;
 
                 let approvedHours = 0;
                 if (approvedRequest && approvedRequest.startTime && approvedRequest.endTime) {
@@ -1069,6 +1134,16 @@ export default function TimesheetCalendar({
                               ? (permessoHours === 8 ? "P" : `${Number(permessoHours)}h P`) 
                               : (approvedHours > 0 ? (approvedHours === 8 ? "P" : `${Number(approvedHours)}h P`) : "P")
                             }
+                          </span>
+                        )}
+                        {isPermesso104 && (
+                          <span className="flex h-5 min-w-[1.25rem] px-1 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30 text-[10px] font-bold text-purple-600 dark:text-purple-400">
+                            104
+                          </span>
+                        )}
+                        {isPaternity && (
+                          <span className="flex h-5 min-w-[1.25rem] px-1 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                            PT
                           </span>
                         )}
                       </div>
@@ -1159,10 +1234,7 @@ export default function TimesheetCalendar({
                     onChange={(e) =>
                       setModalForm((f) => ({
                         ...f,
-                        dayType: e.target.value as
-                          | "normal"
-                          | "ferie"
-                          | "malattia",
+                        dayType: e.target.value as ModalFormState["dayType"],
                       }))
                     }
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -1170,6 +1242,9 @@ export default function TimesheetCalendar({
                     <option value="normal">Normale</option>
                     <option value="ferie">Ferie</option>
                     <option value="malattia">Malattia</option>
+                    {userFeatures?.hasPaternityLeave && (
+                      <option value="paternity">Congedo Paternità</option>
+                    )}
                   </select>
                 </label>
 
@@ -1389,6 +1464,43 @@ export default function TimesheetCalendar({
                         </p>
                       )}
                     </div>
+
+                    {/* Permesso 104 checkbox - only show for users with hasPermesso104 feature */}
+                    {userFeatures?.hasPermesso104 && (
+                      <div className="rounded-xl bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/20 p-4 shadow-sm">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={modalForm.isPermesso104}
+                            onChange={(e) =>
+                              setModalForm((f) => ({
+                                ...f,
+                                isPermesso104: e.target.checked,
+                              }))
+                            }
+                            className="h-5 w-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                          />
+                          <div>
+                            <span className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+                              Usa Permesso 104
+                            </span>
+                            <p className="text-xs text-purple-700 dark:text-purple-300 mt-0.5">
+                              Le ore mancanti saranno conteggiate come permesso 104 invece che permesso normale.
+                            </p>
+                          </div>
+                        </label>
+                        {modalForm.isPermesso104 && calculatedHours.permesso104 > 0 && (
+                          <p className="mt-3 flex items-center justify-between text-sm">
+                            <span className="font-medium text-purple-700 dark:text-purple-300">
+                              Ore Permesso 104:
+                            </span>
+                            <span className="font-bold text-purple-900 dark:text-purple-100">
+                              {calculatedHours.permesso104.toFixed(2)} ore
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -1416,6 +1528,20 @@ export default function TimesheetCalendar({
                     </div>
                     <p className="text-sm text-rose-800 dark:text-rose-200">
                       Giornata di malattia - 8 ore di malattia.
+                    </p>
+                  </div>
+                )}
+
+                {modalForm.dayType === "paternity" && (
+                  <div className="rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <h3 className="text-sm font-bold text-blue-900 dark:text-blue-100">
+                        Congedo Paternità
+                      </h3>
+                    </div>
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      Giornata di congedo paternità completa.
                     </p>
                   </div>
                 )}
@@ -1538,6 +1664,8 @@ export default function TimesheetCalendar({
                     "Salva Ferie"
                   ) : modalForm.dayType === "malattia" ? (
                     "Salva Malattia"
+                  ) : modalForm.dayType === "paternity" ? (
+                    "Salva Paternità"
                   ) : (
                     "Salva"
                   )}

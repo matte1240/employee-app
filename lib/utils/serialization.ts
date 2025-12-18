@@ -28,6 +28,8 @@ export function serializeTimeEntry<T extends {
   permessoHours: Decimal;
   sicknessHours: Decimal;
   vacationHours: Decimal;
+  permesso104Hours: Decimal;
+  paternityHours: Decimal;
   morningStart: string | null;
   morningEnd: string | null;
   afternoonStart: string | null;
@@ -46,6 +48,8 @@ export function serializeTimeEntry<T extends {
     permessoHours: decimalToNumber(entry.permessoHours),
     sicknessHours: decimalToNumber(entry.sicknessHours),
     vacationHours: decimalToNumber(entry.vacationHours),
+    permesso104Hours: decimalToNumber(entry.permesso104Hours),
+    paternityHours: decimalToNumber(entry.paternityHours),
     morningStart: entry.morningStart,
     morningEnd: entry.morningEnd,
     afternoonStart: entry.afternoonStart,
@@ -69,6 +73,8 @@ export function serializeTimeEntries<T extends {
   permessoHours: Decimal;
   sicknessHours: Decimal;
   vacationHours: Decimal;
+  permesso104Hours: Decimal;
+  paternityHours: Decimal;
   morningStart: string | null;
   morningEnd: string | null;
   afternoonStart: string | null;

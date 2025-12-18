@@ -24,6 +24,8 @@ export default async function UsersPage() {
       role: true,
       image: true,
       createdAt: true,
+      hasPermesso104: true,
+      hasPaternityLeave: true,
     },
   })) as User[];
 
