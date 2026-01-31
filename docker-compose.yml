@@ -53,7 +53,7 @@ services:
       # Node
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
-      HOSTNAME: "0.0.0.0"
+      HOSTNAME: 0.0.0.0
     ports:
       - "${APP_PORT:-3000}:3000"
     volumes:

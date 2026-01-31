@@ -37,7 +37,7 @@ EXPOSE 3000
 # Set development environment
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV HOSTNAME="0.0.0.0"
+ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
 # Set entrypoint and default command
@@ -82,6 +82,10 @@ RUN adduser --system --uid 1001 nextjs
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# Copy server startup script
+COPY start-server.sh /usr/local/bin/start-server.sh
+RUN chmod +x /usr/local/bin/start-server.sh
+
 # Copy necessary files from builder
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder /app/package.json ./package.json
@@ -106,8 +110,8 @@ USER nextjs
 # Expose port
 EXPOSE 3000
 
-# Set hostname
-ENV HOSTNAME="0.0.0.0"
+# Set hostname and port for Next.js standalone server
+ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
 # Health check
@@ -116,4 +120,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 # Set entrypoint and default command
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["node", "server.js"]
+CMD ["start-server.sh"]

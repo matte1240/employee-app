@@ -101,3 +101,43 @@ git push origin v1.0.0
 - Builds multi-platform Docker image
 - Pushes to GitHub Container Registry (`ghcr.io`)
 - Creates GitHub Release with auto-generated changelog
+
+---
+
+## 🔧 Troubleshooting
+
+### "Bad Gateway" on Port 3000
+
+If you encounter a "Bad Gateway" error when deploying with Docker (e.g., on Dockploy or similar platforms):
+
+**Cause:** The Next.js standalone server must bind to `0.0.0.0` (all network interfaces) instead of `localhost` to be accessible from outside the container.
+
+**Solution:** This is already configured in the current Dockerfile:
+- `HOSTNAME=0.0.0.0` environment variable is set
+- `start-server.sh` wrapper script ensures proper binding
+- Logs show the host and port during startup
+
+**Verification:**
+```bash
+# Check container logs for startup messages
+docker logs <container-name>
+
+# You should see:
+# 🚀 Starting Next.js server...
+# 📍 Host: 0.0.0.0
+# 🔌 Port: 3000
+```
+
+**Testing locally:**
+```bash
+# Build and run the container
+docker build -t employee-app .
+docker run -p 3000:3000 \
+  -e DATABASE_URL="your-db-url" \
+  -e NEXTAUTH_SECRET="your-secret" \
+  -e NEXTAUTH_URL="http://localhost:3000" \
+  employee-app
+
+# Access the app
+curl http://localhost:3000/api/auth/session
+```
