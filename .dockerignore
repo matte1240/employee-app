@@ -59,3 +59,8 @@ docker-compose.yml
 
 # Scripts (non necessari in container)
 scripts/*.sh
+
+# Startup scripts needed in container
+!docker-entrypoint.sh
+!docker-entrypoint-dev.sh
+!start-server.sh
