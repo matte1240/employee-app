@@ -8,22 +8,42 @@ datasource db {
 }
 
 model User {
-  id            String      @id @default(cuid())
-  name          String?
-  email         String      @unique
-  passwordHash  String
-  role          Role        @default(EMPLOYEE)
-  image         String?
-  emailVerified DateTime?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  tokenVersion  Int         @default(0)
-  hasPermesso104    Boolean   @default(false)
-  hasPaternityLeave Boolean   @default(false)
-  accounts      Account[]
-  sessions      Session[]
-  timeEntries   TimeEntry[]
-  leaveRequests LeaveRequest[]
+  id                String            @id @default(cuid())
+  name              String?
+  email             String            @unique
+  passwordHash      String
+  role              Role              @default(EMPLOYEE)
+  image             String?
+  emailVerified     DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  tokenVersion      Int               @default(0)
+  hasPaternityLeave Boolean           @default(false)
+  hasPermesso104    Boolean           @default(false)
+  canWorkSunday     Boolean           @default(false)
+  accounts          Account[]
+  leaveRequests     LeaveRequest[]
+  sessions          Session[]
+  timeEntries       TimeEntry[]
+  workingSchedules  WorkingSchedule[]
+}
+
+model WorkingSchedule {
+  id             String   @id @default(cuid())
+  userId         String
+  dayOfWeek      Int
+  morningStart   String?
+  morningEnd     String?
+  afternoonStart String?
+  afternoonEnd   String?
+  totalHours     Decimal  @default(0)
+  isWorkingDay   Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayOfWeek])
+  @@index([userId])
 }
 
 model TimeEntry {
@@ -43,8 +63,8 @@ model TimeEntry {
   medicalCertificate String?
   sicknessHours      Decimal  @default(0)
   vacationHours      Decimal  @default(0)
-  permesso104Hours   Decimal  @default(0)
   paternityHours     Decimal  @default(0)
+  permesso104Hours   Decimal  @default(0)
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workDate], map: "user_workdate_unique")
@@ -86,28 +106,28 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-enum Role {
-  EMPLOYEE
-  ADMIN
-}
-
 model LeaveRequest {
-  id          String        @id @default(cuid())
-  userId      String
-  startDate   DateTime
-  endDate     DateTime
-  type        LeaveType
-  status      RequestStatus @default(PENDING)
-  reason      String?
-  startTime   String?
-  endTime     String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String        @id @default(cuid())
+  userId    String
+  startDate DateTime
+  endDate   DateTime
+  type      LeaveType
+  status    RequestStatus @default(PENDING)
+  reason    String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  endTime   String?
+  startTime String?
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status], map: "user_status_idx")
   @@index([status, createdAt], map: "status_created_idx")
   @@index([userId, startDate, endDate], map: "user_dates_idx")
+}
+
+enum Role {
+  EMPLOYEE
+  ADMIN
 }
 
 enum RequestStatus {

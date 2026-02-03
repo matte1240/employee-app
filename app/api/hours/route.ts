@@ -10,6 +10,7 @@ import {
   notFoundResponse,
 } from "@/lib/api-responses";
 import { serializeTimeEntry, serializeTimeEntries } from "@/lib/utils/serialization";
+import { getBaseHoursForDate, isUserWorkingDay } from "@/lib/utils/schedule-utils";
 
 const createHoursSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -143,10 +144,24 @@ export async function POST(request: Request) {
       earliestEditableDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
     }
 
-    // Block Sundays (0 = Sunday)
+    // Check Sunday restrictions
     const dayOfWeek = entryDate.getUTCDay();
-    if (dayOfWeek === 0 || isHoliday(workDate)) {
-      return forbiddenResponse("Cannot enter hours on Sundays or Holidays");
+    
+    // Check if user can work on Sundays
+    const userFlags = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { canWorkSunday: true },
+    });
+    const canWorkSunday = userFlags?.canWorkSunday ?? false;
+    
+    // Block Sundays (0 = Sunday) unless user has canWorkSunday flag
+    if (dayOfWeek === 0 && !canWorkSunday) {
+      return forbiddenResponse("Cannot enter hours on Sundays");
+    }
+    
+    // Block holidays
+    if (isHoliday(workDate)) {
+      return forbiddenResponse("Cannot enter hours on Holidays");
     }
 
     if (entryDate > today) {
@@ -161,10 +176,14 @@ export async function POST(request: Request) {
     }
   }
 
-  // Calculate permessoHours only for weekdays when hours < 8 AND not vacation/sickness
+  // Calculate permessoHours based on user's working schedule
   const entryDate = new Date(`${workDate}T00:00:00.000Z`);
   const dayOfWeek = entryDate.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5 && !isHoliday(workDate);
+  
+  // Get user's schedule-based working day status and base hours
+  const isWorkingDayForUser = await isUserWorkingDay(targetUserId, entryDate);
+  const baseHours = await getBaseHoursForDate(targetUserId, entryDate);
+  const isWorkday = isWorkingDayForUser && !isHoliday(workDate);
 
   let permessoHours = parsed.data.permessoHours ?? 0;
   const sicknessHours = parsed.data.sicknessHours ?? 0;
@@ -174,8 +193,8 @@ export async function POST(request: Request) {
 
   // Only auto-calculate permesso if not already provided and not vacation/sickness/104/paternity
   if (!parsed.data.permessoHours && sicknessHours === 0 && vacationHours === 0 && permesso104Hours === 0 && paternityHours === 0) {
-    if (isWeekday && hoursWorked < 8) {
-      permessoHours = 8 - hoursWorked;
+    if (isWorkday && hoursWorked < baseHours) {
+      permessoHours = baseHours - hoursWorked;
     }
   }
 

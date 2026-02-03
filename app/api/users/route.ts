@@ -10,6 +10,7 @@ import {
   handleError,
 } from "@/lib/api-responses";
 import { decimalToNumber } from "@/lib/utils/serialization";
+import { createDefaultSchedulesForUser } from "@/lib/utils/schedule-utils";
 
 type UserRole = "EMPLOYEE" | "ADMIN";
 
@@ -98,6 +99,9 @@ export async function POST(request: Request) {
         hasPaternityLeave: parsed.data.hasPaternityLeave,
       },
     });
+
+    // Create default working schedules for the new user
+    await createDefaultSchedulesForUser(user.id);
 
     return successResponse({ id: user.id }, 201);
   } catch (error) {
