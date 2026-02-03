@@ -5,6 +5,42 @@ const prisma = new PrismaClient();
 
 type SeedRole = "EMPLOYEE" | "ADMIN";
 
+// Default working schedule (Mon-Fri 8-12, 14-18)
+const DEFAULT_SCHEDULE = {
+  morningStart: "08:00",
+  morningEnd: "12:00",
+  afternoonStart: "14:00",
+  afternoonEnd: "18:00",
+  totalHours: 8,
+};
+const DEFAULT_WORKING_DAYS = [1, 2, 3, 4, 5]; // Mon-Fri
+
+async function ensureUserSchedules(userId: string) {
+  const existingSchedules = await prisma.workingSchedule.count({ where: { userId } });
+  if (existingSchedules > 0) {
+    console.log(`- Working schedules already exist for user ${userId}`);
+    return;
+  }
+
+  const scheduleData = DEFAULT_WORKING_DAYS.map((dayOfWeek) => ({
+    userId,
+    dayOfWeek,
+    morningStart: DEFAULT_SCHEDULE.morningStart,
+    morningEnd: DEFAULT_SCHEDULE.morningEnd,
+    afternoonStart: DEFAULT_SCHEDULE.afternoonStart,
+    afternoonEnd: DEFAULT_SCHEDULE.afternoonEnd,
+    totalHours: DEFAULT_SCHEDULE.totalHours,
+    isWorkingDay: true,
+  }));
+
+  await prisma.workingSchedule.createMany({
+    data: scheduleData,
+    skipDuplicates: true,
+  });
+
+  console.log(`✓ Created default working schedules for user ${userId}`);
+}
+
 async function ensureUser(params: {
   email: string;
   name: string;
@@ -14,6 +50,8 @@ async function ensureUser(params: {
   const existing = await prisma.user.findUnique({ where: { email: params.email } });
   if (existing) {
     console.log(`- User ${params.email} already exists`);
+    // Ensure schedules exist even for existing users
+    await ensureUserSchedules(existing.id);
     return existing;
   }
 
@@ -29,6 +67,10 @@ async function ensureUser(params: {
   });
   
   console.log(`✓ Created user ${params.email} (${params.role})`);
+  
+  // Create default working schedules for new user
+  await ensureUserSchedules(user.id);
+  
   return user;
 }
 
@@ -118,6 +160,14 @@ async function main() {
   console.log("\n📋 Test Credentials:");
   console.log("   Admin: admin@example.com / Admin123!");
   console.log("   Employee: employee@example.com / Employee123!");
+
+  // Migrate all existing users to have default working schedules
+  console.log("\n📅 Ensuring all users have working schedules...");
+  const allUsers = await prisma.user.findMany({ select: { id: true, email: true } });
+  for (const user of allUsers) {
+    await ensureUserSchedules(user.id);
+  }
+  console.log("✓ All users have working schedules");
 }
 
 main()

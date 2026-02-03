@@ -15,9 +15,11 @@ import {
   X, 
   Info, 
   AlertTriangle,
-  Loader2
+  Loader2,
+  Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import UserScheduleEditor from "@/components/dashboard/admin/user-schedule-editor";
 
 type UserWithFlags = User & {
   hasPermesso104?: boolean;
@@ -55,6 +57,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
   const [editingUser, setEditingUser] = useState<UserWithFlags | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [resettingPasswordUser, setResettingPasswordUser] = useState<User | null>(null);
+  const [scheduleEditingUser, setScheduleEditingUser] = useState<UserWithFlags | null>(null);
   
   // Manual password toggle states (for production mode with admin control)
   const [manualPasswordCreate, setManualPasswordCreate] = useState(false);
@@ -424,6 +427,18 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                       >
                         <Edit className="h-4 w-4" />
                         Modifica
+                      </button>
+                      <button
+                        onClick={() => {
+                          setScheduleEditingUser(user);
+                          setError(null);
+                          setSuccess(null);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-2 text-sm font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 transition hover:bg-blue-200 dark:hover:bg-blue-900/50 cursor-pointer"
+                        title="Orari settimanali"
+                      >
+                        <Calendar className="h-4 w-4" />
+                        Orari
                       </button>
                       <button
                         onClick={() => {
@@ -1010,6 +1025,14 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
           </div>
         </div>
       )}
+
+      {/* User Schedule Editor Modal */}
+      <UserScheduleEditor
+        userId={scheduleEditingUser?.id || ""}
+        userName={scheduleEditingUser?.name || scheduleEditingUser?.email || ""}
+        isOpen={!!scheduleEditingUser}
+        onClose={() => setScheduleEditingUser(null)}
+      />
     </div>
   );
 }

@@ -58,3 +58,37 @@ export type LeaveRequestDTO = {
   };
 };
 
+// Working schedule for per-user, per-day base hours configuration
+export type WorkingScheduleDTO = {
+  id: string;
+  userId: string;
+  dayOfWeek: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
+  morningStart: string | null;
+  morningEnd: string | null;
+  afternoonStart: string | null;
+  afternoonEnd: string | null;
+  totalHours: number;
+  isWorkingDay: boolean;
+};
+
+// Day names for UI
+export const DAY_NAMES = [
+  "Domenica",
+  "Lunedì",
+  "Martedì",
+  "Mercoledì",
+  "Giovedì",
+  "Venerdì",
+  "Sabato",
+] as const;
+
+export const DAY_NAMES_SHORT = [
+  "Dom",
+  "Lun",
+  "Mar",
+  "Mer",
+  "Gio",
+  "Ven",
+  "Sab",
+] as const;
+

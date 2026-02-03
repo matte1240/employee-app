@@ -39,10 +39,15 @@ import {
 } from "lucide-react";
 import LogoutButton from "@/components/auth/logout-button";
 import StatsCard from "./stats-card";
-import type { TimeEntryDTO, LeaveRequestDTO } from "@/types/models";
+import type { TimeEntryDTO, LeaveRequestDTO, WorkingScheduleDTO } from "@/types/models";
 import { calculateHours, TIME_OPTIONS } from "@/lib/utils/time-utils";
 import { isDateEditable as isDateEditableUtil } from "@/lib/utils/date-utils";
 import { isHoliday, getHolidayName } from "@/lib/utils/holiday-utils";
+import {
+  getBaseHoursFromScheduleMap,
+  isWorkingDayFromScheduleMap,
+  DEFAULT_WORKING_DAYS,
+} from "@/lib/utils/schedule-utils";
 import RequestLeaveModal from "./request-leave-modal";
 import { cn } from "@/lib/utils";
 
@@ -95,6 +100,13 @@ export default function TimesheetCalendar({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, startSaving] = useTransition();
   const hasFetched = useRef(false);
+
+  // User working schedules state
+  const [userSchedules, setUserSchedules] = useState<WorkingScheduleDTO[]>([]);
+  const [canWorkSunday, setCanWorkSunday] = useState(false);
+  const scheduleMap = useMemo(() => {
+    return new Map(userSchedules.map((s) => [s.dayOfWeek, s]));
+  }, [userSchedules]);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -275,6 +287,34 @@ export default function TimesheetCalendar({
     fetchRequests();
   }, [targetUserId, isRefetching]);
 
+  // Fetch user working schedules
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      try {
+        // For admins viewing another user, fetch that user's schedule
+        // For employees, fetch their own schedule via the API (which will auto-detect user)
+        const url = targetUserId
+          ? `/api/users/${targetUserId}/schedule`
+          : `/api/users/me/schedule`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          const responseData = data.data || data;
+          // Handle both formats: { schedules, canWorkSunday } or just schedules array
+          if (responseData.schedules) {
+            setUserSchedules(responseData.schedules);
+            setCanWorkSunday(responseData.canWorkSunday ?? false);
+          } else if (Array.isArray(responseData)) {
+            setUserSchedules(responseData);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch user schedules", error);
+      }
+    };
+    fetchSchedules();
+  }, [targetUserId]);
+
   const pendingRequests = useMemo(() => requests.filter((r) => r.status === "PENDING"), [requests]);
   const approvedRequests = useMemo(() => requests.filter((r) => r.status === "APPROVED"), [requests]);
 
@@ -390,19 +430,25 @@ export default function TimesheetCalendar({
     if (selectedDate && modalForm.dayType === "normal") {
       const dateObj = new Date(`${selectedDate}T12:00:00`);
       const dayOfWeek = getDay(dateObj);
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       const isHol = isHoliday(dateObj);
       
-      if (isWeekend || isHol) {
-        // On weekends/holidays, all worked hours are overtime
+      // Sunday is always blocked, so if somehow we get here, treat as overtime
+      const isSunday = dayOfWeek === 0;
+      
+      // Get base hours from user's schedule
+      const baseHours = getBaseHoursFromScheduleMap(scheduleMap, dayOfWeek);
+      const isWorkingDay = isWorkingDayFromScheduleMap(scheduleMap, dayOfWeek);
+      
+      if (isSunday || isHol || !isWorkingDay) {
+        // On Sundays, holidays, or non-working days, all worked hours are overtime
         regular = 0;
         overtime = netWork;
         permesso = 0;
       } else {
-        // Weekdays
-        if (netWork < 8) {
+        // Working days - use dynamic base hours
+        if (netWork < baseHours) {
           regular = netWork;
-          const missingHours = 8 - netWork;
+          const missingHours = baseHours - netWork;
           // If isPermesso104 flag is active, use 104 hours instead of regular permesso
           if (modalForm.isPermesso104) {
             permesso = 0;
@@ -413,9 +459,9 @@ export default function TimesheetCalendar({
           }
           overtime = 0;
         } else {
-          regular = 8;
+          regular = baseHours;
           permesso = 0;
-          overtime = netWork - 8;
+          overtime = netWork - baseHours;
         }
       }
     }
@@ -430,7 +476,7 @@ export default function TimesheetCalendar({
       permesso104,
       paternity: 0
     };
-  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso, modalForm.dayType, modalForm.isPermesso104, selectedDate, approvedRequests]);
+  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso, modalForm.dayType, modalForm.isPermesso104, selectedDate, approvedRequests, scheduleMap]);
 
   const activePerm = useMemo(() => {
     if (!selectedDate) return null;
@@ -474,8 +520,16 @@ export default function TimesheetCalendar({
       const dayOfWeek = day.getDay();
       const dateKey = format(day, 'yyyy-MM-dd');
       const holidayInfo = holidayMap.get(dateKey);
-      if (dayOfWeek === 0 || holidayInfo?.isHoliday) {
-        setError("Non è possibile inserire ore la domenica o nei giorni festivi.");
+      
+      // Block Sundays unless user has canWorkSunday permission
+      if (dayOfWeek === 0 && !canWorkSunday) {
+        setError("Non è possibile inserire ore la domenica.");
+        return;
+      }
+      
+      // Always block holidays
+      if (holidayInfo?.isHoliday) {
+        setError("Non è possibile inserire ore nei giorni festivi.");
         return;
       }
     }
@@ -1041,18 +1095,20 @@ export default function TimesheetCalendar({
                   today.setHours(0, 0, 0, 0);
                   const yesterday = new Date(today);
                   yesterday.setDate(yesterday.getDate() - 1);
-                  const isWeekday =
-                    dayOfWeek >= 1 && dayOfWeek <= 5 && !isHolidayDay;
+                  // Use schedule-based check for working days
+                  const isWorkingDayForUser = isWorkingDayFromScheduleMap(scheduleMap, dayOfWeek) && !isHolidayDay;
+                  const baseHoursForDay = getBaseHoursFromScheduleMap(scheduleMap, dayOfWeek);
                   const isPastOrYesterday = day <= yesterday;
                   const isInCurrentMonth = isSameMonth(day, currentMonth);
 
-                  if (isWeekday && isPastOrYesterday && isInCurrentMonth) {
-                    permessoHours = 8; // Full day permesso for empty weekdays in the past
+                  if (isWorkingDayForUser && isPastOrYesterday && isInCurrentMonth) {
+                    permessoHours = baseHoursForDay; // Full day permesso for empty working days in the past
                   }
                 }
 
-                // Determine missing entry indicator
-                const isMissingEntry = permessoHours === 8 && !hasEntries;
+                // Determine missing entry indicator - use schedule-based base hours
+                const baseHoursForDay = getBaseHoursFromScheduleMap(scheduleMap, dayOfWeek);
+                const isMissingEntry = permessoHours === baseHoursForDay && baseHoursForDay > 0 && !hasEntries;
 
                 // Determine explicit permesso
                 const isPermesso = (hasEntries && permessoHours > 0) || !!approvedRequest;
