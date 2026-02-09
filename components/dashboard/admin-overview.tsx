@@ -158,13 +158,9 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="relative flex-shrink-0 h-10 w-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                          {user.image ? (
-                            <Image src={user.image} alt={user.name || "User"} fill className="object-cover" />
-                          ) : (
-                            <span className="text-muted-foreground font-semibold text-sm">
-                              {(user.name || user.email || "?").charAt(0).toUpperCase()}
-                            </span>
-                          )}
+                          <span className="text-muted-foreground font-semibold text-sm">
+                            {(user.name || user.email || "?").charAt(0).toUpperCase()}
+                          </span>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-foreground">

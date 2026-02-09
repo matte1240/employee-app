@@ -120,41 +120,12 @@ export default function EmployeeProfile({ user }: EmployeeProfileProps) {
         <div className="bg-gradient-to-r from-primary/80 to-primary h-32"></div>
         <div className="px-6 pb-6">
           <div className="flex items-end -mt-16 mb-4">
-            <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-background shadow-lg border-4 border-background overflow-hidden group">
-              {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt={user.name || "Profile"}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-muted">
-                  <span className="text-5xl font-bold text-muted-foreground">
-                    {(user.name || user.email).charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
-              
-              {/* Overlay for upload */}
-              <div 
-                className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                onClick={() => !isUploading && fileInputRef.current?.click()}
-              >
-                {isUploading ? (
-                  <Spinner size="lg" className="text-white" />
-                ) : (
-                  <Camera className="w-8 h-8 text-white" />
-                )}
+            <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-background shadow-lg border-4 border-background overflow-hidden">
+              <div className="flex h-full w-full items-center justify-center bg-muted">
+                <span className="text-5xl font-bold text-muted-foreground">
+                  {(user.name || user.email).charAt(0).toUpperCase()}
+                </span>
               </div>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={isUploading}
-              />
             </div>
           </div>
           <div>

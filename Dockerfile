@@ -18,7 +18,7 @@ FROM node:25-alpine AS dev
 WORKDIR /app
 
 # Install PostgreSQL client tools for migrations
-RUN apk add --no-cache postgresql16-client curl
+RUN apk add --no-cache postgresql16-client curl openssl libc6-compat
 
 # Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
@@ -27,8 +27,8 @@ COPY package.json package-lock.json* ./
 # Copy Prisma schema
 COPY prisma ./prisma
 
-# Copy dev entrypoint script
-COPY docker-entrypoint-dev.sh /usr/local/bin/docker-entrypoint.sh
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port
@@ -68,7 +68,7 @@ FROM node:25-alpine AS runner
 WORKDIR /app
 
 # Install PostgreSQL client tools for backup/restore
-RUN apk add --no-cache postgresql16-client
+RUN apk add --no-cache postgresql16-client openssl libc6-compat
 
 # Set to production environment
 ENV NODE_ENV=production
@@ -81,10 +81,6 @@ RUN adduser --system --uid 1001 nextjs
 # Copy entrypoint script (as root before switching users)
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Copy server startup script
-COPY start-server.sh /usr/local/bin/start-server.sh
-RUN chmod +x /usr/local/bin/start-server.sh
 
 # Copy necessary files from builder
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
@@ -120,4 +116,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 # Set entrypoint and default command
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["start-server.sh"]
+CMD ["node", "server.js"]

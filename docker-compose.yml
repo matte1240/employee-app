@@ -23,7 +23,8 @@ services:
 
   # Next.js Application
   app:
-    image: ghcr.io/matte1240/employee-app:${TAG:-latest}
+    build: .
+    image: ghcr.io/matte1240/employee-app:latest
     container_name: employee-tracker-app
     restart: unless-stopped
     depends_on:
