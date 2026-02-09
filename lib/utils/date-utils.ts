@@ -12,9 +12,10 @@ import { isHoliday } from "./holiday-utils";
  * 
  * @param date The date to check
  * @param isAdmin Whether the current user is an admin (bypasses Sunday restriction)
+ * @param canWorkSunday Whether the employee is allowed to work on Sundays
  * @returns true if the date is editable, false otherwise
  */
-export function isDateEditable(date: Date, isAdmin = false): boolean {
+export function isDateEditable(date: Date, isAdmin = false, canWorkSunday = false): boolean {
   // Admins can edit any date, past or future
   if (isAdmin) {
     return true;
@@ -37,10 +38,10 @@ export function isDateEditable(date: Date, isAdmin = false): boolean {
     earliestEditableDate = new Date(today.getFullYear(), today.getMonth(), 1);
   }
   
-  // Block Sundays (0 = Sunday) and Holidays only for employees
+  // Block Sundays (0 = Sunday) unless allowed, and Holidays always for employees
   if (!isAdmin) {
     const dayOfWeek = checkDate.getDay();
-    if (dayOfWeek === 0 || isHoliday(checkDate)) {
+    if ((dayOfWeek === 0 && !canWorkSunday) || isHoliday(checkDate)) {
       return false;
     }
   }

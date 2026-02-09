@@ -509,7 +509,7 @@ export default function TimesheetCalendar({
 
   // Check if date is editable
   const isDateEditable = (date: Date): boolean => {
-    return isDateEditableUtil(date, isAdmin);
+    return isDateEditableUtil(date, isAdmin, canWorkSunday);
   };
 
   const handleDayClick = (day: Date) => {
