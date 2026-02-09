@@ -391,11 +391,7 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="flex items-center">
                       <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground overflow-hidden">
-                        {user.image ? (
-                          <Image src={user.image} alt={user.name || "User"} fill className="object-cover" />
-                        ) : (
-                          (user.name ?? "U")[0].toUpperCase()
-                        )}
+                        {(user.name ?? "U")[0].toUpperCase()}
                       </div>
                       <div className="ml-3">
                         <p className="font-semibold text-foreground">{user.name ?? "Non assegnato"}</p>

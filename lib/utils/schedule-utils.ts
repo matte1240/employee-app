@@ -161,10 +161,15 @@ export async function createDefaultSchedulesForUser(
   }));
 
   // Use createMany for efficiency
-  await prisma.workingSchedule.createMany({
-    data: scheduleData,
-    skipDuplicates: true,
-  });
+  try {
+    await prisma.workingSchedule.createMany({
+      data: scheduleData,
+      skipDuplicates: true,
+    });
+  } catch (error) {
+    console.error(`Failed to create default schedules for user ${userId}:`, error);
+    // Don't throw, just log. This prevents app crashes during race conditions
+  }
 }
 
 /**

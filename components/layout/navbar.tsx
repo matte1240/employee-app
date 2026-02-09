@@ -193,16 +193,7 @@ export default function Navbar({
                   </div>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-accent-foreground font-semibold overflow-hidden relative border border-border">
-                  {userImage ? (
-                    <Image
-                      src={userImage}
-                      alt="Profile"
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    (userName || userEmail || "U").charAt(0).toUpperCase()
-                  )}
+                  {(userName || userEmail || "U").charAt(0).toUpperCase()}
                 </div>
               </Link>
               <button
@@ -257,18 +248,9 @@ export default function Navbar({
               onClick={() => setIsMobileMenuOpen(false)}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent overflow-hidden relative border border-border">
-                {userImage ? (
-                  <Image
-                    src={userImage}
-                    alt="Profile"
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <span className="text-lg font-bold text-foreground">
-                    {(userName || userEmail || "U").charAt(0).toUpperCase()}
-                  </span>
-                )}
+                <span className="text-lg font-bold text-foreground">
+                  {(userName || userEmail || "U").charAt(0).toUpperCase()}
+                </span>
               </div>
               <div>
                 <div className="text-sm font-semibold text-foreground">
