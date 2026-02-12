@@ -47,7 +47,7 @@ import {
   getBaseHoursFromScheduleMap,
   isWorkingDayFromScheduleMap,
 } from "@/lib/utils/schedule-utils";
-import RequestLeaveModal from "./request-leave-modal";
+import RequestLeaveModal from "../employee/request-leave-modal";
 import { cn } from "@/lib/utils";
 
 // Re-export for backward compatibility
@@ -99,6 +99,7 @@ export default function TimesheetCalendar({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, startSaving] = useTransition();
   const hasFetched = useRef(false);
+  const prevDayTypeRef = useRef<"normal" | "ferie" | "malattia" | "paternity">("normal");
 
   // User working schedules state
   const [userSchedules, setUserSchedules] = useState<WorkingScheduleDTO[]>([]);
@@ -232,6 +233,12 @@ export default function TimesheetCalendar({
   useEffect(() => {
     if (!isModalOpen) return; // Only run when modal is open
     
+    // Only reset if dayType actually changed (not on initial modal open)
+    const dayTypeChanged = prevDayTypeRef.current !== modalForm.dayType;
+    prevDayTypeRef.current = modalForm.dayType;
+    
+    if (!dayTypeChanged) return;
+    
     if (modalForm.dayType === "normal" && selectedDate) {
       // Get the working schedule for the selected day
       const selectedDay = new Date(selectedDate + 'T00:00:00');
@@ -255,6 +262,13 @@ export default function TimesheetCalendar({
       }));
     }
   }, [modalForm.dayType, selectedDate, scheduleMap, isModalOpen]);
+
+  // Reset dayType ref when modal closes
+  useEffect(() => {
+    if (!isModalOpen) {
+      prevDayTypeRef.current = "normal";
+    }
+  }, [isModalOpen]);
 
   // Refetch entries when needed
   useEffect(() => {
@@ -571,10 +585,10 @@ export default function TimesheetCalendar({
       const isPermesso104 = (existingEntry.permesso104Hours ?? 0) > 0;
       
       setModalForm({
-        morningStart: isMorningPermesso ? "08:00" : (existingEntry.morningStart || "08:00"),
-        morningEnd: isMorningPermesso ? "12:00" : (existingEntry.morningEnd || "12:00"),
-        afternoonStart: isAfternoonPermesso ? "14:00" : (existingEntry.afternoonStart || "14:00"),
-        afternoonEnd: isAfternoonPermesso ? "18:30" : (existingEntry.afternoonEnd || "18:30"),
+        morningStart: existingEntry.morningStart || "08:00",
+        morningEnd: existingEntry.morningEnd || "12:00",
+        afternoonStart: existingEntry.afternoonStart || "14:00",
+        afternoonEnd: existingEntry.afternoonEnd || "18:30",
         notes: existingEntry.notes || "",
         dayType,
         medicalCertificate,

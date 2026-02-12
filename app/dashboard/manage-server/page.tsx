@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { ManageServer } from "@/components/dashboard/manage-server";
+import { ManageServer } from "@/components/dashboard/admin/manage-server";
 
 export const metadata = {
   title: "Manage Server - Employee Tracker",

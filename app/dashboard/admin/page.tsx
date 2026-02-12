@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import AdminOverview from "@/components/dashboard/admin-overview";
+import AdminOverview from "@/components/dashboard/admin/overview";
 import PendingRequests from "@/components/dashboard/admin/pending-requests";
 import type { User } from "@/types/models";
 

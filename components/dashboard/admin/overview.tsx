@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@/types/models";
-import StatsCard from "./stats-card";
+import StatsCard from "../shared/stats-card";
 import { 
   Clock, 
   Briefcase, 

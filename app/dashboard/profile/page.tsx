@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import EmployeeProfile from "@/components/dashboard/employee-profile";
+import EmployeeProfile from "@/components/dashboard/employee/profile";
 
 export default async function ProfilePage() {
   const session = await getAuthSession();

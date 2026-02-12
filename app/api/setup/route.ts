@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { hash } from "bcryptjs";
 import { z } from "zod";
 
 const setupSchema = z.object({
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Hash password and create admin user
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await hash(password, 10);
     
     const user = await prisma.user.create({
       data: {

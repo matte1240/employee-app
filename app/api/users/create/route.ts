@@ -1,6 +1,6 @@
 import { z } from "zod";
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
+import { hash } from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { sendWelcomeSetupEmail } from "@/lib/email";
 import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/utils/token-utils";
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(passwordToHash, 10);
+    const passwordHash = await hash(passwordToHash, 10);
 
     // Create user
     const newUser = await prisma.user.create({

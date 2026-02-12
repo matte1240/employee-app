@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import AdminReports from "@/components/dashboard/admin-reports";
-import UserReports from "@/components/dashboard/user-reports";
+import AdminReports from "@/components/dashboard/admin/reports";
+import UserReports from "@/components/dashboard/employee/reports";
 import type { User } from "@/types/models";
 
 export default async function ReportsPage() {
