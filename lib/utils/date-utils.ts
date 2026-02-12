@@ -48,3 +48,15 @@ export function isDateEditable(date: Date, isAdmin = false, canWorkSunday = fals
   
   return checkDate >= earliestEditableDate && checkDate <= today;
 }
+
+/**
+ * Format a Date object to database-compatible string format (YYYY-MM-DD)
+ * 
+ * @param date The date to format
+ * @returns String in YYYY-MM-DD format
+ * @example
+ * formatDateForDb(new Date('2026-02-12T15:30:00')) // "2026-02-12"
+ */
+export function formatDateForDb(date: Date): string {
+  return date.toISOString().split("T")[0];
+}

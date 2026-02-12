@@ -3,7 +3,6 @@
 import { format } from "date-fns";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import type { User, UserRole } from "@/types/models";
 import { 
   Plus, 
@@ -436,32 +435,6 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                         <Calendar className="h-4 w-4" />
                         Orari
                       </button>
-                      <button
-                        onClick={() => {
-                          setResettingPasswordUser(user);
-                          setResetPasswordForm({ newPassword: "", confirmPassword: "" });
-                          setError(null);
-                          setSuccess(null);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 transition hover:bg-amber-200 dark:hover:bg-amber-900/50 cursor-pointer"
-                        title="Reimposta password"
-                      >
-                        <Key className="h-4 w-4" />
-                        Reimposta
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDeletingUser(user);
-                          setError(null);
-                          setSuccess(null);
-                        }}
-                        disabled={user.id === currentUserId}
-                        className="inline-flex items-center gap-1 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive transition hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-                        title={user.id === currentUserId ? "Non puoi eliminare il tuo account" : "Elimina utente"}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Elimina
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -813,6 +786,36 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 >
                   {isUpdating && <Loader2 className="h-4 w-4 animate-spin" />}
                   {isUpdating ? "Aggiornamento..." : "Aggiorna Utente"}
+                </button>
+              </div>
+
+              {/* Azioni Utente */}
+              <div className="border-t border-border pt-4 mt-4 space-y-3">
+                <p className="text-sm font-semibold text-muted-foreground mb-3">Azioni Utente</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingUser(null);
+                    setResettingPasswordUser(editingUser);
+                    setResetPasswordForm({ newPassword: "", confirmPassword: "" });
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 transition hover:bg-amber-200 dark:hover:bg-amber-900/50 cursor-pointer"
+                >
+                  <Key className="h-4 w-4" />
+                  Reimposta Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingUser(null);
+                    setDeletingUser(editingUser);
+                  }}
+                  disabled={editingUser?.id === currentUserId}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive transition hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  title={editingUser?.id === currentUserId ? "Non puoi eliminare il tuo account" : "Elimina utente"}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Elimina Utente
                 </button>
               </div>
             </form>

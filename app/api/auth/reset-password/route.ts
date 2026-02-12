@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
+import { hash } from "bcryptjs";
 import prisma from "@/lib/prisma";
 
 const resetPasswordSchema = z.object({
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     }
 
     // Hash new password
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await hash(newPassword, 10);
 
     // Update password, increment tokenVersion, delete token, and invalidate all sessions
     await prisma.$transaction([

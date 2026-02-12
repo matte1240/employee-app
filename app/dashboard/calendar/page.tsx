@@ -3,10 +3,9 @@ import { redirect } from "next/navigation";
 import { endOfMonth, startOfMonth } from "date-fns";
 import prisma from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
-import TimesheetCalendar, {
-  type TimeEntryDTO,
-} from "@/components/dashboard/timesheet-calendar";
-import UserSelector from "@/components/dashboard/user-selector";
+import TimesheetCalendar from "@/components/dashboard/shared/timesheet-calendar";
+import UserSelector from "@/components/dashboard/shared/user-selector";
+import { serializeTimeEntry } from "@/lib/utils/serialization";
 
 type PrismaEntry = {
   id: string;
@@ -24,6 +23,9 @@ type PrismaEntry = {
   afternoonStart: string | null;
   afternoonEnd: string | null;
   notes: string | null;
+  medicalCertificate: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 type UserRow = {
@@ -33,24 +35,6 @@ type UserRow = {
   hasPermesso104: boolean;
   hasPaternityLeave: boolean;
 };
-
-const toDto = (entry: PrismaEntry): TimeEntryDTO => ({
-  id: entry.id,
-  userId: entry.userId,
-  workDate: entry.workDate.toISOString().split("T")[0],
-  hoursWorked: parseFloat(entry.hoursWorked.toString()),
-  overtimeHours: parseFloat(entry.overtimeHours.toString()),
-  permessoHours: parseFloat(entry.permessoHours.toString()),
-  vacationHours: parseFloat(entry.vacationHours.toString()),
-  sicknessHours: parseFloat(entry.sicknessHours.toString()),
-  permesso104Hours: parseFloat(entry.permesso104Hours.toString()),
-  paternityHours: parseFloat(entry.paternityHours.toString()),
-  morningStart: entry.morningStart,
-  morningEnd: entry.morningEnd,
-  afternoonStart: entry.afternoonStart,
-  afternoonEnd: entry.afternoonEnd,
-  notes: entry.notes,
-});
 
 export default async function CalendarPage({
   searchParams,
@@ -84,6 +68,9 @@ export default async function CalendarPage({
     afternoonStart: true,
     afternoonEnd: true,
     notes: true,
+    medicalCertificate: true,
+    createdAt: true,
+    updatedAt: true,
   };
 
   let users: UserRow[] = [];
@@ -142,7 +129,7 @@ export default async function CalendarPage({
     orderBy: { workDate: "asc" },
   })) as PrismaEntry[];
 
-  const plain = entries.map(toDto);
+  const plain = entries.map(serializeTimeEntry);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">

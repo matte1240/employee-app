@@ -1,5 +1,5 @@
 import { z } from "zod";
-import bcrypt from "bcryptjs";
+import { hash } from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { sendPasswordResetLinkEmail } from "@/lib/email";
 import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/utils/token-utils";
@@ -45,7 +45,7 @@ export async function POST(
 
     // If manual password is provided, reset password directly
     if (newPassword) {
-      const passwordHash = await bcrypt.hash(newPassword, 10);
+      const passwordHash = await hash(newPassword, 10);
 
       // Update password and invalidate all sessions
       await prisma.$transaction([

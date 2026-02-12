@@ -48,7 +48,7 @@ export async function getUserSchedules(
     orderBy: { dayOfWeek: "asc" },
   });
 
-  return schedules.map((s: { id: string; userId: string; dayOfWeek: number; morningStart: string | null; morningEnd: string | null; afternoonStart: string | null; afternoonEnd: string | null; totalHours: { toString(): string }; isWorkingDay: boolean }) => ({
+  return schedules.map((s) => ({
     id: s.id,
     userId: s.userId,
     dayOfWeek: s.dayOfWeek,
@@ -57,6 +57,7 @@ export async function getUserSchedules(
     afternoonStart: s.afternoonStart,
     afternoonEnd: s.afternoonEnd,
     totalHours: parseFloat(s.totalHours.toString()),
+    useManualHours: s.useManualHours,
     isWorkingDay: s.isWorkingDay,
   }));
 }
@@ -85,6 +86,7 @@ export async function getUserScheduleForDay(
     afternoonStart: schedule.afternoonStart,
     afternoonEnd: schedule.afternoonEnd,
     totalHours: parseFloat(schedule.totalHours.toString()),
+    useManualHours: schedule.useManualHours,
     isWorkingDay: schedule.isWorkingDay,
   };
 }
@@ -183,26 +185,32 @@ export async function upsertScheduleForDay(
     morningEnd?: string | null;
     afternoonStart?: string | null;
     afternoonEnd?: string | null;
+    totalHours?: number;
+    useManualHours?: boolean;
     isWorkingDay?: boolean;
   }
 ): Promise<WorkingScheduleDTO> {
-  const totalHours = calculateTotalHoursFromShifts(
-    data.morningStart ?? null,
-    data.morningEnd ?? null,
-    data.afternoonStart ?? null,
-    data.afternoonEnd ?? null
-  );
+  // Use provided totalHours if useManualHours is true, otherwise calculate from shifts
+  const totalHours = data.useManualHours && data.totalHours !== undefined
+    ? data.totalHours 
+    : calculateTotalHoursFromShifts(
+        data.morningStart ?? null,
+        data.morningEnd ?? null,
+        data.afternoonStart ?? null,
+        data.afternoonEnd ?? null
+      );
 
   const schedule = await prisma.workingSchedule.upsert({
     where: {
       userId_dayOfWeek: { userId, dayOfWeek },
     },
     update: {
-      morningStart: data.morningStart,
-      morningEnd: data.morningEnd,
-      afternoonStart: data.afternoonStart,
-      afternoonEnd: data.afternoonEnd,
+      morningStart: data.morningStart ?? null,
+      morningEnd: data.morningEnd ?? null,
+      afternoonStart: data.afternoonStart ?? null,
+      afternoonEnd: data.afternoonEnd ?? null,
       totalHours,
+      useManualHours: data.useManualHours ?? false,
       isWorkingDay: data.isWorkingDay ?? true,
     },
     create: {
@@ -213,6 +221,7 @@ export async function upsertScheduleForDay(
       afternoonStart: data.afternoonStart ?? null,
       afternoonEnd: data.afternoonEnd ?? null,
       totalHours,
+      useManualHours: data.useManualHours ?? false,
       isWorkingDay: data.isWorkingDay ?? true,
     },
   });
@@ -226,6 +235,7 @@ export async function upsertScheduleForDay(
     afternoonStart: schedule.afternoonStart,
     afternoonEnd: schedule.afternoonEnd,
     totalHours: parseFloat(schedule.totalHours.toString()),
+    useManualHours: schedule.useManualHours,
     isWorkingDay: schedule.isWorkingDay,
   };
 }
@@ -241,6 +251,8 @@ export async function updateUserSchedules(
     morningEnd?: string | null;
     afternoonStart?: string | null;
     afternoonEnd?: string | null;
+    totalHours?: number;
+    useManualHours?: boolean;
     isWorkingDay?: boolean;
   }>
 ): Promise<WorkingScheduleDTO[]> {

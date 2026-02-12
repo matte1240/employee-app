@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
-import RequestsList from "@/components/dashboard/requests-list";
+import RequestsList from "@/components/dashboard/employee/requests-list";
 
 export default async function RequestsPage() {
   const session = await getAuthSession();

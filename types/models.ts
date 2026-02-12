@@ -68,6 +68,7 @@ export type WorkingScheduleDTO = {
   afternoonStart: string | null;
   afternoonEnd: string | null;
   totalHours: number;
+  useManualHours: boolean;
   isWorkingDay: boolean;
 };
 

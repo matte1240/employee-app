@@ -1,76 +1,27 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition } from "react";
 import { format } from "date-fns";
-import Image from "next/image";
-import { useSession } from "next-auth/react";
 import type { User } from "@/types/models";
 import { 
-  Camera, 
   Shield,
   User as UserIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
-import { Spinner } from "@/components/ui/spinner";
 
 type EmployeeProfileProps = {
   user: User;
 };
 
 export default function EmployeeProfile({ user }: EmployeeProfileProps) {
-  const { update } = useSession();
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isUpdating, startUpdating] = useTransition();
-  
-  // Image upload state
-  const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(user.image);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    setError(null);
-    setSuccess(null);
-    
-    const formData = new FormData();
-    formData.append("image", file);
-
-    try {
-      const response = await fetch(`/api/users/${user.id}/image`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Upload failed");
-      }
-
-      const data = await response.json();
-      setAvatarUrl(data.imageUrl);
-      setSuccess("Immagine profilo aggiornata!");
-      
-      // Update session to reflect new image in navbar
-      await update();
-      
-      // Force a router refresh to update server components if needed
-      window.location.reload(); 
-    } catch (err) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : "Errore durante il caricamento dell'immagine");
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();

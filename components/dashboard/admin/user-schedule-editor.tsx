@@ -22,6 +22,7 @@ type ScheduleEntry = {
   afternoonEnd: string | null;
   isWorkingDay: boolean;
   totalHours: number;
+  useManualHours: boolean;
 };
 
 type UserScheduleEditorProps = {
@@ -54,13 +55,13 @@ function calculateTotalHours(
 
 // Default schedule for each day (Mon-Fri 8-12, 14-18)
 const DEFAULT_SCHEDULES: ScheduleEntry[] = [
-  { dayOfWeek: 0, morningStart: null, morningEnd: null, afternoonStart: null, afternoonEnd: null, isWorkingDay: false, totalHours: 0 }, // Sunday - always off
-  { dayOfWeek: 1, morningStart: "08:00", morningEnd: "12:00", afternoonStart: "14:00", afternoonEnd: "18:00", isWorkingDay: true, totalHours: 8 },
-  { dayOfWeek: 2, morningStart: "08:00", morningEnd: "12:00", afternoonStart: "14:00", afternoonEnd: "18:00", isWorkingDay: true, totalHours: 8 },
-  { dayOfWeek: 3, morningStart: "08:00", morningEnd: "12:00", afternoonStart: "14:00", afternoonEnd: "18:00", isWorkingDay: true, totalHours: 8 },
-  { dayOfWeek: 4, morningStart: "08:00", morningEnd: "12:00", afternoonStart: "14:00", afternoonEnd: "18:00", isWorkingDay: true, totalHours: 8 },
-  { dayOfWeek: 5, morningStart: "08:00", morningEnd: "12:00", afternoonStart: "14:00", afternoonEnd: "18:00", isWorkingDay: true, totalHours: 8 },
-  { dayOfWeek: 6, morningStart: null, morningEnd: null, afternoonStart: null, afternoonEnd: null, isWorkingDay: false, totalHours: 0 }, // Saturday - configurable
+  { dayOfWeek: 0, morningStart: null, morningEnd: null, afternoonStart: null, afternoonEnd: null, isWorkingDay: false, totalHours: 0, useManualHours: false }, // Sunday - always off
+  { dayOfWeek: 1, morningStart: "08:00", morningEnd: "12:00", afternoonStart: "14:00", afternoonEnd: "18:00", isWorkingDay: true, totalHours: 8, useManualHours: false },
+  { dayOfWeek: 2, morningStart: "08:00", morningEnd: "12:00", afternoonStart: "14:00", afternoonEnd: "18:00", isWorkingDay: true, totalHours: 8, useManualHours: false },
+  { dayOfWeek: 3, morningStart: "08:00", morningEnd: "12:00", afternoonStart: "14:00", afternoonEnd: "18:00", isWorkingDay: true, totalHours: 8, useManualHours: false },
+  { dayOfWeek: 4, morningStart: "08:00", morningEnd: "12:00", afternoonStart: "14:00", afternoonEnd: "18:00", isWorkingDay: true, totalHours: 8, useManualHours: false },
+  { dayOfWeek: 5, morningStart: "08:00", morningEnd: "12:00", afternoonStart: "14:00", afternoonEnd: "18:00", isWorkingDay: true, totalHours: 8, useManualHours: false },
+  { dayOfWeek: 6, morningStart: null, morningEnd: null, afternoonStart: null, afternoonEnd: null, isWorkingDay: false, totalHours: 0, useManualHours: false }, // Saturday - configurable
 ];
 
 export default function UserScheduleEditor({
@@ -112,6 +113,7 @@ export default function UserScheduleEditor({
               afternoonEnd: fetched.afternoonEnd,
               isWorkingDay: fetched.isWorkingDay,
               totalHours: fetched.totalHours,
+              useManualHours: fetched.useManualHours ?? false,
             };
           }
           return defaultEntry;
@@ -133,21 +135,13 @@ export default function UserScheduleEditor({
   const updateSchedule = (
     dayOfWeek: number,
     field: keyof ScheduleEntry,
-    value: string | boolean | null
+    value: string | boolean | number | null
   ) => {
     setSchedules((prev) =>
       prev.map((entry) => {
         if (entry.dayOfWeek !== dayOfWeek) return entry;
 
         const updated = { ...entry, [field]: value };
-
-        // Recalculate total hours
-        updated.totalHours = calculateTotalHours(
-          updated.morningStart,
-          updated.morningEnd,
-          updated.afternoonStart,
-          updated.afternoonEnd
-        );
 
         // If toggling isWorkingDay off, clear times
         if (field === "isWorkingDay" && value === false) {
@@ -156,6 +150,26 @@ export default function UserScheduleEditor({
           updated.afternoonStart = null;
           updated.afternoonEnd = null;
           updated.totalHours = 0;
+          updated.useManualHours = false;
+        } else if (field === "useManualHours") {
+          // When toggling useManualHours, recalculate if turning it off
+          if (value === false) {
+            updated.totalHours = calculateTotalHours(
+              updated.morningStart,
+              updated.morningEnd,
+              updated.afternoonStart,
+              updated.afternoonEnd
+            );
+          }
+          // If turning it on, keep current totalHours as manual value
+        } else if (field !== "totalHours" && !updated.useManualHours) {
+          // Auto-recalculate totalHours only if useManualHours is false (using updated state)
+          updated.totalHours = calculateTotalHours(
+            updated.morningStart,
+            updated.morningEnd,
+            updated.afternoonStart,
+            updated.afternoonEnd
+          );
         }
 
         return updated;
@@ -179,6 +193,8 @@ export default function UserScheduleEditor({
             morningEnd: s.isWorkingDay ? s.morningEnd : null,
             afternoonStart: s.isWorkingDay ? s.afternoonStart : null,
             afternoonEnd: s.isWorkingDay ? s.afternoonEnd : null,
+            totalHours: s.totalHours,
+            useManualHours: s.useManualHours,
             isWorkingDay: s.isWorkingDay,
           }));
 
@@ -435,14 +451,55 @@ export default function UserScheduleEditor({
                           </div>
                         )}
 
-                        {/* Total Hours */}
-                        <div className="min-w-[80px] text-right">
+                        {/* Total Hours - Editable with flag */}
+                        <div className="min-w-[140px] text-right">
                           {!isSunday && entry.isWorkingDay ? (
-                            <div>
-                              <span className="text-xs text-muted-foreground">Ore base:</span>
-                              <span className="ml-2 font-semibold text-foreground">
-                                {entry.totalHours.toFixed(1)}h
-                              </span>
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex items-center justify-end gap-2">
+                                <label className="text-xs text-muted-foreground">
+                                  Ore base:
+                                </label>
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={entry.useManualHours}
+                                    onChange={(e) =>
+                                      updateSchedule(
+                                        entry.dayOfWeek,
+                                        "useManualHours",
+                                        e.target.checked
+                                      )
+                                    }
+                                    className="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary/20"
+                                  />
+                                  <span className="text-xs text-muted-foreground">
+                                    Manuale
+                                  </span>
+                                </label>
+                              </div>
+                              <input
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                max="24"
+                                value={entry.totalHours}
+                                readOnly={!entry.useManualHours}
+                                onChange={(e) => {
+                                  if (!entry.useManualHours) return;
+                                  const value = parseFloat(e.target.value) || 0;
+                                  updateSchedule(
+                                    entry.dayOfWeek,
+                                    "totalHours",
+                                    Math.max(0, Math.min(24, value))
+                                  );
+                                }}
+                                className={cn(
+                                  "w-20 rounded-lg border px-2 py-1 text-sm text-center font-semibold outline-none transition",
+                                  entry.useManualHours
+                                    ? "border-input bg-background text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 cursor-text"
+                                    : "border-muted bg-muted/50 text-muted-foreground cursor-not-allowed"
+                                )}
+                              />
                             </div>
                           ) : !isSunday ? (
                             <span className="text-sm text-muted-foreground italic">

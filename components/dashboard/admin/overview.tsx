@@ -3,10 +3,10 @@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import Link from "next/link";
-import Image from "next/image";
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import type { User } from "@/types/models";
-import StatsCard from "./stats-card";
+import StatsCard from "../shared/stats-card";
 import { 
   Clock, 
   Briefcase, 
@@ -29,6 +29,7 @@ type AdminOverviewProps = {
 };
 
 export default function AdminOverview({ users }: AdminOverviewProps) {
+  const router = useRouter();
   const now = new Date();
   const currentMonth = format(now, "MMMM yyyy", { locale: it });
 
@@ -145,16 +146,17 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Ore Malattia
                 </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Azioni
-                </th>
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-border">
               {users.map((user) => {
                 const totalUserHours = user.regularHours + user.overtimeHours;
                 return (
-                  <tr key={user.id} className="hover:bg-muted/50 transition-colors">
+                  <tr 
+                    key={user.id} 
+                    onClick={() => router.push(`/dashboard/calendar?userId=${user.id}`)}
+                    className="hover:bg-muted/50 transition-colors cursor-pointer"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="relative flex-shrink-0 h-10 w-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
@@ -201,14 +203,6 @@ export default function AdminOverview({ users }: AdminOverviewProps) {
                       <div className="text-sm text-red-600 dark:text-red-400 font-medium">
                         {user.sicknessHours.toFixed(1)}h
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <Link
-                        href={`/dashboard/calendar?userId=${user.id}`}
-                        className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
-                      >
-                        Vedi Calendario
-                      </Link>
                     </td>
                   </tr>
                 );
