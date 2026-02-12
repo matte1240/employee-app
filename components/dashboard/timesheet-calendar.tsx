@@ -46,7 +46,6 @@ import { isHoliday, getHolidayName } from "@/lib/utils/holiday-utils";
 import {
   getBaseHoursFromScheduleMap,
   isWorkingDayFromScheduleMap,
-  DEFAULT_WORKING_DAYS,
 } from "@/lib/utils/schedule-utils";
 import RequestLeaveModal from "./request-leave-modal";
 import { cn } from "@/lib/utils";
@@ -229,15 +228,22 @@ export default function TimesheetCalendar({
     }
   }, [isModalOpen]);
 
-  // Reset times and notes when switching to normal, ferie, or malattia
+  // Reset times and notes when switching to normal, ferie, or malattia (only when modal is open)
   useEffect(() => {
-    if (modalForm.dayType === "normal") {
+    if (!isModalOpen) return; // Only run when modal is open
+    
+    if (modalForm.dayType === "normal" && selectedDate) {
+      // Get the working schedule for the selected day
+      const selectedDay = new Date(selectedDate + 'T00:00:00');
+      const dayOfWeek = selectedDay.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+      const schedule = scheduleMap.get(dayOfWeek);
+      
       setModalForm(f => ({
         ...f,
-        morningStart: "08:00",
-        morningEnd: "12:00",
-        afternoonStart: "14:00",
-        afternoonEnd: "18:30",
+        morningStart: schedule ? (schedule.morningStart ?? "") : "08:00",
+        morningEnd: schedule ? (schedule.morningEnd ?? "") : "12:00",
+        afternoonStart: schedule ? (schedule.afternoonStart ?? "") : "14:00",
+        afternoonEnd: schedule ? (schedule.afternoonEnd ?? "") : "18:30",
         notes: "",
         isMorningPermesso: false,
         isAfternoonPermesso: false,
@@ -248,7 +254,7 @@ export default function TimesheetCalendar({
         notes: "",
       }));
     }
-  }, [modalForm.dayType]);
+  }, [modalForm.dayType, selectedDate, scheduleMap, isModalOpen]);
 
   // Refetch entries when needed
   useEffect(() => {
@@ -577,11 +583,16 @@ export default function TimesheetCalendar({
         isPermesso104,
       });
     } else {
+      // Get the working schedule for the selected day
+      const selectedDay = new Date(dateStr + 'T00:00:00');
+      const dayOfWeek = selectedDay.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+      const schedule = scheduleMap.get(dayOfWeek);
+      
       setModalForm({
-        morningStart: "08:00",
-        morningEnd: "12:00",
-        afternoonStart: "14:00",
-        afternoonEnd: "18:30",
+        morningStart: schedule ? (schedule.morningStart ?? "") : "08:00",
+        morningEnd: schedule ? (schedule.morningEnd ?? "") : "12:00",
+        afternoonStart: schedule ? (schedule.afternoonStart ?? "") : "14:00",
+        afternoonEnd: schedule ? (schedule.afternoonEnd ?? "") : "18:30",
         notes: "",
         dayType: "normal",
         medicalCertificate: "",
@@ -1379,6 +1390,7 @@ export default function TimesheetCalendar({
                             disabled={modalForm.isMorningPermesso}
                             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           >
+                            <option value="">--</option>
                             {TIME_OPTIONS.map((time) => (
                               <option
                                 key={`morning-start-${time}`}
@@ -1404,6 +1416,7 @@ export default function TimesheetCalendar({
                             disabled={modalForm.isMorningPermesso}
                             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           >
+                            <option value="">--</option>
                             {TIME_OPTIONS.map((time) => (
                               <option key={`morning-end-${time}`} value={time}>
                                 {time}
@@ -1471,6 +1484,7 @@ export default function TimesheetCalendar({
                             disabled={modalForm.isAfternoonPermesso}
                             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           >
+                            <option value="">--</option>
                             {TIME_OPTIONS.map((time) => (
                               <option
                                 key={`afternoon-start-${time}`}
@@ -1496,6 +1510,7 @@ export default function TimesheetCalendar({
                             disabled={modalForm.isAfternoonPermesso}
                             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           >
+                            <option value="">--</option>
                             {TIME_OPTIONS.map((time) => (
                               <option key={`afternoon-end-${time}`} value={time}>
                                 {time}

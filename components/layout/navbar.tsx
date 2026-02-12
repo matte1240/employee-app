@@ -31,7 +31,8 @@ export default function Navbar({
   userRole,
   userName,
   userEmail,
-  userImage,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  userImage: _userImage,
 }: NavbarProps) {
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();

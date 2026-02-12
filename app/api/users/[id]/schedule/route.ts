@@ -28,6 +28,8 @@ const scheduleEntrySchema = z.object({
   morningEnd: timeSchema,
   afternoonStart: timeSchema,
   afternoonEnd: timeSchema,
+  totalHours: z.number().min(0).max(24).optional(),
+  useManualHours: z.boolean().optional(),
   isWorkingDay: z.boolean().optional(),
 });
 

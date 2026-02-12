@@ -57,21 +57,15 @@ export async function POST(req: NextRequest) {
       throw new Error("DATABASE_URL not configured");
     }
 
-    // Parse connection string
-    // postgresql://user:password@host:port/dbname
-    const url = new URL(dbUrl);
-    const user = url.username;
-    const password = url.password;
-    const host = url.hostname;
-    const port = url.port;
-    const dbname = url.pathname.slice(1);
-
-    // Construct psql command
-    const env = { ...process.env, PGPASSWORD: password };
-    const command = `psql -h ${host} -p ${port} -U ${user} -d ${dbname} -f "${tempPath}"`;
+    // Remove query parameters (psql doesn't need them)
+    const cleanUrl = dbUrl.split('?')[0];
 
     console.log("Restoring database...");
-    await execAsync(command, { env });
+    
+    // Use psql with connection string directly (similar to pg_dump approach)
+    const command = `psql "${cleanUrl}" -f "${tempPath}"`;
+
+    await execAsync(command);
 
     // Clean up temp file
     await unlink(tempPath);

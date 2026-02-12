@@ -178,7 +178,6 @@ export async function POST(request: Request) {
 
   // Calculate permessoHours based on user's working schedule
   const entryDate = new Date(`${workDate}T00:00:00.000Z`);
-  const dayOfWeek = entryDate.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   
   // Get user's schedule-based working day status and base hours
   const isWorkingDayForUser = await isUserWorkingDay(targetUserId, entryDate);

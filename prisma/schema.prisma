@@ -37,6 +37,7 @@ model WorkingSchedule {
   afternoonStart String?
   afternoonEnd   String?
   totalHours     Decimal  @default(0)
+  useManualHours Boolean  @default(false)
   isWorkingDay   Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
