@@ -111,8 +111,8 @@ export async function POST(req: Request) {
         admins.map((admin) =>
           sendLeaveRequestAdminNotification({
             adminEmail: admin.email,
-            adminName: admin.name,
-            employeeName: employee.name,
+            adminName: admin.name ?? admin.email,
+            employeeName: employee.name ?? employee.email,
             employeeEmail: employee.email,
             leaveType: body.type,
             startDate: body.startDate,
