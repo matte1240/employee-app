@@ -9,6 +9,7 @@ import {
   handleError,
   handleZodError,
 } from "@/lib/api-responses";
+import { sendLeaveRequestAdminNotification } from "@/lib/email";
 
 const createRequestSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -93,6 +94,36 @@ export async function POST(req: Request) {
         endTime: body.endTime,
       },
     });
+
+    // Notify all admins via email (fire-and-forget, errors don't block response)
+    const employee = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true },
+    });
+
+    if (employee) {
+      const admins = await prisma.user.findMany({
+        where: { role: "ADMIN" },
+        select: { name: true, email: true },
+      });
+
+      await Promise.allSettled(
+        admins.map((admin) =>
+          sendLeaveRequestAdminNotification({
+            adminEmail: admin.email,
+            adminName: admin.name,
+            employeeName: employee.name,
+            employeeEmail: employee.email,
+            leaveType: body.type,
+            startDate: body.startDate,
+            endDate: body.endDate,
+            startTime: body.startTime,
+            endTime: body.endTime,
+            reason: body.reason,
+          })
+        )
+      );
+    }
 
     return successResponse(request);
   } catch (error) {

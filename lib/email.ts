@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import { getWelcomeSetupEmailTemplate } from "./email-templates/welcome-setup";
 import { getPasswordResetLinkEmailTemplate } from "./email-templates/password-reset-link";
 import { getBackupEmailTemplate } from "./email-templates/backup";
+import { getLeaveRequestAdminEmailTemplate } from "./email-templates/leave-request-admin";
 
 // Configurazione transporter Gmail
 const transporter = nodemailer.createTransport({
@@ -148,3 +149,48 @@ export async function sendBackupEmail(
   }
 }
 
+// Notifica agli admin per una nuova richiesta di ferie/permesso
+export async function sendLeaveRequestAdminNotification(params: {
+  adminEmail: string;
+  adminName: string;
+  employeeName: string;
+  employeeEmail: string;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  startTime?: string;
+  endTime?: string;
+  reason?: string;
+}) {
+  const dashboardUrl = `${process.env.NEXTAUTH_URL ?? ""}/dashboard/requests`;
+
+  const { html, text } = getLeaveRequestAdminEmailTemplate({
+    ...params,
+    dashboardUrl,
+  });
+
+  const LEAVE_TYPE_LABELS: Record<string, string> = {
+    VACATION: "Ferie",
+    SICKNESS: "Malattia",
+    PERMESSO: "Permesso",
+  };
+  const typeLabel = LEAVE_TYPE_LABELS[params.leaveType] ?? params.leaveType;
+
+  const mailOptions = {
+    from: `"${process.env.EMAIL_FROM_NAME ?? "Time Tracker"}" <${process.env.EMAIL_USER}>`,
+    to: params.adminEmail,
+    subject: `📋 Nuova richiesta di ${typeLabel} da ${params.employeeName}`,
+    html,
+    text,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email richiesta ferie inviata ad admin ${params.adminEmail}:`, info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error(`❌ Errore invio email richiesta ferie ad admin ${params.adminEmail}:`, error);
+    // Non propaghiamo l'errore per non bloccare la creazione della richiesta
+    return { success: false };
+  }
+}
