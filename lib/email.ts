@@ -3,6 +3,7 @@ import { getWelcomeSetupEmailTemplate } from "./email-templates/welcome-setup";
 import { getPasswordResetLinkEmailTemplate } from "./email-templates/password-reset-link";
 import { getBackupEmailTemplate } from "./email-templates/backup";
 import { getLeaveRequestAdminEmailTemplate } from "./email-templates/leave-request-admin";
+import { getMissingTimesheetReminderEmailTemplate } from "./email-templates/missing-timesheet-reminder";
 
 // Configurazione transporter Gmail
 const transporter = nodemailer.createTransport({
@@ -191,6 +192,37 @@ export async function sendLeaveRequestAdminNotification(params: {
   } catch (error) {
     console.error(`❌ Errore invio email richiesta ferie ad admin ${params.adminEmail}:`, error);
     // Non propaghiamo l'errore per non bloccare la creazione della richiesta
+    return { success: false };
+  }
+}
+
+// Template email per promemoria timesheet mancante
+export async function sendMissingTimesheetReminderEmail(
+  to: string,
+  username: string,
+  missingDatesFormatted: string
+) {
+  const dashboardUrl = `${process.env.NEXTAUTH_URL ?? ""}/dashboard`;
+  const { html, text } = getMissingTimesheetReminderEmailTemplate(
+    username,
+    missingDatesFormatted,
+    dashboardUrl
+  );
+
+  const mailOptions = {
+    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "⚠️ Promemoria: Ore mancanti nel calendario",
+    html,
+    text,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Email promemoria timesheet inviata:", info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error("❌ Errore invio email promemoria timesheet:", error);
     return { success: false };
   }
 }

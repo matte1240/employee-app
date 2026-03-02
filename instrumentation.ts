@@ -33,5 +33,46 @@ export async function register() {
     });
 
     console.log(`Backup scheduler initialized (${schedule})`);
+
+    // Schedule daily timesheet reminder check at 9:00 AM
+    // Sends reminder emails to employees who have 2+ missing days in the last 5 working days
+    const reminderSchedule = process.env.REMINDER_CRON_SCHEDULE || "0 9 * * 1-5";
+
+    cron.schedule(reminderSchedule, async () => {
+      console.log("Running scheduled timesheet reminder check...");
+      try {
+        const { getUsersWithMissingTimesheets, formatMissingDatesIT } = await import(
+          "@/lib/utils/timesheet-utils"
+        );
+        const { sendMissingTimesheetReminderEmail } = await import("@/lib/email");
+
+        const usersWithMissing = await getUsersWithMissingTimesheets(5);
+
+        if (usersWithMissing.length === 0) {
+          console.log("✅ Nessun utente con ore mancanti. Nessun promemoria inviato.");
+          return;
+        }
+
+        console.log(`📧 Invio promemoria a ${usersWithMissing.length} utente/i con ore mancanti...`);
+
+        for (const { user, missingDates } of usersWithMissing) {
+          const missingDatesFormatted = formatMissingDatesIT(missingDates, false);
+          const result = await sendMissingTimesheetReminderEmail(
+            user.email,
+            user.name ?? user.email,
+            missingDatesFormatted
+          );
+          if (result.success) {
+            console.log(`✅ Promemoria inviato a ${user.email}`);
+          } else {
+            console.error(`❌ Impossibile inviare promemoria a ${user.email}`);
+          }
+        }
+      } catch (error) {
+        console.error("Scheduled timesheet reminder check failed:", error);
+      }
+    });
+
+    console.log(`Timesheet reminder scheduler initialized (${reminderSchedule})`);
   }
 }
