@@ -15,7 +15,8 @@ import {
   Info, 
   AlertTriangle,
   Loader2,
-  Calendar
+  Calendar,
+  Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import UserScheduleEditor from "@/components/dashboard/admin/user-schedule-editor";
@@ -89,6 +90,10 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
   const [isUpdating, startUpdating] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
   const [isResettingPassword, startResettingPassword] = useTransition();
+  const [isSendingReminder, startSendingReminder] = useTransition();
+
+  // Track which user is receiving a reminder (for loading state)
+  const [remindingUserId, setRemindingUserId] = useState<string | null>(null);
 
   // Message states
   const [error, setError] = useState<string | null>(null);
@@ -249,6 +254,40 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
   };
 
   // Reimposta Password Handler
+  // Invia Promemoria Timesheet Handler
+  const handleSendReminder = (user: UserWithFlags) => {
+    setRemindingUserId(user.id);
+    setError(null);
+    setSuccess(null);
+
+    startSendingReminder(async () => {
+      try {
+        const response = await fetch(`/api/users/${user.id}/remind-timesheet`, {
+          method: "POST",
+        });
+
+        const data = await response.json();
+
+        if (response.status === 401) {
+          router.push("/");
+          return;
+        }
+
+        if (!response.ok) {
+          setError(data.error || "Impossibile inviare il promemoria");
+          return;
+        }
+
+        setSuccess(data.message || `Promemoria inviato con successo a ${user.email}!`);
+      } catch (err) {
+        console.error(err);
+        setError("Si è verificato un errore imprevisto durante l'invio del promemoria");
+      } finally {
+        setRemindingUserId(null);
+      }
+    });
+  };
+
   const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (!resettingPasswordUser) return;
@@ -446,8 +485,8 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
 
       {/* Crea Utente Modal */}
       {isCreatingUserModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-xl bg-card border border-border shadow-2xl">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md my-auto rounded-xl bg-card border border-border shadow-2xl">
             <div className="border-b border-border bg-primary px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-primary-foreground">Crea Nuovo Utente</h2>
@@ -661,8 +700,8 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
 
       {/* Modifica Utente Modal */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-xl bg-card border border-border shadow-2xl">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md my-auto rounded-xl bg-card border border-border shadow-2xl">
             <div className="border-b border-border bg-primary px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-primary-foreground">Modifica Utente</h2>
@@ -794,6 +833,22 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
                 <p className="text-sm font-semibold text-muted-foreground mb-3">Azioni Utente</p>
                 <button
                   type="button"
+                  onClick={() => handleSendReminder(editingUser!)}
+                  disabled={isSendingReminder && remindingUserId === editingUser?.id}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-100 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 transition hover:bg-blue-200 dark:hover:bg-blue-900/50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  title="Invia un promemoria all'utente per compilare il calendario"
+                >
+                  {isSendingReminder && remindingUserId === editingUser?.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Bell className="h-4 w-4" />
+                  )}
+                  {isSendingReminder && remindingUserId === editingUser?.id
+                    ? "Invio in corso..."
+                    : "Invia Promemoria Calendario"}
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     setEditingUser(null);
                     setResettingPasswordUser(editingUser);
@@ -825,8 +880,8 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
 
       {/* Elimina Utente Modal */}
       {deletingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-xl bg-card border border-border shadow-2xl">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md my-auto rounded-xl bg-card border border-border shadow-2xl">
             <div className="border-b border-border bg-destructive px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-destructive-foreground">Elimina Utente</h2>
@@ -893,8 +948,8 @@ export default function ManageUsers({ users, currentUserId }: ManageUsersProps) 
 
       {/* Reimposta Password Modal */}
       {resettingPasswordUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-xl bg-card border border-border shadow-2xl">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md my-auto rounded-xl bg-card border border-border shadow-2xl">
             <div className="border-b border-border bg-amber-600 px-6 py-4 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">Reimposta Password</h2>
