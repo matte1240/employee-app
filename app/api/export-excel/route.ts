@@ -32,8 +32,7 @@ export async function POST(request: Request) {
   }
   const [year, monthNum] = month.split("-");
   const startDate = new Date(`${year}-${monthNum}-01T00:00:00.000Z`);
-  const endDate = new Date(parseInt(year), parseInt(monthNum), 0); // Last day of month
-  endDate.setUTCHours(23, 59, 59, 999);
+  const endDate = new Date(Date.UTC(parseInt(year), parseInt(monthNum), 0, 23, 59, 59, 999)); // Last day of month, UTC end of day
 
   try {
     // Create a new workbook

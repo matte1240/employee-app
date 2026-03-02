@@ -30,7 +30,7 @@ export async function register() {
           );
         }
       }
-    });
+    }, { timezone: process.env.TZ || 'Europe/Rome' });
 
     console.log(`Backup scheduler initialized (${schedule})`);
 
@@ -40,6 +40,7 @@ export async function register() {
 
     cron.schedule(reminderSchedule, async () => {
       console.log("Running scheduled timesheet reminder check...");
+
       try {
         const { getUsersWithMissingTimesheets, formatMissingDatesIT } = await import(
           "@/lib/utils/timesheet-utils"
@@ -71,7 +72,7 @@ export async function register() {
       } catch (error) {
         console.error("Scheduled timesheet reminder check failed:", error);
       }
-    });
+    }, { timezone: process.env.TZ || 'Europe/Rome' });
 
     console.log(`Timesheet reminder scheduler initialized (${reminderSchedule})`);
   }
