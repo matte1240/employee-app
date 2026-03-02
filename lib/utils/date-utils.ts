@@ -51,12 +51,16 @@ export function isDateEditable(date: Date, isAdmin = false, canWorkSunday = fals
 
 /**
  * Format a Date object to database-compatible string format (YYYY-MM-DD)
- * 
+ * Uses UTC components to avoid timezone-related day shifts.
+ *
  * @param date The date to format
  * @returns String in YYYY-MM-DD format
  * @example
- * formatDateForDb(new Date('2026-02-12T15:30:00')) // "2026-02-12"
+ * formatDateForDb(new Date('2026-02-12T15:30:00Z')) // "2026-02-12"
  */
 export function formatDateForDb(date: Date): string {
-  return date.toISOString().split("T")[0];
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }

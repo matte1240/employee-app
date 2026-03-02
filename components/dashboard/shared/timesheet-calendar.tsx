@@ -78,6 +78,8 @@ type ModalFormState = {
   isMorningPermesso: boolean;
   isAfternoonPermesso: boolean;
   isPermesso104: boolean;
+  /** How many of the missing hours should be counted as Permesso 104. null = all missing hours. */
+  permesso104Override: number | null;
 };
 
 export default function TimesheetCalendar({
@@ -126,6 +128,7 @@ export default function TimesheetCalendar({
     isMorningPermesso: false,
     isAfternoonPermesso: false,
     isPermesso104: false,
+    permesso104Override: null,
   });
 
   // Context menu state
@@ -254,6 +257,8 @@ export default function TimesheetCalendar({
         notes: "",
         isMorningPermesso: false,
         isAfternoonPermesso: false,
+        isPermesso104: false,
+        permesso104Override: null,
       }));
     } else if (modalForm.dayType === "ferie" || modalForm.dayType === "malattia") {
       setModalForm(f => ({
@@ -469,10 +474,13 @@ export default function TimesheetCalendar({
         if (netWork < baseHours) {
           regular = netWork;
           const missingHours = baseHours - netWork;
-          // If isPermesso104 flag is active, use 104 hours instead of regular permesso
+          // If isPermesso104 flag is active, split between permesso104 and normal permesso
           if (modalForm.isPermesso104) {
-            permesso = 0;
-            permesso104 = missingHours;
+            const perm104 = modalForm.permesso104Override !== null
+              ? Math.min(Math.max(0, modalForm.permesso104Override), missingHours)
+              : missingHours;
+            permesso104 = perm104;
+            permesso = missingHours - perm104;
           } else {
             permesso = missingHours;
             permesso104 = 0;
@@ -496,7 +504,7 @@ export default function TimesheetCalendar({
       permesso104,
       paternity: 0
     };
-  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso, modalForm.dayType, modalForm.isPermesso104, selectedDate, approvedRequests, scheduleMap]);
+  }, [modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd, modalForm.isMorningPermesso, modalForm.isAfternoonPermesso, modalForm.dayType, modalForm.isPermesso104, modalForm.permesso104Override, selectedDate, approvedRequests, scheduleMap]);
 
   const activePerm = useMemo(() => {
     if (!selectedDate) return null;
@@ -583,18 +591,25 @@ export default function TimesheetCalendar({
       const isMorningPermesso = existingEntry.morningStart === "PERM";
       const isAfternoonPermesso = existingEntry.afternoonStart === "PERM";
       const isPermesso104 = (existingEntry.permesso104Hours ?? 0) > 0;
-      
+
+      // For the selected date, get the schedule to use as fallback when PERM sentinel is stored
+      const selectedDay = new Date(dateStr + 'T00:00:00');
+      const dayOfWeek = selectedDay.getDay();
+      const schedule = scheduleMap.get(dayOfWeek);
+
       setModalForm({
-        morningStart: existingEntry.morningStart || "08:00",
-        morningEnd: existingEntry.morningEnd || "12:00",
-        afternoonStart: existingEntry.afternoonStart || "14:00",
-        afternoonEnd: existingEntry.afternoonEnd || "18:30",
+        morningStart: isMorningPermesso ? (schedule?.morningStart ?? "08:00") : (existingEntry.morningStart || "08:00"),
+        morningEnd: isMorningPermesso ? (schedule?.morningEnd ?? "12:00") : (existingEntry.morningEnd || "12:00"),
+        afternoonStart: isAfternoonPermesso ? (schedule?.afternoonStart ?? "14:00") : (existingEntry.afternoonStart || "14:00"),
+        afternoonEnd: isAfternoonPermesso ? (schedule?.afternoonEnd ?? "18:30") : (existingEntry.afternoonEnd || "18:30"),
         notes: existingEntry.notes || "",
         dayType,
         medicalCertificate,
         isMorningPermesso,
         isAfternoonPermesso,
         isPermesso104,
+        // Restore manual split: if both permesso104 and permesso were saved, restore the 104 portion
+        permesso104Override: isPermesso104 ? parseFloat(existingEntry.permesso104Hours?.toString() ?? "0") : null,
       });
     } else {
       // Get the working schedule for the selected day
@@ -613,6 +628,7 @@ export default function TimesheetCalendar({
         isMorningPermesso: false,
         isAfternoonPermesso: false,
         isPermesso104: false,
+        permesso104Override: null,
       });
     }
     
@@ -1561,6 +1577,7 @@ export default function TimesheetCalendar({
                               setModalForm((f) => ({
                                 ...f,
                                 isPermesso104: e.target.checked,
+                                permesso104Override: null,
                               }))
                             }
                             className="h-5 w-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
@@ -1574,15 +1591,36 @@ export default function TimesheetCalendar({
                             </p>
                           </div>
                         </label>
-                        {modalForm.isPermesso104 && calculatedHours.permesso104 > 0 && (
-                          <p className="mt-3 flex items-center justify-between text-sm">
-                            <span className="font-medium text-purple-700 dark:text-purple-300">
-                              Ore Permesso 104:
-                            </span>
-                            <span className="font-bold text-purple-900 dark:text-purple-100">
-                              {calculatedHours.permesso104.toFixed(2)} ore
-                            </span>
-                          </p>
+                        {modalForm.isPermesso104 && (calculatedHours.permesso104 > 0 || calculatedHours.permesso > 0) && (
+                          <div className="mt-3 space-y-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <label className="text-sm font-medium text-purple-700 dark:text-purple-300 whitespace-nowrap">
+                                Ore Permesso 104:
+                              </label>
+                              <input
+                                type="number"
+                                min={0}
+                                max={calculatedHours.permesso104 + calculatedHours.permesso}
+                                step={0.5}
+                                value={modalForm.permesso104Override ?? (calculatedHours.permesso104 + calculatedHours.permesso)}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  const maxH = calculatedHours.permesso104 + calculatedHours.permesso;
+                                  setModalForm((f) => ({
+                                    ...f,
+                                    permesso104Override: isNaN(val) ? null : Math.min(Math.max(0, val), maxH),
+                                  }));
+                                }}
+                                className="w-24 rounded-md border border-purple-300 dark:border-purple-700 bg-white dark:bg-purple-950 px-2 py-1 text-sm font-bold text-purple-900 dark:text-purple-100 text-right focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                            {calculatedHours.permesso > 0 && (
+                              <p className="flex items-center justify-between text-xs text-purple-600 dark:text-purple-400">
+                                <span>Permesso normale:</span>
+                                <span className="font-semibold">{calculatedHours.permesso.toFixed(2)} ore</span>
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
@@ -1736,7 +1774,8 @@ export default function TimesheetCalendar({
                     isSaving ||
                     (modalForm.dayType === "normal" &&
                       calculatedHours.totalWorked === 0 &&
-                      calculatedHours.permesso === 0)
+                      calculatedHours.permesso === 0 &&
+                      calculatedHours.permesso104 === 0)
                   }
                   className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 flex-1 shadow-md"
                 >

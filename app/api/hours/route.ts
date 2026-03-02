@@ -128,24 +128,25 @@ export async function POST(request: Request) {
   // - Current month always allowed
   // - Previous month allowed only if today is on or before the 5th
   if (!isAdmin(session)) {
-    const entryDate = new Date(`${workDate}T00:00:00.000Z`);
+    // entryDateLocal uses local TZ for business rule checks (today, day-of-week, month boundaries)
+    const entryDateLocal = new Date(`${workDate}T00:00:00`);
     const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0); // local midnight
     
-    // Determine the earliest editable date
-    const currentDay = today.getUTCDate();
+    // Determine the earliest editable date (local calendar)
+    const currentDay = today.getDate();
     let earliestEditableDate: Date;
     
     if (currentDay <= 5) {
       // If before or on the 5th, allow editing previous month
-      earliestEditableDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+      earliestEditableDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     } else {
       // Otherwise, only current month
-      earliestEditableDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      earliestEditableDate = new Date(today.getFullYear(), today.getMonth(), 1);
     }
 
-    // Check Sunday restrictions
-    const dayOfWeek = entryDate.getUTCDay();
+    // Check Sunday restrictions (local day of week)
+    const dayOfWeek = entryDateLocal.getDay();
     
     // Check if user can work on Sundays
     const userFlags = await prisma.user.findUnique({
@@ -164,11 +165,11 @@ export async function POST(request: Request) {
       return forbiddenResponse("Cannot enter hours on Holidays");
     }
 
-    if (entryDate > today) {
+    if (entryDateLocal > today) {
       return forbiddenResponse("Cannot enter hours for future dates");
     }
 
-    if (entryDate < earliestEditableDate) {
+    if (entryDateLocal < earliestEditableDate) {
       const errorMessage = currentDay <= 5
         ? "Can only enter hours for the current month or previous month (until the 5th of the current month)"
         : "Can only enter hours for the current month";
