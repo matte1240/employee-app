@@ -2,58 +2,27 @@
 # Multi-stage Dockerfile for Next.js 16
 # ========================================
 
-# Stage 1: Dependencies
-FROM node:25-alpine AS deps
+# Stage 1: Production-only dependencies (no devDependencies)
+FROM node:25-alpine AS prod-deps
 WORKDIR /app
 
-# Copy package files and Prisma schema (needed for postinstall)
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
 
-# Install ALL dependencies (including Prisma for migrations)
-RUN npm install && npm cache clean --force
+# Install only production dependencies
+RUN npm ci --omit=dev && npm cache clean --force
 
-# Stage 2: Development
-FROM node:25-alpine AS dev
-WORKDIR /app
-
-# Install PostgreSQL client tools for migrations
-RUN apk add --no-cache postgresql16-client curl openssl libc6-compat
-
-# Copy dependencies
-COPY --from=deps /app/node_modules ./node_modules
-COPY package.json package-lock.json* ./
-
-# Copy Prisma schema
-COPY prisma ./prisma
-
-# Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Expose port
-EXPOSE 3000
-
-# Set development environment
-ENV NODE_ENV=development
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV HOSTNAME=0.0.0.0
-ENV PORT=3000
-
-# Set entrypoint and default command
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["npm", "run", "dev"]
-
-# Stage 3: Builder
+# Stage 2: Builder
 FROM node:25-alpine AS builder
 WORKDIR /app
 
-# Copy all dependencies from deps stage (including Prisma)
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-# Copy package files
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
+
+# Install ALL dependencies (needed to compile)
+RUN npm install && npm cache clean --force
+
+COPY . .
 
 # Generate Prisma Client (Prisma is already installed)
 RUN npx prisma generate
@@ -86,8 +55,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 
-# Copy all production dependencies (including Prisma)
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+# Copy production-only dependencies (no devDependencies)
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Copy built application
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

@@ -1,7 +1,6 @@
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { isHoliday } from "@/lib/utils/holiday-utils";
-import { createCalendarEvent } from "@/lib/google-calendar";
 import { addDays, isWeekend } from "date-fns";
 import { requireAdmin } from "@/lib/api-middleware";
 import {
@@ -111,16 +110,6 @@ export async function PATCH(
           );
         }
       }
-
-      // Create Google Calendar Event
-      const eventTitle = `${request.user.name || 'Employee'} - ${request.type}`;
-      // Google Calendar end date is exclusive for all-day events, so we add 1 day to the end date
-      await createCalendarEvent({
-        title: eventTitle,
-        start: request.startDate,
-        end: addDays(request.endDate, 1), 
-        description: request.reason || undefined,
-      });
     }
 
     return successResponse(updatedRequest);
