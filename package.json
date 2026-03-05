@@ -39,6 +39,7 @@
     "zod": "^4.1.12"
   },
   "overrides": {
+    "serialize-javascript": "^7.0.4",
     "js-yaml": "^4.1.1",
     "rimraf": "^5.0.0",
     "glob": "^10.4.6",
@@ -58,7 +59,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16.0.10",
-    "semantic-release": "^25.0.2",
+    "semantic-release": "^25.0.3",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"
