@@ -39,7 +39,7 @@ FROM node:25-alpine AS runner
 WORKDIR /app
 
 # Install PostgreSQL client tools for backup/restore
-RUN apk add --no-cache postgresql16-client openssl libc6-compat
+RUN apk add --no-cache postgresql16-client openssl libc6-compat su-exec
 
 # Set to production environment
 ENV NODE_ENV=production
@@ -72,8 +72,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.
 RUN mkdir -p /app/logs /app/backups/database && \
     chown -R nextjs:nodejs /app/logs /app/backups
 
-# Switch to non-root user
-USER nextjs
+# Entrypoint runs as root to fix volume permissions, then drops to nextjs
+# USER nextjs  -- handled by entrypoint via su-exec
 
 # Expose port
 EXPOSE 3000
