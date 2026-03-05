@@ -6,6 +6,8 @@ import { sendWelcomeSetupEmail } from "@/lib/email";
 import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/utils/token-utils";
 import { findUserByEmail } from "@/lib/utils/user-utils";
 import { requireAdmin } from "@/lib/api-middleware";
+import { passwordSchema } from "@/lib/validation";
+import { auditAdmin } from "@/lib/audit-log";
 import {
   successResponse,
   conflictResponse,
@@ -17,11 +19,11 @@ const createUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   role: z.enum(["EMPLOYEE", "ADMIN"]),
-  password: z.string().min(8, "Password must be at least 8 characters").optional(),
+  password: passwordSchema.optional(),
 });
 
 export async function POST(request: Request) {
-  const { error } = await requireAdmin();
+  const { session, error } = await requireAdmin();
   if (error) return error;
 
   try {
@@ -48,9 +50,8 @@ export async function POST(request: Request) {
       // Manual password provided
       passwordToHash = password;
     } else {
-      // Generate a temporary password (8 characters with uppercase, lowercase, and numbers)
-      passwordToHash = crypto.randomBytes(4).toString('hex') + 
-                       String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Add uppercase letter
+      // Generate a secure temporary password (128-bit entropy)
+      passwordToHash = crypto.randomBytes(16).toString('base64url');
     }
 
     // Hash password
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
 
     // If manual password was provided, skip email sending
     if (password) {
-      console.log(`✅ User created with manual password: ${email}`);
+      await auditAdmin.userCreated(session.user.id, newUser.id, role);
       return successResponse(newUser, 201);
     }
 
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
         setupUrl
       );
       
-      console.log(`✅ Welcome email with setup link sent to ${email}`);
+      await auditAdmin.userCreated(session.user.id, newUser.id, role);
     } catch (emailError) {
       console.error("⚠️ Failed to send welcome email:", emailError);
       

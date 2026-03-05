@@ -1,9 +1,9 @@
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { isHoliday } from "@/lib/utils/holiday-utils";
-import { createCalendarEvent } from "@/lib/google-calendar";
 import { addDays, isWeekend } from "date-fns";
 import { requireAdmin } from "@/lib/api-middleware";
+import { auditAdmin } from "@/lib/audit-log";
 import {
   successResponse,
   notFoundResponse,
@@ -48,7 +48,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin();
+  const { session, error } = await requireAdmin();
   if (error) return error;
 
   try {
@@ -111,18 +111,9 @@ export async function PATCH(
           );
         }
       }
-
-      // Create Google Calendar Event
-      const eventTitle = `${request.user.name || 'Employee'} - ${request.type}`;
-      // Google Calendar end date is exclusive for all-day events, so we add 1 day to the end date
-      await createCalendarEvent({
-        title: eventTitle,
-        start: request.startDate,
-        end: addDays(request.endDate, 1), 
-        description: request.reason || undefined,
-      });
     }
 
+    await auditAdmin.leaveRequestReviewed(session.user.id, id, status);
     return successResponse(updatedRequest);
   } catch (error) {
     if (error instanceof z.ZodError) {

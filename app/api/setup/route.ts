@@ -2,25 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { hash } from "bcryptjs";
 import { z } from "zod";
+import { passwordSchema } from "@/lib/validation";
+import { auditSecurity } from "@/lib/audit-log";
+import { getClientIp } from "@/lib/rate-limit";
 
 const setupSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: passwordSchema,
 });
 
 export async function POST(req: NextRequest) {
   try {
-    // Check if any users already exist
-    const userCount = await prisma.user.count();
-    
-    if (userCount > 0) {
-      return NextResponse.json(
-        { error: "Setup has already been completed" },
-        { status: 403 }
-      );
-    }
-
     const body = await req.json();
     const parsed = setupSchema.safeParse(body);
 
@@ -32,30 +25,26 @@ export async function POST(req: NextRequest) {
     }
 
     const { name, email, password } = parsed.data;
-
-    // Check if email already exists (extra safety)
-    const existing = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        { error: "Email already in use" },
-        { status: 409 }
-      );
-    }
-
-    // Hash password and create admin user
     const passwordHash = await hash(password, 10);
-    
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        passwordHash,
-        role: "ADMIN",
-      },
+
+    // Atomic check-and-create to prevent race conditions
+    const user = await prisma.$transaction(async (tx) => {
+      const userCount = await tx.user.count();
+      if (userCount > 0) {
+        throw new SetupAlreadyCompletedError();
+      }
+
+      return tx.user.create({
+        data: {
+          name,
+          email,
+          passwordHash,
+          role: "ADMIN",
+        },
+      });
     });
+
+    await auditSecurity.setupCompleted(user.id, getClientIp(req));
 
     return NextResponse.json(
       { 
@@ -65,10 +54,22 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof SetupAlreadyCompletedError) {
+      return NextResponse.json(
+        { error: "Setup has already been completed" },
+        { status: 403 }
+      );
+    }
     console.error("Setup error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
+  }
+}
+
+class SetupAlreadyCompletedError extends Error {
+  constructor() {
+    super("Setup already completed");
   }
 }

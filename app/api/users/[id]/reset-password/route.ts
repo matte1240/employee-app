@@ -5,6 +5,8 @@ import { sendPasswordResetLinkEmail } from "@/lib/email";
 import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/utils/token-utils";
 import { findUserById } from "@/lib/utils/user-utils";
 import { requireAdmin } from "@/lib/api-middleware";
+import { passwordSchema } from "@/lib/validation";
+import { auditAdmin } from "@/lib/audit-log";
 import {
   successResponse,
   notFoundResponse,
@@ -13,14 +15,14 @@ import {
 } from "@/lib/api-responses";
 
 const resetPasswordSchema = z.object({
-  newPassword: z.string().min(8, "Password must be at least 8 characters").optional(),
+  newPassword: passwordSchema.optional(),
 });
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin();
+  const { session, error } = await requireAdmin();
   if (error) return error;
 
   try {
@@ -63,7 +65,7 @@ export async function POST(
         }),
       ]);
 
-      console.log(`✅ Password reset manually for: ${existingUser.email}`);
+      await auditAdmin.userUpdated(session.user.id, userId, { action: "password_reset" });
       return successResponse({ 
         message: "Password reimpostata con successo." 
       });

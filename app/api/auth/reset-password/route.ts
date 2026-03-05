@@ -3,11 +3,14 @@ import { z } from "zod";
 import crypto from "crypto";
 import { hash } from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { passwordSchema } from "@/lib/validation";
+import { auditAuth } from "@/lib/audit-log";
+import { getClientIp } from "@/lib/rate-limit";
 
 const resetPasswordSchema = z.object({
   email: z.string().email("Invalid email address"),
   token: z.string().min(1, "Token is required"),
-  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  newPassword: passwordSchema,
 });
 
 export async function POST(request: Request) {
@@ -101,7 +104,7 @@ export async function POST(request: Request) {
       }),
     ]);
 
-    console.log(`✅ Password reset successfully for ${email} - all sessions invalidated`);
+    await auditAuth.passwordReset(user.id, getClientIp(request));
 
     return NextResponse.json({
       message: "Password aggiornata con successo. Ora puoi effettuare il login.",

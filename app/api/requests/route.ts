@@ -10,6 +10,7 @@ import {
   handleZodError,
 } from "@/lib/api-responses";
 import { sendLeaveRequestAdminNotification } from "@/lib/email";
+import { auditCalendar } from "@/lib/audit-log";
 
 const createRequestSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -94,6 +95,8 @@ export async function POST(req: Request) {
         endTime: body.endTime,
       },
     });
+
+    auditCalendar.leaveRequested(userId, body.type, body.startDate, body.endDate);
 
     // Notify all admins via email (fire-and-forget, errors don't block response)
     const employee = await prisma.user.findUnique({

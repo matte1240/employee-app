@@ -348,7 +348,7 @@ Displays:
 ### Standard 8-Hour Day
 
 ```ts
-// lib/utils/schedule-utils.ts
+// lib/utils/schedule-utils.ts (client-safe, no DB imports)
 export const DEFAULT_SCHEDULE = {
   morningStart: '08:00',
   morningEnd: '12:00',
@@ -358,6 +358,10 @@ export const DEFAULT_SCHEDULE = {
 ```
 
 Applied to new users automatically unless customized.
+
+> **Note:** Schedule utilities are split into two files:
+> - **`schedule-utils.ts`** — Pure functions safe for client components (`getBaseHoursFromScheduleMap`, `isWorkingDayFromScheduleMap`, `schedulesToMap`, constants)
+> - **`schedule-utils.server.ts`** — Server-only functions that access the database (`getUserSchedules`, `getBaseHoursForDate`, `createDefaultSchedulesForUser`, `upsertScheduleForDay`, `updateUserSchedules`)
 
 ---
 

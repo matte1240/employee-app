@@ -8,6 +8,7 @@ import fs from "fs";
 import path from "path";
 import { isAdmin } from "@/lib/utils/user-utils";
 import prisma from "@/lib/prisma";
+import { auditAdmin } from "@/lib/audit-log";
 
 const execAsync = promisify(exec);
 
@@ -69,6 +70,8 @@ export async function POST(req: NextRequest) {
 
     // Clean up temp file
     await unlink(tempPath);
+
+    await auditAdmin.backupRestored("system");
 
     return NextResponse.json(
       { success: true, message: "Database restored successfully" },

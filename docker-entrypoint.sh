@@ -3,7 +3,10 @@ set -e
 
 echo "🚀 Starting application entrypoint..."
 
-# Run Prisma migrations
+# Fix ownership of mounted volumes (they may be created as root)
+chown -R nextjs:nodejs /app/logs /app/backups /app/public/uploads 2>/dev/null || true
+
+# Run Prisma migrations (as nextjs user)
 echo "🔄 Running Prisma migrations..."
 LOG_FILE=$(mktemp)
 if ! npx prisma migrate deploy > "$LOG_FILE" 2>&1; then
@@ -40,6 +43,6 @@ else
 fi
 rm "$LOG_FILE"
 
-# Execute the main command passed to the entrypoint
+# Execute the main command passed to the entrypoint (drop to nextjs user)
 echo "🚀 Starting application: $@"
-exec "$@"
+exec su-exec nextjs "$@"

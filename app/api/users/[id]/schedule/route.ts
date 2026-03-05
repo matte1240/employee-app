@@ -12,7 +12,7 @@ import {
   getUserSchedules,
   updateUserSchedules,
   createDefaultSchedulesForUser,
-} from "@/lib/utils/schedule-utils";
+} from "@/lib/utils/schedule-utils.server";
 
 // Time format validation (HH:MM)
 const timeSchema = z

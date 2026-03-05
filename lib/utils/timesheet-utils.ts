@@ -5,7 +5,7 @@
 
 import prisma from "@/lib/prisma";
 import { isHoliday } from "./holiday-utils";
-import { isUserWorkingDay } from "./schedule-utils";
+import { isUserWorkingDay } from "./schedule-utils.server";
 
 /**
  * Go back `lookbackDays` calendar days (excluding today) and find which ones

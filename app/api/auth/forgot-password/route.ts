@@ -3,6 +3,8 @@ import { z } from "zod";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { sendPasswordResetLinkEmail } from "@/lib/email";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { auditAuth, auditSecurity } from "@/lib/audit-log";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -10,6 +12,16 @@ const forgotPasswordSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    // Rate limit: 3 requests per IP per 15 minutes
+    const ip = getClientIp(request);
+    const result = checkRateLimit(`forgot-password:${ip}`, 3, 15 * 60 * 1000);
+    if (result.limited) {
+      await auditSecurity.rateLimited(ip, "/api/auth/forgot-password");
+      return NextResponse.json(
+        { error: "Troppi tentativi. Riprova più tardi." },
+        { status: 429, headers: { "Retry-After": String(result.retryAfterSeconds) } }
+      );
+    }
     const body = await request.json();
     const parsed = forgotPasswordSchema.safeParse(body);
 
@@ -69,7 +81,7 @@ export async function POST(request: Request) {
         resetUrl
       );
       
-      console.log(`✅ Password reset email sent to ${email}`);
+      await auditAuth.passwordResetRequested(ip);
     } catch (emailError) {
       console.error("⚠️ Failed to send password reset email:", emailError);
       

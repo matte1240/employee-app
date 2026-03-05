@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import ExcelJS from "exceljs";
 import { requireAuth, isAdmin } from "@/lib/api-middleware";
 import { badRequestResponse, forbiddenResponse, handleError } from "@/lib/api-responses";
+import { auditAdmin } from "@/lib/audit-log";
 import { decimalToNumber } from "@/lib/utils/serialization";
 
 const exportSchema = z.object({
@@ -481,6 +482,8 @@ export async function POST(request: Request) {
 
     // Generate Excel file buffer
     const buffer = await workbook.xlsx.writeBuffer();
+
+    await auditAdmin.excelExported(session.user.id);
 
     // Return the Excel file
     return new NextResponse(buffer, {
