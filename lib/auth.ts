@@ -7,8 +7,9 @@ import { compare } from "bcryptjs";
 import prisma from "./prisma";
 import { auditAuth } from "./audit-log";
 
-// Validate required secret at module load
-if (!process.env.NEXTAUTH_SECRET) {
+// Validate required secret at runtime (skip during build where env vars may not exist)
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+if (!isBuildPhase && !process.env.NEXTAUTH_SECRET) {
   throw new Error("NEXTAUTH_SECRET environment variable is required");
 }
 
