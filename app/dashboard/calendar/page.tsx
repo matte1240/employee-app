@@ -1,4 +1,6 @@
-import type { Decimal } from "@prisma/client/runtime/library";
+import type { Prisma } from "@/lib/generated/prisma/client";
+
+type Decimal = Prisma.Decimal;
 import { redirect } from "next/navigation";
 import { endOfMonth, startOfMonth } from "date-fns";
 import prisma from "@/lib/prisma";

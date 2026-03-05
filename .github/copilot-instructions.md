@@ -19,9 +19,17 @@
 - **Tailwind CSS v4** (Utility-first styling)
 
 ### Backend & Data
-- **Prisma ORM v6.19** (Type-safe database access)
+- **Prisma ORM v7** (Type-safe database access, Rust-free client with `@prisma/adapter-pg`)
 - **PostgreSQL 16** (Primary database)
 - **NextAuth v4** (Credentials provider, JWT sessions, Prisma adapter)
+
+### Prisma v7 Architecture
+- **Generator**: `prisma-client` (not the legacy `prisma-client-js`)
+- **Generated client**: `lib/generated/prisma/` (not in `node_modules`)
+- **Driver adapter**: `@prisma/adapter-pg` (required in v7 — no built-in engine)
+- **CLI config**: `prisma.config.ts` at project root (datasource URL, schema path, seed command)
+- **ESM**: `"type": "module"` in `package.json`
+- **Env loading**: `dotenv` must be imported explicitly (`import "dotenv/config"`)
 
 ### Key Integrations
 - **`date-holidays`** - Italian public holiday calculation
@@ -179,7 +187,8 @@ model WorkingSchedule {
 **`lib/auth.ts`** - NextAuth configuration
 ```typescript
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // Type assertion needed: @next-auth/prisma-adapter types are not updated for Prisma v7
+  adapter: PrismaAdapter(prisma as any),
   providers: [
     CredentialsProvider({
       credentials: { email: {}, password: {} },
@@ -261,30 +270,31 @@ export function handleError(error: unknown) {
 
 **`lib/utils/serialization.ts`** - **CRITICAL: Always use for Prisma Decimal conversion**
 ```typescript
-import { TimeEntry } from "@prisma/client";
+import type { Prisma } from "@/lib/generated/prisma/client";
 
-// Convert single TimeEntry (Prisma → JSON-safe DTO)
-export function serializeTimeEntry(entry: TimeEntry) {
-  return {
-    ...entry,
-    hoursWorked: parseFloat(entry.hoursWorked.toString()),
-    overtimeHours: parseFloat(entry.overtimeHours.toString()),
-    vacationHours: parseFloat(entry.vacationHours.toString()),
-    sicknessHours: parseFloat(entry.sicknessHours.toString()),
-    permessoHours: parseFloat(entry.permessoHours.toString()),
-    permesso104Hours: parseFloat(entry.permesso104Hours.toString()),
-    paternityHours: parseFloat(entry.paternityHours.toString()),
-    workDate: entry.workDate.toISOString().split("T")[0],
-  };
+type Decimal = Prisma.Decimal;
+
+// Convert Prisma Decimal to number
+export function decimalToNumber(decimal: Decimal | null | undefined): number {
+  if (decimal === null || decimal === undefined) return 0;
+  return parseFloat(decimal.toString());
 }
 
-// Convert array of TimeEntries
-export function serializeTimeEntries(entries: TimeEntry[]) {
-  return entries.map(serializeTimeEntry);
+// Convert single TimeEntry (Prisma → JSON-safe DTO)
+export function serializeTimeEntry(entry) {
+  return {
+    ...entry,
+    workDate: entry.workDate.toISOString().split("T")[0],
+    hoursWorked: decimalToNumber(entry.hoursWorked),
+    overtimeHours: decimalToNumber(entry.overtimeHours),
+    // ... all Decimal fields converted via decimalToNumber()
+  };
 }
 ```
 
 **⚠️ ALWAYS USE** `serializeTimeEntry()` instead of manual `parseFloat()` conversions.
+
+**⚠️ Decimal import in v7**: Use `import type { Prisma } from "@/lib/generated/prisma/client"` then `Prisma.Decimal`. The old `@prisma/client/runtime/library` path no longer exists.
 
 ---
 
@@ -296,7 +306,8 @@ export function serializeTimeEntries(entries: TimeEntry[]) {
 | **`lib/utils/time-utils.ts`** | Time calculations | `calculateHours()`, `parseTimeToMinutes()`, `TIME_OPTIONS` |
 | **`lib/utils/calculations.ts`** | Aggregations | `calculateTotalHours()`, `calculateMonthlyStats()` |
 | **`lib/utils/holiday-utils.ts`** | Italian holidays | `getItalianHolidays()`, `isHoliday()` |
-| **`lib/utils/schedule-utils.ts`** | Working schedules | `getDefaultSchedule()`, `calculateExpectedHours()` |
+| **`lib/utils/schedule-utils.ts`** | Schedule helpers (client-safe) | `getBaseHoursFromScheduleMap()`, `isWorkingDayFromScheduleMap()`, `schedulesToMap()`, `DEFAULT_SCHEDULE` |
+| **`lib/utils/schedule-utils.server.ts`** | Schedule DB operations (server-only) | `getUserSchedules()`, `getBaseHoursForDate()`, `createDefaultSchedulesForUser()`, `upsertScheduleForDay()` |
 | **`lib/utils/user-utils.ts`** | User operations | `generateTemporaryPassword()`, `validateUserRole()` |
 | **`lib/db-backup.ts`** | Database backups | `createBackup()`, `cleanupOldBackups()` |
 | **`lib/google-calendar.ts`** | Calendar sync | `createCalendarEvent()`, `updateCalendarEvent()` |
@@ -501,10 +512,16 @@ export function ClientComponent({ entries }) {
 | `npm run docker:up` | Start full stack in Docker |
 | `npm run docker:build` | Rebuild and start Docker stack |
 | `npm run docker:down` | Stop Docker containers |
-| `npm run prisma:migrate` | Create and run dev migrations |
+| `npm run prisma:migrate` | Create dev migration (⚠️ run `prisma generate` after) |
 | `npm run prisma:deploy` | Apply migrations in production |
-| `npm run prisma:seed` | Seed database with test users |
-| `npm run prisma:studio` | Open Prisma Studio GUI |
+| `npm run prisma:seed` | Seed database (`npx prisma db seed`) |
+| `npx prisma generate` | Regenerate client to `lib/generated/prisma/` |
+
+### ⚠️ Prisma v7 Migration Workflow Changes
+- `prisma migrate dev` **no longer auto-generates** the client → run `npx prisma generate` after
+- `prisma migrate dev` **no longer auto-seeds** → run `npx prisma db seed` explicitly
+- Seed script is configured in `prisma.config.ts` (not `package.json`)
+- CLI reads database URL from `prisma.config.ts` (not `schema.prisma`)
 
 ---
 
@@ -668,9 +685,14 @@ Creates:
 4. **Not checking role in API routes** → Use `requireAdmin()` for admin endpoints
 5. **Passing Prisma objects to client components** → Serialize first
 6. **Ignoring timezone for holidays** → Use `date-holidays` with IT locale
+7. **Importing from `@prisma/client`** → Use `@/lib/generated/prisma/client` instead (v7 generates locally)
+8. **Importing Decimal from `@prisma/client/runtime/library`** → Use `import type { Prisma } from "@/lib/generated/prisma/client"` then `Prisma.Decimal`
+9. **Importing server-only utils in client components** → `schedule-utils.ts` is client-safe; use `schedule-utils.server.ts` for DB operations
+10. **Forgetting `prisma generate` after `migrate dev`** → v7 no longer auto-generates the client
+11. **Missing `dotenv` in standalone scripts** → Add `import "dotenv/config"` at top (e.g., seed.ts)
 
 ---
 
-**Last Updated**: February 12, 2026  
-**Version**: 0.7.0+  
+**Last Updated**: March 5, 2026  
+**Version**: 0.7.0+ (Prisma v7)  
 **Maintainer**: Development Team

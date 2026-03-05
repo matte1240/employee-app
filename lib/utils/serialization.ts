@@ -2,7 +2,9 @@
  * Data transformation utilities for converting Prisma types to JSON-safe types
  */
 
-import type { Decimal } from "@prisma/client/runtime/library";
+import type { Prisma } from "@/lib/generated/prisma/client";
+
+type Decimal = Prisma.Decimal;
 
 /**
  * Convert Prisma Decimal to number

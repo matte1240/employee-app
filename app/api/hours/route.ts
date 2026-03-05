@@ -1,4 +1,6 @@
-import type { Decimal } from "@prisma/client/runtime/library";
+import type { Prisma } from "@/lib/generated/prisma/client";
+
+type Decimal = Prisma.Decimal;
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { isHoliday } from "@/lib/utils/holiday-utils";
@@ -10,7 +12,7 @@ import {
   notFoundResponse,
 } from "@/lib/api-responses";
 import { serializeTimeEntry, serializeTimeEntries } from "@/lib/utils/serialization";
-import { getBaseHoursForDate, isUserWorkingDay } from "@/lib/utils/schedule-utils";
+import { getBaseHoursForDate, isUserWorkingDay } from "@/lib/utils/schedule-utils.server";
 
 const createHoursSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

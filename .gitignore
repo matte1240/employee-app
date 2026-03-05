@@ -48,6 +48,9 @@ next-env.d.ts
 # database backups
 /backups
 
+# prisma generated client
+lib/generated/prisma/
+
 # logs
 /logs
 

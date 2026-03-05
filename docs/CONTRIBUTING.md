@@ -12,7 +12,7 @@ Thank you for contributing to the Employee Work Hours Tracker!
 ## 🎯 Getting Started
 
 ### Prerequisites
-- Node.js 20+
+- Node.js 20.19+
 - Docker & Docker Compose
 - Git
 
@@ -32,9 +32,10 @@ cp .env.example .env
 # 4. Start database (Docker)
 docker compose up postgres -d
 
-# 5. Run migrations & seed data
+# 5. Run migrations, generate client & seed data
 npx prisma migrate dev
-npm run prisma:seed
+npx prisma generate
+npx prisma db seed
 
 # 6. Start dev server
 npm run dev
@@ -60,8 +61,11 @@ npm run docker:dev
 | Command | Description |
 |---------|-------------|
 | `npm run lint` | Run ESLint |
-| `npm run prisma:migrate` | Create/apply migrations |
-| `npm run prisma:generate` | Regenerate Prisma client |
+| `npm run prisma:migrate` | Create/apply dev migrations |
+| `npx prisma generate` | Regenerate Prisma client to `lib/generated/prisma/` |
+| `npx prisma db seed` | Seed database (configured in `prisma.config.ts`) |
+
+> **⚠️ Prisma v7 Note**: `prisma migrate dev` no longer auto-generates the client or auto-seeds. After creating a migration, run `npx prisma generate` explicitly. Seed with `npx prisma db seed`.
 
 ---
 

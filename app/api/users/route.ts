@@ -10,7 +10,7 @@ import {
   handleError,
 } from "@/lib/api-responses";
 import { decimalToNumber } from "@/lib/utils/serialization";
-import { createDefaultSchedulesForUser } from "@/lib/utils/schedule-utils";
+import { createDefaultSchedulesForUser } from "@/lib/utils/schedule-utils.server";
 
 type UserRole = "EMPLOYEE" | "ADMIN";
 

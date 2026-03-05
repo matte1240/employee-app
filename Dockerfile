@@ -8,6 +8,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 
 # Install only production dependencies
 RUN npm ci --omit=dev && npm cache clean --force
@@ -18,6 +19,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 
 # Install ALL dependencies (needed to compile)
 RUN npm install && npm cache clean --force
@@ -62,8 +64,9 @@ COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy Prisma schema and migrations
+# Copy Prisma schema, migrations, and config
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
 # Create directories for logs and backups
 RUN mkdir -p /app/logs /app/backups/database && \
@@ -81,7 +84,7 @@ ENV PORT=3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/api/auth/session', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD node -e "import('http').then(h => h.default.get('http://localhost:3000/api/auth/session', r => {process.exit(r.statusCode === 200 ? 0 : 1)}))"
 
 # Set entrypoint and default command
 ENTRYPOINT ["docker-entrypoint.sh"]

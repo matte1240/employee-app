@@ -8,7 +8,7 @@ import {
 import {
   getUserSchedules,
   createDefaultSchedulesForUser,
-} from "@/lib/utils/schedule-utils";
+} from "@/lib/utils/schedule-utils.server";
 
 /**
  * GET /api/users/me/schedule
