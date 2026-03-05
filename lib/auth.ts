@@ -5,6 +5,12 @@ import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import prisma from "./prisma";
+import { auditAuth } from "./audit-log";
+
+// Validate required secret at module load
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error("NEXTAUTH_SECRET environment variable is required");
+}
 
 type CredentialsUser = AdapterUser & {
   role: string;
@@ -22,7 +28,9 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 60, // 30 minutes in seconds
   },
-  useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https") ?? false,
+  useSecureCookies: process.env.NODE_ENV === "production"
+    ? (process.env.NEXTAUTH_URL?.startsWith("https") ?? true)
+    : false,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -108,7 +116,8 @@ export const authOptions: NextAuthOptions = {
 
             const tokenVersionInToken = (token.tokenVersion as number) || 0;
             if (dbUser.tokenVersion !== tokenVersionInToken) {
-              console.log(`🔒 Token invalidated for ${token.email} - password changed`);
+              console.log(`🔒 Token invalidated for user ${token.id} - password changed`);
+              auditAuth.sessionInvalidated(token.id as string);
               return {}; // Invalidate the token
             }
           }
@@ -143,6 +152,19 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/",
+  },
+  events: {
+    async signIn({ user }) {
+      if (user?.id) {
+        await auditAuth.loginSuccess(user.id, "session");
+      }
+    },
+    async signOut({ token }) {
+      const typedToken = token as JWT & { id?: string };
+      if (typedToken?.id) {
+        await auditAuth.logout(typedToken.id);
+      }
+    },
   },
 };
 

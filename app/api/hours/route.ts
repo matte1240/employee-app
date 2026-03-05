@@ -13,6 +13,7 @@ import {
 } from "@/lib/api-responses";
 import { serializeTimeEntry, serializeTimeEntries } from "@/lib/utils/serialization";
 import { getBaseHoursForDate, isUserWorkingDay } from "@/lib/utils/schedule-utils.server";
+import { auditCalendar } from "@/lib/audit-log";
 
 const createHoursSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -287,6 +288,7 @@ export async function POST(request: Request) {
         notes,
       },
     })) as RawEntry;
+    auditCalendar.entryUpdated(targetUserId, workDate, { hoursWorked, overtimeHours: overtimeHours ?? 0, editedBy: session.user.id });
   } else {
     // Create new entry
     entry = (await prisma.timeEntry.create({
@@ -308,6 +310,7 @@ export async function POST(request: Request) {
         notes,
       },
     })) as RawEntry;
+    auditCalendar.entryCreated(targetUserId, workDate, { hoursWorked, overtimeHours: overtimeHours ?? 0, createdBy: session.user.id });
   }
 
   return successResponse(serializeTimeEntry(entry), existing ? 200 : 201);
@@ -342,6 +345,9 @@ export async function DELETE(request: Request) {
   await prisma.timeEntry.delete({
     where: { id: entryId },
   });
+
+  const workDate = entry.workDate instanceof Date ? entry.workDate.toISOString().split("T")[0] : String(entry.workDate);
+  auditCalendar.entryDeleted(entry.userId, workDate, session.user.id);
 
   return successResponse({ success: true });
 }

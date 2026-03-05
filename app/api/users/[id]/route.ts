@@ -10,6 +10,7 @@ import {
   handleError,
   handleZodError,
 } from "@/lib/api-responses";
+import { auditAdmin } from "@/lib/audit-log";
 
 const updateUserSchema = z.object({
   name: z.string().min(1, "Name is required").max(100).optional(),
@@ -80,6 +81,7 @@ export async function PUT(
       },
     });
 
+    await auditAdmin.userUpdated(session.user.id, userId, parsed.data);
     return successResponse(updatedUser);
   } catch (error) {
     return handleError(error, "updating user");
@@ -113,6 +115,7 @@ export async function DELETE(
       where: { id: userId },
     });
 
+    await auditAdmin.userDeleted(session.user.id, userId);
     return successResponse({ message: "User deleted successfully" });
   } catch (error) {
     return handleError(error, "deleting user");

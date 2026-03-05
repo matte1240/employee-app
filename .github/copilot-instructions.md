@@ -304,7 +304,6 @@ export function serializeTimeEntry(entry) {
 |------|---------|---------------|
 | **`lib/utils/date-utils.ts`** | Date operations | `isItalianHoliday()`, `getMonthDateRange()`, `formatDateForDb()` |
 | **`lib/utils/time-utils.ts`** | Time calculations | `calculateHours()`, `parseTimeToMinutes()`, `TIME_OPTIONS` |
-| **`lib/utils/calculations.ts`** | Aggregations | `calculateTotalHours()`, `calculateMonthlyStats()` |
 | **`lib/utils/holiday-utils.ts`** | Italian holidays | `getItalianHolidays()`, `isHoliday()` |
 | **`lib/utils/schedule-utils.ts`** | Schedule helpers (client-safe) | `getBaseHoursFromScheduleMap()`, `isWorkingDayFromScheduleMap()`, `schedulesToMap()`, `DEFAULT_SCHEDULE` |
 | **`lib/utils/schedule-utils.server.ts`** | Schedule DB operations (server-only) | `getUserSchedules()`, `getBaseHoursForDate()`, `createDefaultSchedulesForUser()`, `upsertScheduleForDay()` |

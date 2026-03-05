@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { isHoliday } from "@/lib/utils/holiday-utils";
 import { addDays, isWeekend } from "date-fns";
 import { requireAdmin } from "@/lib/api-middleware";
+import { auditAdmin } from "@/lib/audit-log";
 import {
   successResponse,
   notFoundResponse,
@@ -47,7 +48,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin();
+  const { session, error } = await requireAdmin();
   if (error) return error;
 
   try {
@@ -112,6 +113,7 @@ export async function PATCH(
       }
     }
 
+    await auditAdmin.leaveRequestReviewed(session.user.id, id, status);
     return successResponse(updatedRequest);
   } catch (error) {
     if (error instanceof z.ZodError) {

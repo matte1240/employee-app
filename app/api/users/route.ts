@@ -3,6 +3,7 @@ import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { findUserByEmail } from "@/lib/utils/user-utils";
 import { requireAdmin } from "@/lib/api-middleware";
+import { passwordSchema } from "@/lib/validation";
 import {
   successResponse,
   badRequestResponse,
@@ -27,7 +28,7 @@ type UserRow = {
 const createUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1).max(100),
-  password: z.string().min(8).max(64),
+  password: passwordSchema,
   role: z.enum(["EMPLOYEE", "ADMIN"]).default("EMPLOYEE"),
   hasPermesso104: z.boolean().optional().default(false),
   hasPaternityLeave: z.boolean().optional().default(false),

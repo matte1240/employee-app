@@ -43,12 +43,7 @@
   },
   "overrides": {
     "serialize-javascript": "^7.0.4",
-    "js-yaml": "^4.1.1",
-    "rimraf": "^5.0.0",
-    "glob": "^10.4.6",
-    "inflight": "^1.0.6",
-    "fstream": "^1.0.12",
-    "lodash.isequal": "^4.5.0"
+    "js-yaml": "^4.1.1"
   },
   "devDependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",

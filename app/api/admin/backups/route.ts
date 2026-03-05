@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { isAdmin } from "@/lib/utils/user-utils";
 import { performBackup } from "@/lib/db-backup";
+import { auditAdmin } from "@/lib/audit-log";
 import { readdir, stat } from "fs/promises";
 import path from "path";
 import fs from "fs";
@@ -125,6 +126,8 @@ export async function POST() {
     }
 
     const result = await performBackup();
+
+    await auditAdmin.backupCreated(session.user.id);
 
     return NextResponse.json(
       {

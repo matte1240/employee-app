@@ -9,12 +9,14 @@ import {
   RefreshCw, 
   AlertTriangle, 
   FileText,
-  HardDrive
+  HardDrive,
+  ScrollText
 } from "lucide-react";
 import { downloadBlob } from "@/lib/utils/file-utils";
 import { Card } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
+import { LogViewer } from "@/components/dashboard/admin/log-viewer";
 
 interface Backup {
   filename: string;
@@ -335,6 +337,19 @@ export function ManageServer() {
               </div>
             )}
           </div>
+        </Card>
+
+        {/* Audit Logs */}
+        <Card>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <ScrollText className="w-6 h-6 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground">
+              Log di Audit
+            </h2>
+          </div>
+          <LogViewer />
         </Card>
       </div>
     </div>
