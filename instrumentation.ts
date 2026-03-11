@@ -14,6 +14,10 @@ export async function register() {
       try {
         const result = await performBackup();
 
+        if (result.s3Uri) {
+          console.log(`Backup uploaded to S3: ${result.s3Uri}`);
+        }
+
         if (recipient) {
           await sendBackupEmail(recipient, true, result.filename, result.path);
         }
