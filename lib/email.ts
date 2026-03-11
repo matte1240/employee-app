@@ -22,12 +22,12 @@ function getFromAddress(): string {
   return `"${name}" <${address}>`;
 }
 
-function getEnvelope(): { from: string; } | undefined {
+function getEnvelope(to: string): { from: string; to: string } | undefined {
   // Force the SMTP MAIL FROM to use the alias address.
   // Required for Google Workspace aliases — Gmail ignores the From header
   // and uses the authenticated user unless envelope.from is set.
   const from = process.env.EMAIL_FROM;
-  if (from) return { from };
+  if (from) return { from, to };
   return undefined;
 }
 
@@ -52,7 +52,7 @@ export async function sendNotificationEmail(
 ) {
   const mailOptions = {
     from: getFromAddress(),
-    envelope: getEnvelope(),
+    envelope: getEnvelope(to),
     to,
     subject,
     html: htmlContent,
@@ -79,7 +79,7 @@ export async function sendWelcomeSetupEmail(
 
   const mailOptions = {
     from: getFromAddress(),
-    envelope: getEnvelope(),
+    envelope: getEnvelope(to),
     to,
     subject: "🎉 Benvenuto su Time Tracker - Configura il tuo account",
     html,
@@ -111,7 +111,7 @@ export async function sendPasswordResetLinkEmail(
 
   const mailOptions = {
     from: getFromAddress(),
-    envelope: getEnvelope(),
+    envelope: getEnvelope(to),
     to,
     subject: "🔐 Reimposta la tua password - Time Tracker",
     html,
@@ -144,7 +144,7 @@ export async function sendBackupEmail(
 
   const mailOptions: nodemailer.SendMailOptions = {
     from: getFromAddress(),
-    envelope: getEnvelope(),
+    envelope: getEnvelope(to),
     to,
     subject,
     html,
@@ -198,7 +198,7 @@ export async function sendLeaveRequestAdminNotification(params: {
 
   const mailOptions = {
     from: getFromAddress(),
-    envelope: getEnvelope(),
+    envelope: getEnvelope(params.adminEmail),
     to: params.adminEmail,
     subject: `📋 Nuova richiesta di ${typeLabel} da ${params.employeeName}`,
     html,
@@ -231,7 +231,7 @@ export async function sendMissingTimesheetReminderEmail(
 
   const mailOptions = {
     from: getFromAddress(),
-    envelope: getEnvelope(),
+    envelope: getEnvelope(to),
     to,
     subject: "⚠️ Promemoria: Ore mancanti nel calendario",
     html,
