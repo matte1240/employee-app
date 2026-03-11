@@ -647,6 +647,33 @@ export default function TimesheetCalendar({
 
     if (!selectedDate) return;
 
+    // Block future times for today (employees only)
+    if (!isAdmin && modalForm.dayType === "normal") {
+      const todayStr = format(new Date(), "yyyy-MM-dd");
+      if (selectedDate === todayStr) {
+        const now = new Date();
+        const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+        const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+        const timeFields = [
+          { label: "Fine mattina", value: modalForm.isMorningPermesso ? null : modalForm.morningEnd },
+          { label: "Inizio pomeriggio", value: modalForm.isAfternoonPermesso ? null : modalForm.afternoonStart },
+          { label: "Fine pomeriggio", value: modalForm.isAfternoonPermesso ? null : modalForm.afternoonEnd },
+          { label: "Inizio mattina", value: modalForm.isMorningPermesso ? null : modalForm.morningStart },
+        ];
+
+        for (const field of timeFields) {
+          if (field.value) {
+            const [h, m] = field.value.split(":").map(Number);
+            if (h * 60 + m > currentTotalMinutes) {
+              setModalError(`Non puoi inserire un orario futuro per "${field.label}" (${field.value}). Ora attuale: ${currentTimeStr}.`);
+              return;
+            }
+          }
+        }
+      }
+    }
+
     let payload: Record<string, unknown>;
     if (modalForm.dayType === "ferie") {
       payload = {
