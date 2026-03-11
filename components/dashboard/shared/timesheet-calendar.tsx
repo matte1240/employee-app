@@ -647,6 +647,33 @@ export default function TimesheetCalendar({
 
     if (!selectedDate) return;
 
+    // Block future times for today (employees only)
+    if (!isAdmin && modalForm.dayType === "normal") {
+      const todayStr = format(new Date(), "yyyy-MM-dd");
+      if (selectedDate === todayStr) {
+        const now = new Date();
+        const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+        const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+        const timeFields = [
+          { label: "Fine mattina", value: modalForm.isMorningPermesso ? null : modalForm.morningEnd },
+          { label: "Inizio pomeriggio", value: modalForm.isAfternoonPermesso ? null : modalForm.afternoonStart },
+          { label: "Fine pomeriggio", value: modalForm.isAfternoonPermesso ? null : modalForm.afternoonEnd },
+          { label: "Inizio mattina", value: modalForm.isMorningPermesso ? null : modalForm.morningStart },
+        ];
+
+        for (const field of timeFields) {
+          if (field.value) {
+            const [h, m] = field.value.split(":").map(Number);
+            if (h * 60 + m > currentTotalMinutes) {
+              setModalError(`Non puoi inserire un orario futuro per "${field.label}" (${field.value}). Ora attuale: ${currentTimeStr}.`);
+              return;
+            }
+          }
+        }
+      }
+    }
+
     let payload: Record<string, unknown>;
     if (modalForm.dayType === "ferie") {
       payload = {
@@ -1319,6 +1346,18 @@ export default function TimesheetCalendar({
                 </button>
               </div>
 
+              {/* Error banner - fixed above scrollable content */}
+              {modalError && (
+                <div className="mx-6 mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0" />
+                    <p className="text-sm font-medium text-destructive">
+                      {modalError}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Modal Body */}
               <div className="space-y-5 p-6 pb-5 overflow-y-auto flex-1">
                 {/* Day type selector */}
@@ -1731,16 +1770,6 @@ export default function TimesheetCalendar({
                   />
                 </label>
 
-                {modalError && (
-                  <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-5 w-5 text-destructive" />
-                      <p className="text-sm font-medium text-destructive">
-                        {modalError}
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Modal Footer */}

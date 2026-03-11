@@ -172,6 +172,32 @@ export async function POST(request: Request) {
       return forbiddenResponse("Cannot enter hours for future dates");
     }
 
+    // Block future times for today's date
+    if (entryDateLocal.getTime() === today.getTime()) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTotalMinutes = currentHour * 60 + currentMinute;
+
+      const timeFields = [
+        { name: "morningEnd", value: morningEnd },
+        { name: "afternoonEnd", value: afternoonEnd },
+        { name: "morningStart", value: morningStart },
+        { name: "afternoonStart", value: afternoonStart },
+      ];
+
+      for (const field of timeFields) {
+        if (field.value && field.value !== "PERM") {
+          const [h, m] = field.value.split(":").map(Number);
+          if (h * 60 + m > currentTotalMinutes) {
+            return forbiddenResponse(
+              `Non puoi inserire un orario futuro (${field.value}). L'ora attuale è ${String(currentHour).padStart(2, "0")}:${String(currentMinute).padStart(2, "0")}.`
+            );
+          }
+        }
+      }
+    }
+
     if (entryDateLocal < earliestEditableDate) {
       const errorMessage = currentDay <= 5
         ? "Can only enter hours for the current month or previous month (until the 5th of the current month)"
