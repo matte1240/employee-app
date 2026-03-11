@@ -1346,6 +1346,18 @@ export default function TimesheetCalendar({
                 </button>
               </div>
 
+              {/* Error banner - fixed above scrollable content */}
+              {modalError && (
+                <div className="mx-6 mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0" />
+                    <p className="text-sm font-medium text-destructive">
+                      {modalError}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Modal Body */}
               <div className="space-y-5 p-6 pb-5 overflow-y-auto flex-1">
                 {/* Day type selector */}
@@ -1758,16 +1770,6 @@ export default function TimesheetCalendar({
                   />
                 </label>
 
-                {modalError && (
-                  <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-5 w-5 text-destructive" />
-                      <p className="text-sm font-medium text-destructive">
-                        {modalError}
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Modal Footer */}
