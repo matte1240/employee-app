@@ -22,6 +22,15 @@ function getFromAddress(): string {
   return `"${name}" <${address}>`;
 }
 
+function getEnvelope(): { from: string; } | undefined {
+  // Force the SMTP MAIL FROM to use the alias address.
+  // Required for Google Workspace aliases — Gmail ignores the From header
+  // and uses the authenticated user unless envelope.from is set.
+  const from = process.env.EMAIL_FROM;
+  if (from) return { from };
+  return undefined;
+}
+
 // Verifica connessione (opzionale, utile per debug)
 export async function verifyEmailConnection() {
   try {
@@ -43,6 +52,7 @@ export async function sendNotificationEmail(
 ) {
   const mailOptions = {
     from: getFromAddress(),
+    envelope: getEnvelope(),
     to,
     subject,
     html: htmlContent,
@@ -69,6 +79,7 @@ export async function sendWelcomeSetupEmail(
 
   const mailOptions = {
     from: getFromAddress(),
+    envelope: getEnvelope(),
     to,
     subject: "🎉 Benvenuto su Time Tracker - Configura il tuo account",
     html,
@@ -100,6 +111,7 @@ export async function sendPasswordResetLinkEmail(
 
   const mailOptions = {
     from: getFromAddress(),
+    envelope: getEnvelope(),
     to,
     subject: "🔐 Reimposta la tua password - Time Tracker",
     html,
@@ -132,6 +144,7 @@ export async function sendBackupEmail(
 
   const mailOptions: nodemailer.SendMailOptions = {
     from: getFromAddress(),
+    envelope: getEnvelope(),
     to,
     subject,
     html,
@@ -185,6 +198,7 @@ export async function sendLeaveRequestAdminNotification(params: {
 
   const mailOptions = {
     from: getFromAddress(),
+    envelope: getEnvelope(),
     to: params.adminEmail,
     subject: `📋 Nuova richiesta di ${typeLabel} da ${params.employeeName}`,
     html,
@@ -217,6 +231,7 @@ export async function sendMissingTimesheetReminderEmail(
 
   const mailOptions = {
     from: getFromAddress(),
+    envelope: getEnvelope(),
     to,
     subject: "⚠️ Promemoria: Ore mancanti nel calendario",
     html,
