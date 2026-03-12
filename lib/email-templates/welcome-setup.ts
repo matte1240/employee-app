@@ -258,6 +258,7 @@ Se hai domande o hai bisogno di assistenza, non esitare a contattare l'amministr
 ---
 Questa è un'email automatica, ti preghiamo di non rispondere.
 Presenze Ivicolors © ${new Date().getFullYear()}
+`;
 
   return { html, text };
 };

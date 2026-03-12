@@ -9,7 +9,7 @@ import { getMissingTimesheetReminderEmailTemplate } from "./email-templates/miss
 // Logo CID attachments for branded emails
 const logoDir = path.join(process.cwd(), "public");
 
-export const emailLogoAttachments: nodemailer.SendMailOptions["attachments"] = [
+export const emailLogoAttachments = [
   {
     filename: "logo.png",
     path: path.join(logoDir, "email-logo.png"),

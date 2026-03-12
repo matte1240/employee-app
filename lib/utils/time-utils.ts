@@ -18,14 +18,14 @@ export function calculateHours(start: string, end: string): number {
 }
 
 /**
- * Generate time options from 06:00 to 21:00 with 30-minute intervals
+ * Generate time options from 06:00 to 22:00 with 30-minute intervals
  * @returns Array of time strings in HH:MM format
  */
 export function generateTimeOptions(): string[] {
   const options: string[] = [];
-  for (let hour = 6; hour <= 21; hour++) {
+  for (let hour = 6; hour <= 22; hour++) {
     options.push(`${hour.toString().padStart(2, "0")}:00`);
-    if (hour < 21) {
+    if (hour < 22) {
       options.push(`${hour.toString().padStart(2, "0")}:30`);
     }
   }
