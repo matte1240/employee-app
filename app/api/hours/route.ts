@@ -4,7 +4,7 @@ type Decimal = Prisma.Decimal;
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { isHoliday } from "@/lib/utils/holiday-utils";
-import { requireAuth, isAdmin } from "@/lib/api-middleware";
+import { getRequiredSession, isAdmin } from "@/lib/api-middleware";
 import {
   successResponse,
   badRequestResponse,
@@ -61,8 +61,7 @@ type RawEntry = {
 };
 
 export async function GET(request: Request) {
-  const { session, error } = await requireAuth();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   const url = new URL(request.url);
   const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams));
@@ -112,8 +111,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { session, error } = await requireAuth();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   const body = await request.json();
   const parsed = createHoursSchema.safeParse(body);
@@ -343,8 +341,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { session, error } = await requireAuth();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   const url = new URL(request.url);
   const entryId = url.searchParams.get("id");

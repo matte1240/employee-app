@@ -2,7 +2,7 @@ import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { isHoliday } from "@/lib/utils/holiday-utils";
 import { addDays, isWeekend } from "date-fns";
-import { requireAdmin } from "@/lib/api-middleware";
+import { getRequiredSession } from "@/lib/api-middleware";
 import { auditAdmin } from "@/lib/audit-log";
 import {
   successResponse,
@@ -48,8 +48,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { session, error } = await requireAdmin();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   try {
     const json = await req.json();
@@ -127,8 +126,7 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin();
-  if (error) return error;
+  await getRequiredSession();
 
   try {
     const json = await req.json();
@@ -181,8 +179,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin();
-  if (error) return error;
+  await getRequiredSession();
 
   try {
     const { id } = await params;

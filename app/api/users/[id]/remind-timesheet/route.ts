@@ -1,6 +1,6 @@
 import { sendMissingTimesheetReminderEmail } from "@/lib/email";
 import { findUserById } from "@/lib/utils/user-utils";
-import { requireAdmin } from "@/lib/api-middleware";
+import { getRequiredSession } from "@/lib/api-middleware";
 import { successResponse, notFoundResponse, handleError } from "@/lib/api-responses";
 import { getMissingDaysForUser, formatMissingDatesIT } from "@/lib/utils/timesheet-utils";
 
@@ -8,8 +8,7 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin();
-  if (error) return error;
+  await getRequiredSession();
 
   try {
     const { id: userId } = await params;

@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { sendPasswordResetLinkEmail } from "@/lib/email";
 import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/utils/token-utils";
 import { findUserById } from "@/lib/utils/user-utils";
-import { requireAdmin } from "@/lib/api-middleware";
+import { getRequiredSession } from "@/lib/api-middleware";
 import { passwordSchema } from "@/lib/validation";
 import { auditAdmin } from "@/lib/audit-log";
 import {
@@ -22,8 +22,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { session, error } = await requireAdmin();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   try {
     const { id: userId } = await params;

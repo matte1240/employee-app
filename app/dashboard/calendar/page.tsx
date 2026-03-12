@@ -1,7 +1,6 @@
 import type { Prisma } from "@/lib/generated/prisma/client";
 
 type Decimal = Prisma.Decimal;
-import { redirect } from "next/navigation";
 import { endOfMonth, startOfMonth } from "date-fns";
 import prisma from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
@@ -43,11 +42,8 @@ export default async function CalendarPage({
 }: {
   searchParams: Promise<{ userId?: string }>;
 }) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    redirect("/");
-  }
+  // Auth enforced by proxy.ts — session is guaranteed non-null here
+  const session = (await getAuthSession())!;
 
   const now = new Date();
   const params = await searchParams;

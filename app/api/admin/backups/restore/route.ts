@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { writeFile, unlink } from "fs/promises";
 import fs from "fs";
 import path from "path";
-import { isAdmin } from "@/lib/utils/user-utils";
 import prisma from "@/lib/prisma";
+import { getRequiredSession } from "@/lib/api-middleware";
 import { auditAdmin } from "@/lib/audit-log";
 
 const execAsync = promisify(exec);
@@ -18,15 +16,10 @@ export async function POST(req: NextRequest) {
     const userCount = await prisma.user.count();
     const isSetupMode = userCount === 0;
 
-    // Require admin authentication unless in setup mode
+    // In setup mode, proxy.ts allows unauthenticated access to this endpoint.
+    // In normal mode, proxy.ts enforces admin auth — just verify the session exists.
     if (!isSetupMode) {
-      const session = await getServerSession(authOptions);
-      if (!session?.user || !isAdmin(session)) {
-        return NextResponse.json(
-          { error: "Unauthorized - Admin access required" },
-          { status: 401 }
-        );
-      }
+      await getRequiredSession();
     }
 
     const formData = await req.formData();

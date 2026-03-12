@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { isAdmin } from "@/lib/utils/user-utils";
+import { getRequiredSession } from "@/lib/api-middleware";
 import { performBackup } from "@/lib/db-backup";
 import { auditAdmin } from "@/lib/audit-log";
 import { readdir, stat } from "fs/promises";
@@ -25,14 +23,8 @@ function formatBytes(bytes: number, decimals = 2): string {
 
 export async function GET(req: NextRequest) {
   try {
-    // Check authentication and admin role
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !isAdmin(session)) {
-      return NextResponse.json(
-        { error: "Unauthorized - Admin access required" },
-        { status: 401 }
-      );
-    }
+    // Auth + admin role enforced by proxy.ts
+    await getRequiredSession();
 
     const { searchParams } = new URL(req.url);
     const filename = searchParams.get("filename");
@@ -116,14 +108,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST() {
   try {
-    // Check authentication and admin role
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !isAdmin(session)) {
-      return NextResponse.json(
-        { error: "Unauthorized - Admin access required" },
-        { status: 401 }
-      );
-    }
+    // Auth + admin role enforced by proxy.ts
+    const session = await getRequiredSession();
 
     const result = await performBackup();
 

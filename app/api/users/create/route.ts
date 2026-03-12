@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import { sendWelcomeSetupEmail } from "@/lib/email";
 import { generateResetToken, createVerificationToken, deleteVerificationTokens } from "@/lib/utils/token-utils";
 import { findUserByEmail } from "@/lib/utils/user-utils";
-import { requireAdmin } from "@/lib/api-middleware";
+import { getRequiredSession } from "@/lib/api-middleware";
 import { passwordSchema } from "@/lib/validation";
 import { auditAdmin } from "@/lib/audit-log";
 import {
@@ -23,8 +23,7 @@ const createUserSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const { session, error } = await requireAdmin();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   try {
     const body = await request.json();

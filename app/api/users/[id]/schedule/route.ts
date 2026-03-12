@@ -1,6 +1,6 @@
 import { z } from "zod";
 import prisma from "@/lib/prisma";
-import { requireAdmin } from "@/lib/api-middleware";
+import { getRequiredSession } from "@/lib/api-middleware";
 import {
   successResponse,
   notFoundResponse,
@@ -47,8 +47,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin();
-  if (error) return error;
+  await getRequiredSession();
 
   try {
     const { id: userId } = await params;
@@ -91,8 +90,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin();
-  if (error) return error;
+  await getRequiredSession();
 
   try {
     const { id: userId } = await params;

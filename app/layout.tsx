@@ -15,21 +15,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Work Hours Tracker",
-  description: "Employee time tracking with admin oversight using Next.js, Prisma, and NextAuth.",
+  title: "Presenze Ivicolors",
+  description: "Gestione presenze e orari dipendenti Ivicolors",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Hours Tracker",
+    title: "Presenze Ivicolors",
   },
   icons: {
     icon: [
-      { url: "/logo40.png", type: "image/png" },
-      { url: "/logo40.svg", type: "image/svg+xml" },
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/logo40.png", type: "image/png", sizes: "40x40" },
     ],
     apple: [
-      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
 };

@@ -1,7 +1,7 @@
 {
-  "name": "Work Hours Tracker",
-  "short_name": "Hours Tracker",
-  "description": "Employee time tracking with admin oversight",
+  "name": "Presenze Ivicolors",
+  "short_name": "Presenze Ivicolors",
+  "description": "Gestione presenze e orari dipendenti Ivicolors",
   "start_url": "/",
   "display": "standalone",
   "display_override": ["standalone"],
