@@ -11,18 +11,23 @@ const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
 async function rateLimitedPost(req: NextRequest, context: unknown): Promise<Response> {
-  const ip = getClientIp(req);
-  const result = checkRateLimit(`login:${ip}`, MAX_LOGIN_ATTEMPTS, LOGIN_WINDOW_MS);
+  // Only rate-limit sign-in attempts, not signout/csrf/other callbacks
+  const isSignIn = req.nextUrl.pathname.endsWith("/callback/credentials");
 
-  if (result.limited) {
-    auditSecurity.rateLimited(ip, "/api/auth");
-    return NextResponse.json(
-      { error: "Troppi tentativi di login. Riprova più tardi." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(result.retryAfterSeconds) },
-      }
-    );
+  if (isSignIn) {
+    const ip = getClientIp(req);
+    const result = checkRateLimit(`login:${ip}`, MAX_LOGIN_ATTEMPTS, LOGIN_WINDOW_MS);
+
+    if (result.limited) {
+      auditSecurity.rateLimited(ip, "/api/auth");
+      return NextResponse.json(
+        { error: "Troppi tentativi di login. Riprova più tardi." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(result.retryAfterSeconds) },
+        }
+      );
+    }
   }
 
   return (handler as (...args: unknown[]) => Promise<Response>)(req, context);

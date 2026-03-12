@@ -1,9 +1,26 @@
 import nodemailer from "nodemailer";
+import path from "path";
 import { getWelcomeSetupEmailTemplate } from "./email-templates/welcome-setup";
 import { getPasswordResetLinkEmailTemplate } from "./email-templates/password-reset-link";
 import { getBackupEmailTemplate } from "./email-templates/backup";
 import { getLeaveRequestAdminEmailTemplate } from "./email-templates/leave-request-admin";
 import { getMissingTimesheetReminderEmailTemplate } from "./email-templates/missing-timesheet-reminder";
+
+// Logo CID attachments for branded emails
+const logoDir = path.join(process.cwd(), "public");
+
+export const emailLogoAttachments = [
+  {
+    filename: "logo.png",
+    path: path.join(logoDir, "email-logo.png"),
+    cid: "logo",
+  },
+  {
+    filename: "logo-white.png",
+    path: path.join(logoDir, "email-logo-white.png"),
+    cid: "logo-white",
+  },
+];
 
 // Configurazione transporter Gmail
 const transporter = nodemailer.createTransport({
@@ -15,21 +32,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD, // App Password di Gmail
   },
 });
-
-function getFromAddress(): string {
-  const name = process.env.EMAIL_FROM_NAME || "Time Tracker";
-  const address = process.env.EMAIL_FROM || process.env.EMAIL_USER;
-  return `"${name}" <${address}>`;
-}
-
-function getEnvelope(to: string): { from: string; to: string } | undefined {
-  // Force the SMTP MAIL FROM to use the alias address.
-  // Required for Google Workspace aliases — Gmail ignores the From header
-  // and uses the authenticated user unless envelope.from is set.
-  const from = process.env.EMAIL_FROM;
-  if (from) return { from, to };
-  return undefined;
-}
 
 // Verifica connessione (opzionale, utile per debug)
 export async function verifyEmailConnection() {
@@ -51,8 +53,7 @@ export async function sendNotificationEmail(
   textContent: string
 ) {
   const mailOptions = {
-    from: getFromAddress(),
-    envelope: getEnvelope(to),
+    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html: htmlContent,
@@ -78,12 +79,12 @@ export async function sendWelcomeSetupEmail(
   const { html, text } = getWelcomeSetupEmailTemplate(username, setupUrl, to);
 
   const mailOptions = {
-    from: getFromAddress(),
-    envelope: getEnvelope(to),
+    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "🎉 Benvenuto su Time Tracker - Configura il tuo account",
+    subject: "🎉 Benvenuto su Presenze Ivicolors - Configura il tuo account",
     html,
     text,
+    attachments: [...emailLogoAttachments],
   };
 
   try {
@@ -110,12 +111,12 @@ export async function sendPasswordResetLinkEmail(
   );
 
   const mailOptions = {
-    from: getFromAddress(),
-    envelope: getEnvelope(to),
+    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "🔐 Reimposta la tua password - Time Tracker",
+    subject: "🔐 Reimposta la tua password - Presenze Ivicolors",
     html,
     text,
+    attachments: [...emailLogoAttachments],
   };
 
   try {
@@ -143,20 +144,18 @@ export async function sendBackupEmail(
   const { html } = getBackupEmailTemplate(success, filename, errorMessage);
 
   const mailOptions: nodemailer.SendMailOptions = {
-    from: getFromAddress(),
-    envelope: getEnvelope(to),
+    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html,
+    attachments: [...emailLogoAttachments],
   };
 
   if (success && filePath && filename) {
-    mailOptions.attachments = [
-      {
-        filename: filename,
-        path: filePath,
-      },
-    ];
+    mailOptions.attachments!.push({
+      filename: filename,
+      path: filePath,
+    });
   }
 
   try {
@@ -197,12 +196,12 @@ export async function sendLeaveRequestAdminNotification(params: {
   const typeLabel = LEAVE_TYPE_LABELS[params.leaveType] ?? params.leaveType;
 
   const mailOptions = {
-    from: getFromAddress(),
-    envelope: getEnvelope(params.adminEmail),
+    from: `"${process.env.EMAIL_FROM_NAME ?? "Time Tracker"}" <${process.env.EMAIL_USER}>`,
     to: params.adminEmail,
     subject: `📋 Nuova richiesta di ${typeLabel} da ${params.employeeName}`,
     html,
     text,
+    attachments: [...emailLogoAttachments],
   };
 
   try {
@@ -230,12 +229,12 @@ export async function sendMissingTimesheetReminderEmail(
   );
 
   const mailOptions = {
-    from: getFromAddress(),
-    envelope: getEnvelope(to),
+    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
     to,
     subject: "⚠️ Promemoria: Ore mancanti nel calendario",
     html,
     text,
+    attachments: [...emailLogoAttachments],
   };
 
   try {

@@ -19,7 +19,7 @@ export default async function SetupPage() {
       <div className="w-full max-w-md space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-foreground">
-            Welcome to Work Hours Tracker
+            Benvenuto in Presenze Ivicolors
           </h2>
           <p className="mt-2 text-center text-sm text-muted-foreground">
             Let&apos;s set up your first administrator account to get started.

@@ -5,11 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RequestStatus } from "@/types/models";
-
-const VALID_TIME_SLOTS = [
-  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00",
-  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30"
-];
+import { TIME_OPTIONS } from "@/lib/utils/time-utils";
 
 type RequestLeaveModalProps = {
   isOpen: boolean;
@@ -209,7 +205,7 @@ export default function RequestLeaveModal({ isOpen, onClose, editRequest }: Requ
                   }
                 >
                   <option value="">Seleziona orario</option>
-                  {VALID_TIME_SLOTS.map((time) => (
+                  {TIME_OPTIONS.map((time) => (
                     <option key={time} value={time}>
                       {time}
                     </option>
@@ -229,7 +225,7 @@ export default function RequestLeaveModal({ isOpen, onClose, editRequest }: Requ
                   }
                 >
                   <option value="">Seleziona orario</option>
-                  {VALID_TIME_SLOTS.map((time) => (
+                  {TIME_OPTIONS.map((time) => (
                     <option key={time} value={time}>
                       {time}
                     </option>

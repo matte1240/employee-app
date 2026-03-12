@@ -1,7 +1,7 @@
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { findUserById, findUserByEmail } from "@/lib/utils/user-utils";
-import { requireAdmin } from "@/lib/api-middleware";
+import { getRequiredSession } from "@/lib/api-middleware";
 import {
   successResponse,
   notFoundResponse,
@@ -24,8 +24,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { session, error } = await requireAdmin();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   try {
     const { id: userId } = await params;
@@ -92,8 +91,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { session, error } = await requireAdmin();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   try {
     const { id: userId } = await params;

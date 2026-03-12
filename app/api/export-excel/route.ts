@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import ExcelJS from "exceljs";
-import { requireAuth, isAdmin } from "@/lib/api-middleware";
+import { getRequiredSession, isAdmin } from "@/lib/api-middleware";
 import { badRequestResponse, forbiddenResponse, handleError } from "@/lib/api-responses";
 import { auditAdmin } from "@/lib/audit-log";
 import { decimalToNumber } from "@/lib/utils/serialization";
@@ -13,8 +13,7 @@ const exportSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const { session, error } = await requireAuth();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   const body = await request.json();
   const parsed = exportSchema.safeParse(body);
@@ -38,7 +37,7 @@ export async function POST(request: Request) {
   try {
     // Create a new workbook
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = "Employee Time Tracker";
+    workbook.creator = "Presenze Ivicolors";
     workbook.created = new Date();
 
     // Batch fetch all users and entries in parallel to avoid N+1 queries

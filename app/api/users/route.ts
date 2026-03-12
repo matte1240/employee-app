@@ -2,7 +2,7 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { findUserByEmail } from "@/lib/utils/user-utils";
-import { requireAdmin } from "@/lib/api-middleware";
+import { getRequiredSession } from "@/lib/api-middleware";
 import { passwordSchema } from "@/lib/validation";
 import {
   successResponse,
@@ -35,8 +35,7 @@ const createUserSchema = z.object({
 });
 
 export async function GET() {
-  const { error } = await requireAdmin();
-  if (error) return error;
+  await getRequiredSession();
 
   const [users, totals] = await Promise.all([
     prisma.user.findMany({
@@ -73,8 +72,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { error } = await requireAdmin();
-  if (error) return error;
+  await getRequiredSession();
 
   const payload = await request.json();
   const parsed = createUserSchema.safeParse(payload);

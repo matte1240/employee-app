@@ -1,8 +1,7 @@
-import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getRequiredSession } from "@/lib/api-middleware";
 import {
   successResponse,
-  unauthorizedResponse,
   handleError,
 } from "@/lib/api-responses";
 import {
@@ -16,11 +15,7 @@ import {
  */
 export async function GET() {
   try {
-    const session = await getAuthSession();
-    if (!session) {
-      return unauthorizedResponse();
-    }
-
+    const session = await getRequiredSession();
     const userId = session.user.id;
 
     // Get user's canWorkSunday flag

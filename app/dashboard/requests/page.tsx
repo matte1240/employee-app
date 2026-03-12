@@ -1,13 +1,9 @@
-import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import RequestsList from "@/components/dashboard/employee/requests-list";
 
 export default async function RequestsPage() {
-  const session = await getAuthSession();
-
-  if (!session) {
-    redirect("/");
-  }
+  // Auth enforced by proxy.ts — session is guaranteed non-null here
+  const session = (await getAuthSession())!;
 
   const isAdmin = session.user.role === "ADMIN";
 

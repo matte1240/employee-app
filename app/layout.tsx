@@ -15,22 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Work Hours Tracker",
-  description: "Employee time tracking with admin oversight using Next.js, Prisma, and NextAuth.",
+  title: "Presenze Ivicolors",
+  description: "Gestione presenze e orari dipendenti Ivicolors",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Hours Tracker",
-  },
-  icons: {
-    icon: [
-      { url: "/logo40.png", type: "image/png" },
-      { url: "/logo40.svg", type: "image/svg+xml" },
-    ],
-    apple: [
-      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
-    ],
+    title: "Presenze Ivicolors",
   },
 };
 
@@ -50,7 +41,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#0f172a" />
+        {/* Light theme icons (default) */}
+        <link rel="icon" type="image/png" href="/favicon-v2.png" media="(prefers-color-scheme: light)" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v2.png" media="(prefers-color-scheme: light)" />
+        {/* Dark theme icons */}
+        <link rel="icon" type="image/png" href="/favicon-v2-dark.png" media="(prefers-color-scheme: dark)" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v2-dark.png" media="(prefers-color-scheme: dark)" />
+        {/* Theme color per scheme */}
+        <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}

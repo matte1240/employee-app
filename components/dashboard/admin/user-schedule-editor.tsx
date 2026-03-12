@@ -4,15 +4,8 @@ import { useState, useEffect, useTransition } from "react";
 import { X, Calendar, Clock, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { WorkingScheduleDTO, DAY_NAMES } from "@/types/models";
 import { cn } from "@/lib/utils";
-
-// Time options from 06:00 to 22:00 with 30-minute intervals
-const TIME_OPTIONS: string[] = [];
-for (let hour = 6; hour <= 22; hour++) {
-  TIME_OPTIONS.push(`${hour.toString().padStart(2, "0")}:00`);
-  if (hour < 22) {
-    TIME_OPTIONS.push(`${hour.toString().padStart(2, "0")}:30`);
-  }
-}
+import { TIME_OPTIONS } from "@/lib/utils/time-utils";
+import { calculateTotalHoursFromShifts } from "@/lib/utils/schedule-utils";
 
 type ScheduleEntry = {
   dayOfWeek: number;
@@ -31,27 +24,6 @@ type UserScheduleEditorProps = {
   isOpen: boolean;
   onClose: () => void;
 };
-
-// Calculate total hours from shifts
-function calculateTotalHours(
-  morningStart: string | null,
-  morningEnd: string | null,
-  afternoonStart: string | null,
-  afternoonEnd: string | null
-): number {
-  let total = 0;
-  if (morningStart && morningEnd) {
-    const [msh, msm] = morningStart.split(":").map(Number);
-    const [meh, mem] = morningEnd.split(":").map(Number);
-    total += Math.max(0, (meh * 60 + mem - msh * 60 - msm) / 60);
-  }
-  if (afternoonStart && afternoonEnd) {
-    const [ash, asm] = afternoonStart.split(":").map(Number);
-    const [aeh, aem] = afternoonEnd.split(":").map(Number);
-    total += Math.max(0, (aeh * 60 + aem - ash * 60 - asm) / 60);
-  }
-  return total;
-}
 
 // Default schedule for each day (Mon-Fri 8-12, 14-18)
 const DEFAULT_SCHEDULES: ScheduleEntry[] = [
@@ -154,7 +126,7 @@ export default function UserScheduleEditor({
         } else if (field === "useManualHours") {
           // When toggling useManualHours, recalculate if turning it off
           if (value === false) {
-            updated.totalHours = calculateTotalHours(
+            updated.totalHours = calculateTotalHoursFromShifts(
               updated.morningStart,
               updated.morningEnd,
               updated.afternoonStart,
@@ -164,7 +136,7 @@ export default function UserScheduleEditor({
           // If turning it on, keep current totalHours as manual value
         } else if (field !== "totalHours" && !updated.useManualHours) {
           // Auto-recalculate totalHours only if useManualHours is false (using updated state)
-          updated.totalHours = calculateTotalHours(
+          updated.totalHours = calculateTotalHoursFromShifts(
             updated.morningStart,
             updated.morningEnd,
             updated.afternoonStart,

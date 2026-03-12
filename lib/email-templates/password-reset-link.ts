@@ -168,10 +168,7 @@ export const getPasswordResetLinkEmailTemplate = (
             <!-- Header -->
             <div class="header">
               <div class="header-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
+                <img src="cid:logo-white" alt="Ivicolors" width="48" height="48" style="display:block;" />
               </div>
               <h1>Reimposta Password</h1>
             </div>
@@ -181,7 +178,7 @@ export const getPasswordResetLinkEmailTemplate = (
               <div class="greeting">Ciao ${username}! 👋</div>
               
               <p class="message">
-                Abbiamo ricevuto una richiesta per reimpostare la password del tuo account Time Tracker. 
+                Abbiamo ricevuto una richiesta per reimpostare la password del tuo account Presenze Ivicolors. 
                 Nessun problema, succede a tutti!
               </p>
 
@@ -223,7 +220,7 @@ export const getPasswordResetLinkEmailTemplate = (
                 Questa è un'email automatica, ti preghiamo di non rispondere.
               </div>
               <div class="footer-brand">
-                Time Tracker © ${new Date().getFullYear()}
+                Presenze Ivicolors © ${new Date().getFullYear()}
               </div>
             </div>
           </div>
@@ -236,7 +233,7 @@ Reset Password
 
 Ciao ${username},
 
-Hai richiesto di reimpostare la password del tuo account Time Tracker.
+Hai richiesto di reimpostare la password del tuo account Presenze Ivicolors.
 
 Clicca sul link qui sotto per reimpostare la password:
 ${resetUrl}
@@ -251,7 +248,7 @@ Se non hai richiesto questo reset, contatta immediatamente l'amministratore.
 
 ---
 Questo è un messaggio automatico, per favore non rispondere a questa email.
-© ${new Date().getFullYear()} Time Tracker. Tutti i diritti riservati.
+© ${new Date().getFullYear()} Presenze Ivicolors. Tutti i diritti riservati.
     `;
 
   return { html, text };

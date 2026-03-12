@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useTransition, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import {
@@ -35,13 +35,13 @@ export default function Navbar({
   userImage: _userImage,
 }: NavbarProps) {
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    startTransition(async () => {
-      await signOut({ callbackUrl: "/" });
-    });
+  const handleLogout = async () => {
+    setIsPending(true);
+    await signOut({ redirect: false });
+    window.location.href = "/";
   };
 
   // Close mobile menu on route change

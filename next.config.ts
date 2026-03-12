@@ -55,5 +55,18 @@ export default withPWA({
     skipWaiting: true,
     clientsClaim: true,
     cleanupOutdatedCaches: true,
+    runtimeCaching: [
+      {
+        urlPattern: /\/icon-.*\.png|apple-touch-icon.*\.png|favicon.*\.png|logo40.*\.(png|svg)/,
+        handler: "StaleWhileRevalidate",
+        options: {
+          cacheName: "app-icons",
+          expiration: {
+            maxEntries: 20,
+            maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+          },
+        },
+      },
+    ],
   },
 })(nextConfig);

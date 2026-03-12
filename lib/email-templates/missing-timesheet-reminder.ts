@@ -163,13 +163,7 @@ export const getMissingTimesheetReminderEmailTemplate = (
             <!-- Header -->
             <div class="header">
               <div class="header-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                  <line x1="10" y1="15" x2="14" y2="15"></line>
-                </svg>
+                <img src="cid:logo-white" alt="Ivicolors" width="48" height="48" style="display:block;" />
               </div>
               <h1>⚠️ Ore Mancanti nel Calendario</h1>
             </div>
@@ -222,7 +216,7 @@ export const getMissingTimesheetReminderEmailTemplate = (
                 Questa è un'email automatica, ti preghiamo di non rispondere.
               </div>
               <div class="footer-brand">
-                Time Tracker © ${new Date().getFullYear()}
+                Presenze Ivicolors © ${new Date().getFullYear()}
               </div>
             </div>
           </div>
@@ -253,7 +247,7 @@ Se hai già provveduto ad inserire le ore o se quei giorni erano festivi / di ri
 
 ---
 Questa è un'email automatica, ti preghiamo di non rispondere.
-Time Tracker © ${new Date().getFullYear()}
+Presenze Ivicolors © ${new Date().getFullYear()}
     `;
 
   return { html, text };

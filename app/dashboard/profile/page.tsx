@@ -4,11 +4,8 @@ import prisma from "@/lib/prisma";
 import EmployeeProfile from "@/components/dashboard/employee/profile";
 
 export default async function ProfilePage() {
-  const session = await getAuthSession();
-
-  if (!session) {
-    redirect("/");
-  }
+  // Auth enforced by proxy.ts — session is guaranteed non-null here
+  const session = (await getAuthSession())!;
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },

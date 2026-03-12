@@ -1,6 +1,6 @@
 import { z } from "zod";
 import prisma from "@/lib/prisma";
-import { requireAuth, isAdmin } from "@/lib/api-middleware";
+import { getRequiredSession, isAdmin } from "@/lib/api-middleware";
 import {
   successResponse,
   badRequestResponse,
@@ -27,8 +27,7 @@ interface LeaveRequestWhereClause {
 }
 
 export async function POST(req: Request) {
-  const { session, error } = await requireAuth();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   try {
     const json = await req.json();
@@ -138,8 +137,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  const { session, error } = await requireAuth();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   const { searchParams } = new URL(req.url);
   const userIdParam = searchParams.get("userId");

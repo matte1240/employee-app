@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import AdminOverview from "@/components/dashboard/admin/overview";
@@ -17,15 +16,8 @@ type UserAggregate = User & {
 type UserRow = User;
 
 export default async function AdminDashboardPage() {
-  const session = await getAuthSession();
-
-  if (!session) {
-    redirect("/");
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect("/dashboard");
-  }
+  // Auth + admin role enforced by proxy.ts
+  const session = (await getAuthSession())!;
 
   // Filter by current month only (to match calendar view)
   const now = new Date();

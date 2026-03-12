@@ -4,7 +4,7 @@ import { writeFile, mkdir, unlink } from "fs/promises";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
-import { requireAuth } from "@/lib/api-middleware";
+import { getRequiredSession } from "@/lib/api-middleware";
 import {
   successResponse,
   badRequestResponse,
@@ -45,8 +45,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { session, error } = await requireAuth();
-  if (error) return error;
+  const session = await getRequiredSession();
 
   const { id: userId } = await params;
 

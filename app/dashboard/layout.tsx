@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getAuthSession } from "@/lib/auth";
 import Navbar from "@/components/layout/navbar";
 import ActivityTracker from "@/components/features/activity-tracker";
@@ -8,11 +7,8 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getAuthSession();
-
-  if (!session) {
-    redirect("/");
-  }
+  // Auth enforced by proxy.ts — session is guaranteed non-null here
+  const session = (await getAuthSession())!;
 
   return (
     <div className="min-h-screen bg-background">
