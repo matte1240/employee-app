@@ -1,9 +1,26 @@
 import nodemailer from "nodemailer";
+import path from "path";
 import { getWelcomeSetupEmailTemplate } from "./email-templates/welcome-setup";
 import { getPasswordResetLinkEmailTemplate } from "./email-templates/password-reset-link";
 import { getBackupEmailTemplate } from "./email-templates/backup";
 import { getLeaveRequestAdminEmailTemplate } from "./email-templates/leave-request-admin";
 import { getMissingTimesheetReminderEmailTemplate } from "./email-templates/missing-timesheet-reminder";
+
+// Logo CID attachments for branded emails
+const logoDir = path.join(process.cwd(), "public");
+
+export const emailLogoAttachments: nodemailer.SendMailOptions["attachments"] = [
+  {
+    filename: "logo.png",
+    path: path.join(logoDir, "email-logo.png"),
+    cid: "logo",
+  },
+  {
+    filename: "logo-white.png",
+    path: path.join(logoDir, "email-logo-white.png"),
+    cid: "logo-white",
+  },
+];
 
 // Configurazione transporter Gmail
 const transporter = nodemailer.createTransport({
@@ -64,9 +81,10 @@ export async function sendWelcomeSetupEmail(
   const mailOptions = {
     from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "🎉 Benvenuto su Time Tracker - Configura il tuo account",
+    subject: "🎉 Benvenuto su Presenze Ivicolors - Configura il tuo account",
     html,
     text,
+    attachments: [...emailLogoAttachments],
   };
 
   try {
@@ -95,9 +113,10 @@ export async function sendPasswordResetLinkEmail(
   const mailOptions = {
     from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "🔐 Reimposta la tua password - Time Tracker",
+    subject: "🔐 Reimposta la tua password - Presenze Ivicolors",
     html,
     text,
+    attachments: [...emailLogoAttachments],
   };
 
   try {
@@ -129,15 +148,14 @@ export async function sendBackupEmail(
     to,
     subject,
     html,
+    attachments: [...emailLogoAttachments],
   };
 
   if (success && filePath && filename) {
-    mailOptions.attachments = [
-      {
-        filename: filename,
-        path: filePath,
-      },
-    ];
+    mailOptions.attachments!.push({
+      filename: filename,
+      path: filePath,
+    });
   }
 
   try {
@@ -183,6 +201,7 @@ export async function sendLeaveRequestAdminNotification(params: {
     subject: `📋 Nuova richiesta di ${typeLabel} da ${params.employeeName}`,
     html,
     text,
+    attachments: [...emailLogoAttachments],
   };
 
   try {
@@ -215,6 +234,7 @@ export async function sendMissingTimesheetReminderEmail(
     subject: "⚠️ Promemoria: Ore mancanti nel calendario",
     html,
     text,
+    attachments: [...emailLogoAttachments],
   };
 
   try {

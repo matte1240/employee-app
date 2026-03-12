@@ -3,7 +3,7 @@ import LoginForm from "@/components/auth/login-form";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import Image from "next/image";
-import { CheckCircle2, Zap, BarChart3, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, CalendarDays, Shield } from "lucide-react";
 
 // Force dynamic rendering to check database at runtime
 export const dynamic = "force-dynamic";
@@ -57,29 +57,29 @@ export default async function Home({
         <div className="relative z-10 space-y-6">
           <div className="flex items-start gap-4 group">
             <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:shadow-lg transition-all duration-300 border border-primary/20">
-              <CheckCircle2 className="w-5 h-5 text-primary" />
+              <Clock className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-foreground mb-1">Registrazione Semplice</p>
-              <p className="text-sm text-muted-foreground">Clicca su un giorno per registrare le ore, inclusi i turni mattutini e pomeridiani</p>
+              <p className="font-semibold text-foreground mb-1">Gestione Ore</p>
+              <p className="text-sm text-muted-foreground">Registra le ore lavorative giornaliere con turni mattutini e pomeridiani</p>
             </div>
           </div>
           <div className="flex items-start gap-4 group">
             <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center group-hover:shadow-lg transition-all duration-300 border border-secondary/20">
-              <Zap className="w-5 h-5 text-secondary-foreground" />
+              <CalendarDays className="w-5 h-5 text-secondary-foreground" />
             </div>
             <div>
-              <p className="font-semibold text-foreground mb-1">Monitoraggio Straordinari</p>
-              <p className="text-sm text-muted-foreground">Calcolo automatico delle ore ordinarie e degli straordinari</p>
+              <p className="font-semibold text-foreground mb-1">Ferie e Permessi</p>
+              <p className="text-sm text-muted-foreground">Richiedi ferie, permessi e gestisci le assenze in modo semplice</p>
             </div>
           </div>
           <div className="flex items-start gap-4 group">
             <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center group-hover:shadow-lg transition-all duration-300 border border-accent/20">
-              <BarChart3 className="w-5 h-5 text-accent-foreground" />
+              <Shield className="w-5 h-5 text-accent-foreground" />
             </div>
             <div>
               <p className="font-semibold text-foreground mb-1">Pannello Amministratore</p>
-              <p className="text-sm text-muted-foreground">Panoramica in tempo reale delle attività del team e delle ore lavorate</p>
+              <p className="text-sm text-muted-foreground">Gestisci il team, approva richieste e consulta i report aziendali</p>
             </div>
           </div>
         </div>
@@ -145,7 +145,7 @@ export default async function Home({
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            © 2025 Ivicolors. Tutti i diritti riservati.
+            © {new Date().getFullYear()} Ivicolors. Tutti i diritti riservati.
           </p>
         </div>
       </div>

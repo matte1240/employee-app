@@ -209,7 +209,9 @@ export function getLeaveRequestAdminEmailTemplate(params: {
   <body>
     <div class="email-wrapper">
       <div class="header">
-        <div class="header-icon">📋</div>
+        <div class="header-icon">
+          <img src="cid:logo-white" alt="Ivicolors" width="48" height="48" style="display:block;" />
+        </div>
         <h1>Nuova Richiesta di Assenza</h1>
         <p>Richiede la tua approvazione</p>
       </div>
@@ -255,14 +257,14 @@ export function getLeaveRequestAdminEmailTemplate(params: {
       </div>
 
       <div class="footer">
-        <p>Time Tracker · Notifica automatica</p>
+        <p>Presenze Ivicolors · Notifica automatica</p>
         <p style="margin-top:4px;">Non rispondere a questa email.</p>
       </div>
     </div>
   </body>
 </html>`;
 
-  const text = `Nuova richiesta di assenza - Time Tracker
+  const text = `Nuova richiesta di assenza - Presenze Ivicolors
 
 Ciao ${adminName},
 
@@ -276,7 +278,7 @@ Accedi alla dashboard per gestire la richiesta:
 ${dashboardUrl}
 
 ---
-Time Tracker · Notifica automatica
+Presenze Ivicolors · Notifica automatica
 `;
 
   return { html, text };

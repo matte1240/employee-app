@@ -169,10 +169,7 @@ export const getWelcomeSetupEmailTemplate = (
             <!-- Header -->
             <div class="header">
               <div class="header-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                  <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                </svg>
+                <img src="cid:logo-white" alt="Ivicolors" width="48" height="48" style="display:block;" />
               </div>
               <h1>Benvenuto nel Team!</h1>
             </div>
@@ -182,7 +179,7 @@ export const getWelcomeSetupEmailTemplate = (
               <div class="greeting">Ciao ${username}! 👋</div>
               
               <p class="message">
-                Siamo entusiasti di darti il benvenuto su <strong>Time Tracker</strong>! 
+                Siamo entusiasti di darti il benvenuto su <strong>Presenze Ivicolors</strong>! 
                 Il tuo account è stato creato con successo.
               </p>
 
@@ -229,7 +226,7 @@ export const getWelcomeSetupEmailTemplate = (
                 Questa è un'email automatica, ti preghiamo di non rispondere.
               </div>
               <div class="footer-brand">
-                Time Tracker © ${new Date().getFullYear()}
+                Presenze Ivicolors © ${new Date().getFullYear()}
               </div>
             </div>
           </div>
@@ -238,7 +235,7 @@ export const getWelcomeSetupEmailTemplate = (
     `;
 
   const text = `
-Benvenuto su Time Tracker!
+Benvenuto su Presenze Ivicolors!
 
 Ciao ${username}!
 
@@ -260,8 +257,7 @@ Se hai domande o hai bisogno di assistenza, non esitare a contattare l'amministr
 
 ---
 Questa è un'email automatica, ti preghiamo di non rispondere.
-Time Tracker © ${new Date().getFullYear()}
-    `;
+Presenze Ivicolors © ${new Date().getFullYear()}
 
   return { html, text };
 };
