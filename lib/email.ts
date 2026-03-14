@@ -33,6 +33,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const senderEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+const senderName = process.env.EMAIL_FROM_NAME || "Time Tracker";
+const fromAddress = senderEmail ? `"${senderName}" <${senderEmail}>` : senderName;
+
 // Verifica connessione (opzionale, utile per debug)
 export async function verifyEmailConnection() {
   try {
@@ -53,7 +57,7 @@ export async function sendNotificationEmail(
   textContent: string
 ) {
   const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
+    from: fromAddress,
     to,
     subject,
     html: htmlContent,
@@ -79,7 +83,7 @@ export async function sendWelcomeSetupEmail(
   const { html, text } = getWelcomeSetupEmailTemplate(username, setupUrl, to);
 
   const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
+    from: fromAddress,
     to,
     subject: "🎉 Benvenuto su Presenze Ivicolors - Configura il tuo account",
     html,
@@ -111,7 +115,7 @@ export async function sendPasswordResetLinkEmail(
   );
 
   const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
+    from: fromAddress,
     to,
     subject: "🔐 Reimposta la tua password - Presenze Ivicolors",
     html,
@@ -144,7 +148,7 @@ export async function sendBackupEmail(
   const { html } = getBackupEmailTemplate(success, filename, errorMessage);
 
   const mailOptions: nodemailer.SendMailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
+    from: fromAddress,
     to,
     subject,
     html,
@@ -196,7 +200,7 @@ export async function sendLeaveRequestAdminNotification(params: {
   const typeLabel = LEAVE_TYPE_LABELS[params.leaveType] ?? params.leaveType;
 
   const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME ?? "Time Tracker"}" <${process.env.EMAIL_USER}>`,
+    from: fromAddress,
     to: params.adminEmail,
     subject: `📋 Nuova richiesta di ${typeLabel} da ${params.employeeName}`,
     html,
@@ -229,7 +233,7 @@ export async function sendMissingTimesheetReminderEmail(
   );
 
   const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME || "Time Tracker"}" <${process.env.EMAIL_USER}>`,
+    from: fromAddress,
     to,
     subject: "⚠️ Promemoria: Ore mancanti nel calendario",
     html,
