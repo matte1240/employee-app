@@ -41,12 +41,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Light theme icons (default) */}
+        {/* Default apple-touch-icon (iOS ignores media queries on apple-touch-icon) */}
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v2.png" />
+        {/* Light theme favicon */}
         <link rel="icon" type="image/png" href="/favicon-v2.png" media="(prefers-color-scheme: light)" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v2.png" media="(prefers-color-scheme: light)" />
-        {/* Dark theme icons */}
+        {/* Dark theme favicon */}
         <link rel="icon" type="image/png" href="/favicon-v2-dark.png" media="(prefers-color-scheme: dark)" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v2-dark.png" media="(prefers-color-scheme: dark)" />
         {/* Theme color per scheme */}
         <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
