@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import Image from "next/image";
+import { Logo } from "@/components/ui/logo";
 import {
   LayoutDashboard,
   Users,
@@ -146,13 +146,7 @@ export default function Navbar({
             {/* Logo/Brand */}
             <div className="flex items-center h-full">
               <Link href="/dashboard" className="flex items-center h-full py-3 group">
-                <Image
-                  src="/logo.svg"
-                  alt="Ivicolors"
-                  width={40}
-                  height={40}
-                  className="h-10 w-auto transition-transform group-hover:scale-105 translate-y-0.5"
-                />
+                <Logo className="h-10 w-auto transition-transform group-hover:scale-105 translate-y-0.5" />
               </Link>
             </div>
 

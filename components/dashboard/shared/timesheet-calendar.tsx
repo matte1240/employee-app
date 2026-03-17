@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { addMonths, format, isSameMonth, startOfMonth } from "date-fns";
 import { it } from "date-fns/locale";
-import Image from "next/image";
+import { Logo } from "@/components/ui/logo";
 import {
   ChevronLeft,
   ChevronRight,
@@ -355,7 +355,7 @@ export default function TimesheetCalendar({
         <header className="border-b border-border bg-card shadow-sm">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-4">
             <div className="flex items-center gap-6">
-              <Image src="/logo.svg" alt="Ivicolors" width={140} height={35} className="h-9 w-auto" priority />
+              <Logo className="h-9 w-auto" />
               <div className="hidden sm:block">
                 <h1 className="text-lg font-semibold text-foreground">
                   Benvenuto, {userName.split(" ")[0] ?? userName}
