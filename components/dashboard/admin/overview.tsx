@@ -1,17 +1,9 @@
 "use client";
 
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
 import Link from "next/link";
-import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@/types/models";
-import StatsCard from "../shared/stats-card";
 import { 
-  Clock, 
-  Briefcase, 
-  Calendar, 
-  Stethoscope, 
   UserCog 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,86 +22,11 @@ type AdminOverviewProps = {
 
 export default function AdminOverview({ users }: AdminOverviewProps) {
   const router = useRouter();
-  const now = new Date();
-  const currentMonth = format(now, "MMMM yyyy", { locale: it });
-
-  // Calculate leaderboard using useMemo to avoid setState in effect
-  const leaderboardData = useMemo(() => {
-    let maxHours = -1; let maxHoursId: string | null = null;
-    let maxOver = -1; let maxOverId: string | null = null;
-    let maxPerm = -1; let maxPermId: string | null = null;
-    let maxSick = -1; let maxSickId: string | null = null;
-
-    for (const user of users) {
-      const total = user.regularHours + user.overtimeHours;
-      if (total > maxHours) { 
-        maxHours = total; 
-        maxHoursId = user.id; 
-      }
-      if (user.overtimeHours > maxOver) { 
-        maxOver = user.overtimeHours; 
-        maxOverId = user.id; 
-      }
-      const permsum = user.permessoHours + user.vacationHours;
-      if (permsum > maxPerm) { 
-        maxPerm = permsum; 
-        maxPermId = user.id; 
-      }
-      if (user.sicknessHours > maxSick) { 
-        maxSick = user.sicknessHours; 
-        maxSickId = user.id; 
-      }
-    }
-
-    const findName = (id: string | null) => {
-      if (!id) return '—';
-      const u = users.find((x) => x.id === id);
-      return u ? (u.name || u.email) : id;
-    };
-
-    return {
-      topHoursUser: maxHoursId ? { id: maxHoursId, name: findName(maxHoursId), value: Math.max(0, maxHours) } : null,
-      topOvertimeUser: maxOverId ? { id: maxOverId, name: findName(maxOverId), value: Math.max(0, maxOver) } : null,
-      topPermessoUser: maxPermId ? { id: maxPermId, name: findName(maxPermId), value: Math.max(0, maxPerm) } : null,
-      topSicknessUser: maxSickId ? { id: maxSickId, name: findName(maxSickId), value: Math.max(0, maxSick) } : null,
-    };
-  }, [users]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
-      {/* Leaderboard Cards (mese corrente) */}
-      <div className="grid gap-6 md:grid-cols-4 order-2 md:order-1">
-        <StatsCard
-          title={`Più Ore (${currentMonth})`}
-          value={leaderboardData.topHoursUser ? leaderboardData.topHoursUser.name : '—'}
-          color="green"
-          icon={<Clock className="h-6 w-6" />}
-        />
-
-        <StatsCard
-          title="Più Straordinarie"
-          value={leaderboardData.topOvertimeUser ? leaderboardData.topOvertimeUser.name : '—'}
-          color="orange"
-          icon={<Briefcase className="h-6 w-6" />}
-        />
-
-        <StatsCard
-          title="Più Perm/Ferie"
-          value={leaderboardData.topPermessoUser ? leaderboardData.topPermessoUser.name : '—'}
-          color="purple"
-          icon={<Calendar className="h-6 w-6" />}
-        />
-
-        <StatsCard
-          title="Più Malattia (ore)"
-          value={leaderboardData.topSicknessUser ? leaderboardData.topSicknessUser.name : '—'}
-          color="red"
-          icon={<Stethoscope className="h-6 w-6" />}
-        />
-      </div>
-
       {/* Users Table */}
-      <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm overflow-hidden order-1 md:order-2">
+      <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">Utenti e Ore Lavorate</h2>
           <Link

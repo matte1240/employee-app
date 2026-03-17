@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import LoginForm from "@/components/auth/login-form";
 import { getAuthSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import Image from "next/image";
+import { Logo } from "@/components/ui/logo";
 import { CheckCircle2, AlertCircle, Clock, CalendarDays, Shield } from "lucide-react";
 
 // Force dynamic rendering to check database at runtime
@@ -44,7 +44,7 @@ export default async function Home({
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-16">
-            <Image src="/logo.svg" alt="Ivicolors" width={56} height={56} className="h-14 w-auto" />
+            <Logo className="h-14 w-auto" />
           </div>
           <h1 className="text-5xl font-bold text-foreground leading-tight mb-6">
             Gestione Presenze e Orari
@@ -92,7 +92,7 @@ export default async function Home({
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50" />
             <div className="p-8">
               <div className="flex justify-center mb-8 lg:hidden">
-                <Image src="/logo.svg" alt="Ivicolors" width={180} height={45} className="h-12 w-auto" />
+                <Logo className="h-12 w-auto" />
               </div>
               <div className="mb-8">
                 <h2 className="text-3xl font-bold text-foreground mb-2">Bentornato</h2>
