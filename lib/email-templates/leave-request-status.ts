@@ -4,58 +4,73 @@ const LEAVE_TYPE_LABELS: Record<string, string> = {
   PERMESSO: "Permesso",
 };
 
-const LEAVE_TYPE_COLORS: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-  VACATION: {
-    bg: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
-    border: "#93c5fd",
-    text: "#1e40af",
-    badge: "#2563eb",
+type StatusAction = "APPROVED" | "REJECTED" | "MODIFIED";
+
+const STATUS_CONFIG: Record<StatusAction, {
+  gradient: string;
+  title: string;
+  emoji: string;
+  messageColor: string;
+  badgeColor: string;
+}> = {
+  APPROVED: {
+    gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+    title: "Richiesta approvata",
+    emoji: "✅",
+    messageColor: "#166534",
+    badgeColor: "#10b981",
   },
-  SICKNESS: {
-    bg: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
-    border: "#fdba74",
-    text: "#c2410c",
-    badge: "#ea580c",
+  REJECTED: {
+    gradient: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+    title: "Richiesta rifiutata",
+    emoji: "❌",
+    messageColor: "#991b1b",
+    badgeColor: "#ef4444",
   },
-  PERMESSO: {
-    bg: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
-    border: "#c4b5fd",
-    text: "#6d28d9",
-    badge: "#7c3aed",
+  MODIFIED: {
+    gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+    title: "Richiesta modificata",
+    emoji: "✏️",
+    messageColor: "#92400e",
+    badgeColor: "#f59e0b",
   },
 };
 
-export function getLeaveRequestAdminEmailTemplate(params: {
-  adminName: string;
+export function getLeaveRequestStatusEmailTemplate(params: {
   employeeName: string;
-  employeeEmail: string;
+  action: StatusAction;
   leaveType: string;
   startDate: string;
   endDate: string;
   startTime?: string;
   endTime?: string;
-  reason?: string;
+  adminNotes?: string;
   dashboardUrl: string;
 }) {
   const {
-    adminName,
     employeeName,
-    employeeEmail,
+    action,
     leaveType,
     startDate,
     endDate,
     startTime,
     endTime,
-    reason,
+    adminNotes,
     dashboardUrl,
   } = params;
 
   const typeLabel = LEAVE_TYPE_LABELS[leaveType] ?? leaveType;
-  const colors = LEAVE_TYPE_COLORS[leaveType] ?? LEAVE_TYPE_COLORS.PERMESSO;
+  const config = STATUS_CONFIG[action];
 
   const isSingleDay = startDate === endDate;
   const dateRange = isSingleDay ? startDate : `${startDate} → ${endDate}`;
   const timeRange = startTime && endTime ? `${startTime} – ${endTime}` : null;
+
+  const messageByAction: Record<StatusAction, string> = {
+    APPROVED: `La tua richiesta di <strong>${typeLabel}</strong> è stata approvata! 🎉`,
+    REJECTED: `Purtroppo la tua richiesta di <strong>${typeLabel}</strong> è stata rifiutata.`,
+    MODIFIED: `La tua richiesta di <strong>${typeLabel}</strong> è stata modificata dall'amministratore.`,
+  };
 
   const html = `<!DOCTYPE html>
 <html>
@@ -80,7 +95,7 @@ export function getLeaveRequestAdminEmailTemplate(params: {
         box-shadow: 0 4px 24px rgba(0,0,0,0.08);
       }
       .header {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        background: ${config.gradient};
         padding: 32px 30px;
         text-align: center;
       }
@@ -89,11 +104,6 @@ export function getLeaveRequestAdminEmailTemplate(params: {
         font-size: 24px;
         font-weight: 700;
         margin: 0;
-      }
-      .header p {
-        color: rgba(255,255,255,0.85);
-        margin-top: 6px;
-        font-size: 14px;
       }
       .content {
         padding: 36px 30px;
@@ -109,16 +119,16 @@ export function getLeaveRequestAdminEmailTemplate(params: {
         margin-bottom: 20px;
         font-size: 15px;
       }
-      .request-card {
-        background: ${colors.bg};
-        border: 2px solid ${colors.border};
+      .detail-card {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
         border-radius: 12px;
         padding: 20px;
         margin: 20px 0;
       }
-      .type-badge {
+      .status-badge {
         display: inline-block;
-        background: ${colors.badge};
+        background: ${config.badgeColor};
         color: white;
         font-size: 12px;
         font-weight: 700;
@@ -137,12 +147,12 @@ export function getLeaveRequestAdminEmailTemplate(params: {
         font-weight: 600;
       }
       .detail-value {
-        color: ${colors.text};
+        color: #1e293b;
         font-weight: 500;
       }
-      .reason-box {
-        background: #f8fafc;
-        border-left: 3px solid #cbd5e1;
+      .admin-notes {
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
         border-radius: 0 8px 8px 0;
         padding: 12px 16px;
         margin-top: 14px;
@@ -165,7 +175,7 @@ export function getLeaveRequestAdminEmailTemplate(params: {
       }
       .button {
         display: inline-block;
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        background: ${config.gradient};
         color: white !important;
         text-decoration: none;
         padding: 14px 28px;
@@ -196,23 +206,16 @@ export function getLeaveRequestAdminEmailTemplate(params: {
     <div class="email-wrapper">
       <div class="header">
         <img src="cid:logo-white" alt="Ivicolors" style="max-width:140px;height:auto;margin-bottom:12px;" />
-        <h1>Nuova richiesta di assenza 📋</h1>
-        <p>Da approvare</p>
+        <h1>${config.title} ${config.emoji}</h1>
       </div>
 
       <div class="content">
-        <div class="greeting">Ciao ${adminName}! 👋</div>
-        <p class="message">
-          <strong>${employeeName}</strong> ha inviato una richiesta di assenza — dai un'occhiata quando puoi!
-        </p>
+        <div class="greeting">Ciao ${employeeName}! 👋</div>
+        <p class="message">${messageByAction[action]}</p>
 
-        <div class="request-card">
-          <span class="type-badge">${typeLabel}</span>
+        <div class="detail-card">
+          <span class="status-badge">${typeLabel}</span>
 
-          <div class="detail-row">
-            <span class="detail-label">Dipendente: </span>
-            <span class="detail-value">${employeeName} &lt;${employeeEmail}&gt;</span>
-          </div>
           <div class="detail-row">
             <span class="detail-label">Tipo: </span>
             <span class="detail-value">${typeLabel}</span>
@@ -226,15 +229,15 @@ export function getLeaveRequestAdminEmailTemplate(params: {
             <span class="detail-label">Orario: </span>
             <span class="detail-value">${timeRange}</span>
           </div>` : ""}
-          ${reason ? `
-          <div class="reason-box">
-            💬 <strong>Nota:</strong> ${reason}
+          ${adminNotes ? `
+          <div class="admin-notes">
+            💬 <strong>Nota dell'admin:</strong> ${adminNotes}
           </div>` : ""}
         </div>
 
         <div class="cta-box">
-          <p class="cta-text">Vai alla dashboard per approvare o rifiutare:</p>
-          <a href="${dashboardUrl}" class="button">Gestisci richiesta →</a>
+          <p class="cta-text">Puoi controllare le tue richieste dalla dashboard:</p>
+          <a href="${dashboardUrl}" class="button">Vai alle mie richieste</a>
         </div>
       </div>
 
@@ -246,17 +249,23 @@ export function getLeaveRequestAdminEmailTemplate(params: {
   </body>
 </html>`;
 
-  const text = `Nuova richiesta di assenza 📋
+  const statusTextMap: Record<StatusAction, string> = {
+    APPROVED: "APPROVATA ✅",
+    REJECTED: "RIFIUTATA ❌",
+    MODIFIED: "MODIFICATA ✏️",
+  };
 
-Ciao ${adminName}! 👋
+  const text = `${config.title} ${config.emoji}
 
-${employeeName} (${employeeEmail}) ha inviato una richiesta di assenza.
+Ciao ${employeeName}! 👋
+
+La tua richiesta di ${typeLabel} è stata ${statusTextMap[action]}.
 
 Dettagli:
 - Tipo: ${typeLabel}
-- ${isSingleDay ? "Data" : "Periodo"}: ${dateRange}${timeRange ? `\n- Orario: ${timeRange}` : ""}${reason ? `\n- Nota: ${reason}` : ""}
+- ${isSingleDay ? "Data" : "Periodo"}: ${dateRange}${timeRange ? `\n- Orario: ${timeRange}` : ""}${adminNotes ? `\n- Nota admin: ${adminNotes}` : ""}
 
-Vai alla dashboard per gestire la richiesta:
+Controlla le tue richieste:
 ${dashboardUrl}
 
 ---

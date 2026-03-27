@@ -5,6 +5,7 @@ import { getPasswordResetLinkEmailTemplate } from "./email-templates/password-re
 import { getBackupEmailTemplate } from "./email-templates/backup";
 import { getLeaveRequestAdminEmailTemplate } from "./email-templates/leave-request-admin";
 import { getMissingTimesheetReminderEmailTemplate } from "./email-templates/missing-timesheet-reminder";
+import { getLeaveRequestStatusEmailTemplate } from "./email-templates/leave-request-status";
 
 // Logo CID attachments for branded emails
 const logoDir = path.join(process.cwd(), "public");
@@ -202,6 +203,7 @@ export async function sendLeaveRequestAdminNotification(params: {
   const mailOptions = {
     from: fromAddress,
     to: params.adminEmail,
+    replyTo: params.employeeEmail,
     subject: `📋 Nuova richiesta di ${typeLabel} da ${params.employeeName}`,
     html,
     text,
@@ -215,6 +217,58 @@ export async function sendLeaveRequestAdminNotification(params: {
   } catch (error) {
     console.error(`❌ Errore invio email richiesta ferie ad admin ${params.adminEmail}:`, error);
     // Non propaghiamo l'errore per non bloccare la creazione della richiesta
+    return { success: false };
+  }
+}
+
+// Notifica all'utente per cambio stato richiesta ferie/permesso
+export async function sendLeaveRequestStatusEmail(params: {
+  employeeEmail: string;
+  employeeName: string;
+  action: "APPROVED" | "REJECTED" | "MODIFIED";
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  startTime?: string;
+  endTime?: string;
+  adminNotes?: string;
+}) {
+  const dashboardUrl = `${process.env.NEXTAUTH_URL ?? ""}/dashboard/requests`;
+
+  const { html, text } = getLeaveRequestStatusEmailTemplate({
+    ...params,
+    dashboardUrl,
+  });
+
+  const LEAVE_TYPE_LABELS: Record<string, string> = {
+    VACATION: "Ferie",
+    SICKNESS: "Malattia",
+    PERMESSO: "Permesso",
+  };
+  const typeLabel = LEAVE_TYPE_LABELS[params.leaveType] ?? params.leaveType;
+
+  const STATUS_LABELS: Record<string, string> = {
+    APPROVED: "approvata ✅",
+    REJECTED: "rifiutata ❌",
+    MODIFIED: "modificata ✏️",
+  };
+  const statusLabel = STATUS_LABELS[params.action] ?? params.action;
+
+  const mailOptions = {
+    from: fromAddress,
+    to: params.employeeEmail,
+    subject: `${typeLabel}: richiesta ${statusLabel} — Presenze Ivicolors`,
+    html,
+    text,
+    attachments: [...emailLogoAttachments],
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email stato richiesta inviata a ${params.employeeEmail}:`, info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error(`❌ Errore invio email stato richiesta a ${params.employeeEmail}:`, error);
     return { success: false };
   }
 }

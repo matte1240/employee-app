@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Email Templates Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: white; }
+    .nav { position: fixed; top: 0; left: 0; right: 0; background: #1e293b; padding: 12px 24px; display: flex; gap: 10px; z-index: 100; flex-wrap: wrap; align-items: center; border-bottom: 2px solid #334155; }
+    .nav h2 { margin-right: 12px; font-size: 15px; color: #94a3b8; white-space: nowrap; }
+    .nav button { background: #334155; color: white; border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+    .nav button:hover, .nav button.active { background: #3b82f6; }
+    .preview-container { padding-top: 60px; display: flex; justify-content: center; }
+    .frame-wrapper { width: 640px; margin: 16px auto; }
+    iframe { width: 100%; border: none; border-radius: 12px; background: white; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <h2>📧 Anteprima Email</h2>
+    <button onclick="show('welcome')" id="btn-welcome" class="active">Benvenuto</button>
+    <button onclick="show('reset')" id="btn-reset">Reset Password</button>
+    <button onclick="show('timesheet')" id="btn-timesheet">Ore Mancanti</button>
+    <button onclick="show('leave')" id="btn-leave">Richiesta Assenza</button>
+    <button onclick="show('backup')" id="btn-backup">Backup OK</button>
+    <button onclick="show('backupErr')" id="btn-backupErr">Backup Errore</button>
+  </div>
+  <div class="preview-container">
+    <div class="frame-wrapper">
+      <iframe id="preview-frame" style="height:800px;"></iframe>
+    </div>
+  </div>
+  <script>
+const year = 2026;
+const commonHead = `<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">`;
+const commonBody = `font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:#1e293b;background:#f1f5f9;padding:20px;`;
+const commonWrapper = `max-width:600px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);`;
+const commonFooter = `<div style="background:#f8fafc;padding:24px 30px;text-align:center;border-top:1px solid #e2e8f0"><div style="color:#94a3b8;font-size:12px;margin:4px 0">Email automatica — non rispondere a questo messaggio</div><div style="color:#334155;font-weight:600;font-size:13px;margin-top:8px">Presenze Ivicolors &copy; ${year}</div></div>`;
+const logoImg = `<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 257 52'%3E%3Cpath fill='white' d='M113.61,0.05c-10.88,0-18.48,6.67-18.48,17.7c0,4.84,1.46,8.83,4.02,11.8c2.97-1.4,6.24-2.39,8.94-3.06c-3.67-2-4.35-6.03-4.35-8.74c0-3.72,1.28-9.95,9.87-9.95c8.59,0,9.87,6.23,9.87,9.95c0,0.74-0.05,1.57-0.2,2.44c-0.06,0.55-0.18,1.15-0.39,1.8c-0.68,2.13-1.56,6.47,0.87,11.04c5.17-2.87,8.33-8.16,8.33-15.28C132.09,6.72,124.48,0.05,113.61,0.05'/%3E%3Cpath fill='%23FFD400' d='M117.79,25.09c0,0-1.4,0.72-3.36,2.05c-3.9,2.63-10.03,7.64-11.94,14.14c-0.32,1.08-0.69,2.95-0.57,5.08c0.18,3.35,3.21,5.84,6.55,5.57c3.35-0.27,5.57-3.19,5.57-6.55c0-2.45-1.04-4.74-1.22-7.12c-0.57-4.92,2.15-9.62,4.74-12.86C117.7,25.2,117.79,25.09,117.79,25.09'/%3E%3Cpath fill='%23E20613' d='M122.94,36.6c-6.21-8.37-1.17-15.59-1.17-15.59s-2.06,1.7-4.21,4.39c-2.59,3.25-5.31,7.94-4.74,12.86c0.01,0.07,0.01,0.13,0.02,0.2c0.56,4.18,2.62,6.45,6.18,6.38c1.72-0.03,3.25-0.87,3.98-2.05C124.37,41.08,124.17,38.26,122.94,36.6'/%3E%3Crect x='0' y='0.43' fill='white' width='8.61' height='34.63'/%3E%3Crect x='53.95' y='0.43' fill='white' width='8.61' height='34.63'/%3E%3Cpath fill='white' d='M41.44,0.43c0,0-9.26,26.31-9.4,26.69c-0.14,0.38-0.37,0.59-0.82,0.59c-0.44,0-0.67-0.24-0.81-0.59c-0.14-0.35-9.38-26.69-9.38-26.69h-9.03c0,0,9.48,26.98,10.31,29.35c0.83,2.37,3.36,5.66,8.91,5.66c5.55,0,8.11-3.38,8.91-5.66c0.8-2.28,10.34-29.35,10.34-29.35H41.44z'/%3E%3Cpath fill='white' d='M82.36,8.18H92.8V0.43H82.33v0C73.35,0.45,66.07,8.2,66.07,17.75s7.28,17.29,16.26,17.31v0H92.8v-7.75H82.36c-4.17,0-7.69-4.38-7.69-9.57C74.67,12.56,78.19,8.18,82.36,8.18'/%3E%3Cpath fill='white' d='M175.28,0.05c-10.88,0-18.48,6.67-18.48,17.7s7.6,17.7,18.48,17.7c10.88,0,18.48-6.67,18.48-17.7S186.15,0.05,175.28,0.05 M175.28,27.7c-8.59,0-9.87-6.23-9.87-9.95s1.28-9.95,9.87-9.95c8.59,0,9.87,6.23,9.87,9.95S183.87,27.7,175.28,27.7'/%3E%3Cpath fill='white' d='M148.99,27.31c-2.82,0-4.85-1.71-4.85-4.58V0.43h-8.61v22.3c0,7.68,5.3,12.32,12.87,12.32h6.9v-7.75H148.99z'/%3E%3Cpath fill='white' d='M218.76,22.61c-0.65-1.04-0.47-1.94,0.29-2.74l2.39-2.52c1.82-1.79,2.93-4.18,2.93-6.8c0-5.57-5.02-10.09-11.21-10.09V0.43h-15.87v34.63h8.61V8.18h7.26v0c1.42,0.03,2.56,1.08,2.56,2.36c0,0.47-0.15,0.9-0.41,1.27l-6.19,6.54c-1.06,1.16-1.16,2.83-0.29,4.2l7.87,12.51h9.89L218.76,22.61z'/%3E%3Cpath fill='white' d='M243.82,34.97h-13.98v-7.73h13.98c2.15,0,3.69-0.25,4.33-1.33c0.34-0.58,0.41-1.48,0.06-2.12c-0.43-0.81-1.67-1.31-2.64-1.59l-9.34-2.78c-2.87-0.86-5.16-2.66-6.43-5.12c-1.26-2.43-1.38-5.28-0.32-7.64c1.28-2.84,4.34-6.23,11.67-6.23h14.63v7.73h-15.66c-1.53,0-2.36,0.5-2.69,1.4c-0.15,0.41-0.26,1.99,1.58,2.55c0.91,0.28,3.8,1.13,9.2,2.74c4.63,1.38,6.76,3.79,7.72,5.6c1.31,2.46,1.39,5.46,0.21,8.22C254.95,31.55,251.82,34.97,243.82,34.97'/%3E%3Cpath fill='%230080C8' d='M114.42,27.13c-1.06,0.18-14.96,2.58-19.79,8.54c-1.52,1.87-2.11,3.37-1.98,5.38c0.14,2.13,1.8,4.46,4.46,4.48c3.87,0.03,5.18-3.62,5.37-4.26C104.4,34.77,110.53,29.76,114.42,27.13'/%3E%3C/svg%3E" alt="Ivicolors" style="max-width:160px;height:auto;margin-bottom:12px;" />`;
+
+const templates = {};
+
+templates.welcome = `<!DOCTYPE html><html><head>${commonHead}<style>body{${commonBody}}</style></head><body>
+<div style="${commonWrapper}">
+  <div style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);padding:32px 30px;text-align:center">
+    ${logoImg}
+    <h1 style="color:white;font-size:24px;font-weight:700;margin:0">Benvenuto nel team! 🎉</h1>
+  </div>
+  <div style="padding:36px 30px">
+    <div style="font-size:18px;font-weight:600;color:#0f172a;margin-bottom:12px">Ciao Marco! 👋</div>
+    <p style="color:#475569;margin-bottom:20px;font-size:15px">Che bello averti a bordo! Il tuo account su <strong>Presenze Ivicolors</strong> è pronto — manca solo un ultimo passaggio.</p>
+    <div style="background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border:2px solid #86efac;border-radius:12px;padding:20px;margin:20px 0">
+      <div style="color:#166534;font-size:15px;font-weight:600;margin-bottom:8px">🎯 Quasi fatto!</div>
+      <div style="color:#15803d;font-size:14px">Devi solo scegliere una password per il tuo account. Ci vogliono due minuti, promesso!</div>
+    </div>
+    <div style="background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:28px;text-align:center;margin:28px 0">
+      <div style="color:#334155;font-size:15px;font-weight:600;margin-bottom:16px">Clicca qui sotto per impostare la password:</div>
+      <a href="#" style="display:inline-block;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white!important;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px">Imposta la mia password</a>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b">Il pulsante non funziona? Copia questo link nel browser:<br><a href="#" style="color:#10b981;word-break:break-all;text-decoration:none">https://presenze.ivicolors.it/setup/abc123</a></div>
+    </div>
+    <div style="background:#eff6ff;border-left:4px solid #3b82f6;border-radius:8px;padding:16px;margin:20px 0">
+      <div style="font-weight:600;color:#1e40af;margin-bottom:8px;font-size:14px">📋 Cose da sapere</div>
+      <ul style="margin:0;padding-left:20px;color:#1e3a8a;font-size:14px"><li style="margin:6px 0">Il link è <strong>valido per 24 ore</strong></li><li style="margin:6px 0">Scegli una password di almeno 8 caratteri</li><li style="margin:6px 0">Dopo aver impostato la password potrai accedere subito</li><li style="margin:6px 0">Il tuo username è: <strong>marco@ivicolors.it</strong></li></ul>
+    </div>
+    <p style="color:#475569;margin-bottom:20px;font-size:15px">Se hai dubbi o qualcosa non va, scrivi pure all'amministratore — siamo qui per aiutarti!</p>
+  </div>
+  ${commonFooter}
+</div></body></html>`;
+
+templates.reset = `<!DOCTYPE html><html><head>${commonHead}<style>body{${commonBody}}</style></head><body>
+<div style="${commonWrapper}">
+  <div style="background:linear-gradient(135deg,#2563eb 0%,#4f46e5 100%);padding:32px 30px;text-align:center">
+    ${logoImg}
+    <h1 style="color:white;font-size:24px;font-weight:700;margin:0">Reset Password 🔐</h1>
+  </div>
+  <div style="padding:36px 30px">
+    <div style="font-size:18px;font-weight:600;color:#0f172a;margin-bottom:12px">Ciao Marco! 👋</div>
+    <p style="color:#475569;margin-bottom:20px;font-size:15px">Hai chiesto di reimpostare la password del tuo account Presenze Ivicolors. Tranquillo, capita a tutti! 😄</p>
+    <div style="background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:28px;text-align:center;margin:28px 0">
+      <div style="color:#334155;font-size:15px;font-weight:600;margin-bottom:16px">Clicca qui sotto per scegliere una nuova password:</div>
+      <a href="#" style="display:inline-block;background:linear-gradient(135deg,#2563eb 0%,#4f46e5 100%);color:white!important;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px">Reimposta la mia password</a>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b">Il pulsante non funziona? Copia questo link nel browser:<br><a href="#" style="color:#2563eb;word-break:break-all;text-decoration:none">https://presenze.ivicolors.it/reset/xyz789</a></div>
+    </div>
+    <div style="background:#fffbeb;border-left:4px solid #f59e0b;border-radius:8px;padding:16px;margin:20px 0">
+      <div style="font-weight:600;color:#92400e;margin-bottom:8px;font-size:14px">⏰ Info utili</div>
+      <ul style="margin:0;padding-left:20px;color:#78350f;font-size:14px"><li style="margin:6px 0">Il link è <strong>valido per 1 ora</strong></li><li style="margin:6px 0">Puoi usarlo <strong>una sola volta</strong></li><li style="margin:6px 0">Dopo il reset dovrai fare il login con la nuova password</li></ul>
+    </div>
+    <div style="background:#f1f5f9;border-radius:8px;padding:16px;margin-top:20px;border-left:4px solid #64748b">
+      <div style="font-weight:600;color:#334155;margin-bottom:6px;font-size:14px">🛡️ Non sei stato tu?</div>
+      <div style="color:#475569;font-size:13px">Se non hai chiesto tu il reset, ignora pure questa email e avvisa l'amministratore. Il tuo account resta al sicuro.</div>
+    </div>
+  </div>
+  ${commonFooter}
+</div></body></html>`;
+
+templates.timesheet = `<!DOCTYPE html><html><head>${commonHead}<style>body{${commonBody}}</style></head><body>
+<div style="${commonWrapper}">
+  <div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);padding:32px 30px;text-align:center">
+    ${logoImg}
+    <h1 style="color:white;font-size:24px;font-weight:700;margin:0">Ore mancanti ⚠️</h1>
+  </div>
+  <div style="padding:36px 30px">
+    <div style="font-size:18px;font-weight:600;color:#0f172a;margin-bottom:12px">Ciao Marco! 👋</div>
+    <p style="color:#475569;margin-bottom:20px;font-size:15px">Ti scriviamo perché ci sono alcuni giorni senza ore registrate. Niente di grave, basta un attimo per sistemarli!</p>
+    <div style="background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);border:2px solid #fcd34d;border-radius:12px;padding:20px;margin:20px 0">
+      <div style="color:#92400e;font-size:15px;font-weight:600;margin-bottom:10px">📅 Giorni da completare:</div>
+      <div style="color:#78350f;font-size:14px"><strong>Lun 24 Mar</strong> · <strong>Mar 25 Mar</strong> · <strong>Mer 26 Mar</strong></div>
+    </div>
+    <div style="background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:28px;text-align:center;margin:28px 0">
+      <div style="color:#334155;font-size:15px;font-weight:600;margin-bottom:16px">Vai al calendario e compila le ore mancanti:</div>
+      <a href="#" style="display:inline-block;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:white!important;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px">Apri il calendario</a>
+    </div>
+    <div style="background:#eff6ff;border-left:4px solid #3b82f6;border-radius:8px;padding:16px;margin:20px 0">
+      <div style="font-weight:600;color:#1e40af;margin-bottom:8px;font-size:14px">📋 Promemoria veloce</div>
+      <ul style="margin:0;padding-left:20px;color:#1e3a8a;font-size:14px"><li style="margin:6px 0">Puoi modificare le ore del <strong>mese corrente</strong></li><li style="margin:6px 0">Ricordati di segnare anche straordinari e assenze</li><li style="margin:6px 0">Se eri in ferie o malattia, registra anche quelle</li><li style="margin:6px 0">Per qualsiasi problema, chiedi all'amministratore</li></ul>
+    </div>
+    <p style="color:#475569;margin-bottom:20px;font-size:15px">Se hai già inserito tutto o quei giorni erano festivi, ignora pure questa email. 😊</p>
+  </div>
+  ${commonFooter}
+</div></body></html>`;
+
+templates.leave = `<!DOCTYPE html><html><head>${commonHead}<style>body{${commonBody}}</style></head><body>
+<div style="${commonWrapper}">
+  <div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);padding:32px 30px;text-align:center">
+    ${logoImg}
+    <h1 style="color:white;font-size:24px;font-weight:700;margin:0">Nuova richiesta di assenza 📋</h1>
+    <p style="color:rgba(255,255,255,0.85);margin-top:6px;font-size:14px">Da approvare</p>
+  </div>
+  <div style="padding:36px 30px">
+    <div style="font-size:18px;font-weight:600;color:#0f172a;margin-bottom:12px">Ciao Admin! 👋</div>
+    <p style="color:#475569;margin-bottom:20px;font-size:15px"><strong>Marco Rossi</strong> ha inviato una richiesta di assenza — dai un'occhiata quando puoi!</p>
+    <div style="background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:2px solid #93c5fd;border-radius:12px;padding:20px;margin:20px 0">
+      <span style="display:inline-block;background:#2563eb;color:white;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px">FERIE</span>
+      <div style="margin-bottom:8px;font-size:14px"><span style="color:#64748b;font-weight:600">Dipendente: </span><span style="color:#1e40af;font-weight:500">Marco Rossi &lt;marco@ivicolors.it&gt;</span></div>
+      <div style="margin-bottom:8px;font-size:14px"><span style="color:#64748b;font-weight:600">Tipo: </span><span style="color:#1e40af;font-weight:500">Ferie</span></div>
+      <div style="margin-bottom:8px;font-size:14px"><span style="color:#64748b;font-weight:600">Periodo: </span><span style="color:#1e40af;font-weight:500">28/03/2026 → 04/04/2026</span></div>
+      <div style="background:#f8fafc;border-left:3px solid #cbd5e1;border-radius:0 8px 8px 0;padding:12px 16px;margin-top:14px;font-size:14px;color:#475569;font-style:italic">💬 <strong>Nota:</strong> Vacanza di Pasqua con la famiglia</div>
+    </div>
+    <div style="background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:28px;text-align:center;margin:24px 0">
+      <p style="color:#334155;font-size:14px;margin-bottom:16px">Vai alla dashboard per approvare o rifiutare:</p>
+      <a href="#" style="display:inline-block;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:white!important;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:15px">Gestisci richiesta →</a>
+    </div>
+  </div>
+  ${commonFooter}
+</div></body></html>`;
+
+templates.backup = `<!DOCTYPE html><html><head>${commonHead}<style>body{${commonBody}}</style></head><body>
+<div style="${commonWrapper}">
+  <div style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);padding:32px 30px;text-align:center">
+    ${logoImg}
+    <h1 style="color:white;font-size:24px;font-weight:700;margin:0">Backup completato ✅</h1>
+  </div>
+  <div style="padding:36px 30px">
+    <p style="color:#475569;margin-bottom:20px;font-size:15px">Il backup del database è andato a buon fine! Trovi il file in allegato.</p>
+    <div style="background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:20px;margin:20px 0">
+      <div style="margin-bottom:8px;font-size:14px"><span style="color:#64748b;font-weight:600">File: </span><span style="color:#1e293b;font-weight:500">backup_2026-03-27_143000.sql.gz</span></div>
+      <div style="font-size:14px"><span style="color:#64748b;font-weight:600">Data: </span><span style="color:#1e293b;font-weight:500">27/03/2026, 14:30:00</span></div>
+    </div>
+  </div>
+  ${commonFooter}
+</div></body></html>`;
+
+templates.backupErr = `<!DOCTYPE html><html><head>${commonHead}<style>body{${commonBody}}</style></head><body>
+<div style="${commonWrapper}">
+  <div style="background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);padding:32px 30px;text-align:center">
+    ${logoImg}
+    <h1 style="color:white;font-size:24px;font-weight:700;margin:0">Errore backup ❌</h1>
+  </div>
+  <div style="padding:36px 30px">
+    <p style="color:#475569;margin-bottom:20px;font-size:15px">Purtroppo qualcosa è andato storto durante il backup del database.</p>
+    <div style="background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:20px;margin:20px 0">
+      <div style="margin-bottom:8px;font-size:14px"><span style="color:#64748b;font-weight:600">Errore: </span><span style="color:#1e293b;font-weight:500">Connection timeout after 30000ms</span></div>
+      <div style="font-size:14px"><span style="color:#64748b;font-weight:600">Data: </span><span style="color:#1e293b;font-weight:500">27/03/2026, 14:30:00</span></div>
+    </div>
+  </div>
+  ${commonFooter}
+</div></body></html>`;
+
+function show(name) {
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + name).classList.add('active');
+  const frame = document.getElementById('preview-frame');
+  frame.srcdoc = templates[name];
+  frame.onload = () => { try { frame.style.height = frame.contentDocument.body.scrollHeight + 40 + 'px'; } catch(e) {} };
+}
+show('welcome');
+  </script>
+</body>
+</html>

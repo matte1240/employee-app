@@ -11,6 +11,7 @@ import {
   handleError,
   handleZodError,
 } from "@/lib/api-responses";
+import { sendLeaveRequestStatusEmail } from "@/lib/email";
 
 const updateStatusSchema = z.object({
   status: z.enum(["APPROVED", "REJECTED"]),
@@ -113,6 +114,19 @@ export async function PATCH(
     }
 
     await auditAdmin.leaveRequestReviewed(session.user.id, id, status);
+
+    // Notifica email all'utente
+    sendLeaveRequestStatusEmail({
+      employeeEmail: request.user.email,
+      employeeName: request.user.name,
+      action: status as "APPROVED" | "REJECTED",
+      leaveType: request.type,
+      startDate: request.startDate.toISOString().split("T")[0],
+      endDate: request.endDate.toISOString().split("T")[0],
+      startTime: request.startTime ?? undefined,
+      endTime: request.endTime ?? undefined,
+    }).catch(() => {});
+
     return successResponse(updatedRequest);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -164,7 +178,20 @@ export async function PUT(
     const updatedRequest = await prisma.leaveRequest.update({
       where: { id },
       data: updateData,
+      include: { user: true },
     });
+
+    // Notifica email all'utente per modifica
+    sendLeaveRequestStatusEmail({
+      employeeEmail: updatedRequest.user.email,
+      employeeName: updatedRequest.user.name,
+      action: "MODIFIED",
+      leaveType: updatedRequest.type,
+      startDate: updatedRequest.startDate.toISOString().split("T")[0],
+      endDate: updatedRequest.endDate.toISOString().split("T")[0],
+      startTime: updatedRequest.startTime ?? undefined,
+      endTime: updatedRequest.endTime ?? undefined,
+    }).catch(() => {});
 
     return successResponse(updatedRequest);
   } catch (error) {
