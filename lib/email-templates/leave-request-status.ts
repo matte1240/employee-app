@@ -7,28 +7,28 @@ const LEAVE_TYPE_LABELS: Record<string, string> = {
 type StatusAction = "APPROVED" | "REJECTED" | "MODIFIED";
 
 const STATUS_CONFIG: Record<StatusAction, {
-  gradient: string;
+  color: string;
   title: string;
   emoji: string;
   messageColor: string;
   badgeColor: string;
 }> = {
   APPROVED: {
-    gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+    color: "#059669",
     title: "Richiesta approvata",
     emoji: "✅",
     messageColor: "#166534",
     badgeColor: "#10b981",
   },
   REJECTED: {
-    gradient: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+    color: "#dc2626",
     title: "Richiesta rifiutata",
     emoji: "❌",
     messageColor: "#991b1b",
     badgeColor: "#ef4444",
   },
   MODIFIED: {
-    gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+    color: "#d97706",
     title: "Richiesta modificata",
     emoji: "✏️",
     messageColor: "#92400e",
@@ -73,179 +73,104 @@ export function getLeaveRequestStatusEmailTemplate(params: {
   };
 
   const html = `<!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        line-height: 1.6;
-        color: #1e293b;
-        background: #f1f5f9;
-        padding: 20px;
-      }
-      .email-wrapper {
-        max-width: 600px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-      }
-      .header {
-        background: ${config.gradient};
-        padding: 32px 30px;
-        text-align: center;
-      }
-      .header h1 {
-        color: white;
-        font-size: 24px;
-        font-weight: 700;
-        margin: 0;
-      }
-      .content {
-        padding: 36px 30px;
-      }
-      .greeting {
-        font-size: 18px;
-        font-weight: 600;
-        color: #0f172a;
-        margin-bottom: 12px;
-      }
-      .message {
-        color: #475569;
-        margin-bottom: 20px;
-        font-size: 15px;
-      }
-      .detail-card {
-        background: #f8fafc;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 20px;
-        margin: 20px 0;
-      }
-      .status-badge {
-        display: inline-block;
-        background: ${config.badgeColor};
-        color: white;
-        font-size: 12px;
-        font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 20px;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        margin-bottom: 14px;
-      }
-      .detail-row {
-        margin-bottom: 8px;
-        font-size: 14px;
-      }
-      .detail-label {
-        color: #64748b;
-        font-weight: 600;
-      }
-      .detail-value {
-        color: #1e293b;
-        font-weight: 500;
-      }
-      .admin-notes {
-        background: #fffbeb;
-        border-left: 4px solid #f59e0b;
-        border-radius: 0 8px 8px 0;
-        padding: 12px 16px;
-        margin-top: 14px;
-        font-size: 14px;
-        color: #475569;
-        font-style: italic;
-      }
-      .cta-box {
-        background: #f8fafc;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 28px;
-        text-align: center;
-        margin: 24px 0;
-      }
-      .cta-text {
-        color: #334155;
-        font-size: 14px;
-        margin-bottom: 16px;
-      }
-      .button {
-        display: inline-block;
-        background: ${config.gradient};
-        color: white !important;
-        text-decoration: none;
-        padding: 14px 28px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 15px;
-      }
-      .footer {
-        background: #f8fafc;
-        border-top: 1px solid #e2e8f0;
-        padding: 24px 30px;
-        text-align: center;
-      }
-      .footer-text {
-        color: #94a3b8;
-        font-size: 12px;
-        margin: 4px 0;
-      }
-      .footer-brand {
-        color: #334155;
-        font-weight: 600;
-        font-size: 13px;
-        margin-top: 8px;
-      }
-    </style>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>${config.title}</title>
+    <!--[if mso]>
+    <noscript>
+      <xml>
+        <o:OfficeDocumentSettings>
+          <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+      </xml>
+    </noscript>
+    <![endif]-->
   </head>
-  <body>
-    <div class="email-wrapper">
-      <div class="header">
-        <img src="cid:logo-white" alt="Ivicolors" style="max-width:140px;height:auto;margin-bottom:12px;" />
-        <h1>${config.title} ${config.emoji}</h1>
-      </div>
+  <body style="margin:0; padding:0; background-color:#f1f5f9; font-family:Arial,Helvetica,sans-serif; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;" bgcolor="#f1f5f9">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9;" bgcolor="#f1f5f9">
+      <tr>
+        <td align="center" style="padding:20px 10px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; width:100%; background-color:#ffffff;" bgcolor="#ffffff">
+            <!-- Header -->
+            <tr>
+              <td align="center" style="background-color:${config.color}; padding:32px 30px;" bgcolor="${config.color}">
+                <img src="cid:logo-white" alt="Ivicolors" width="180" style="display:block; max-width:180px; height:auto; margin:0 auto 12px auto;" />
+                <h1 style="color:#ffffff; font-size:24px; font-weight:700; margin:0; font-family:Arial,Helvetica,sans-serif; line-height:1.3;">${config.title} ${config.emoji}</h1>
+              </td>
+            </tr>
 
-      <div class="content">
-        <div class="greeting">Ciao ${employeeName}! 👋</div>
-        <p class="message">${messageByAction[action]}</p>
+            <!-- Content -->
+            <tr>
+              <td style="padding:36px 30px; font-family:Arial,Helvetica,sans-serif;">
+                <p style="font-size:18px; font-weight:600; color:#0f172a; margin:0 0 12px 0; line-height:1.4;">Ciao ${employeeName}! &#128075;</p>
+                <p style="color:#475569; margin:0 0 20px 0; font-size:15px; line-height:1.6;">${messageByAction[action]}</p>
 
-        <div class="detail-card">
-          <span class="status-badge">${typeLabel}</span>
+                <!-- Detail card -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;">
+                  <tr>
+                    <td style="background-color:#f8fafc; border:2px solid #e2e8f0; border-radius:12px; padding:20px;" bgcolor="#f8fafc">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:14px;">
+                        <tr>
+                          <td style="background-color:${config.badgeColor}; color:#ffffff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; letter-spacing:0.5px; text-transform:uppercase; font-family:Arial,Helvetica,sans-serif;" bgcolor="${config.badgeColor}">${typeLabel}</td>
+                        </tr>
+                      </table>
+                      <p style="margin:0 0 8px 0; font-size:14px; font-family:Arial,Helvetica,sans-serif;">
+                        <span style="color:#64748b; font-weight:600;">Tipo: </span>
+                        <span style="color:#1e293b; font-weight:500;">${typeLabel}</span>
+                      </p>
+                      <p style="margin:0 0 8px 0; font-size:14px; font-family:Arial,Helvetica,sans-serif;">
+                        <span style="color:#64748b; font-weight:600;">${isSingleDay ? "Data" : "Periodo"}: </span>
+                        <span style="color:#1e293b; font-weight:500;">${dateRange}</span>
+                      </p>
+                      ${timeRange ? `
+                      <p style="margin:0 0 8px 0; font-size:14px; font-family:Arial,Helvetica,sans-serif;">
+                        <span style="color:#64748b; font-weight:600;">Orario: </span>
+                        <span style="color:#1e293b; font-weight:500;">${timeRange}</span>
+                      </p>` : ""}
+                      ${adminNotes ? `
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;">
+                        <tr>
+                          <td style="background-color:#fffbeb; border-left:4px solid #f59e0b; border-radius:0 8px 8px 0; padding:12px 16px; font-size:14px; color:#475569; font-style:italic; font-family:Arial,Helvetica,sans-serif;" bgcolor="#fffbeb">
+                            &#128172; <strong>Nota dell'admin:</strong> ${adminNotes}
+                          </td>
+                        </tr>
+                      </table>` : ""}
+                    </td>
+                  </tr>
+                </table>
 
-          <div class="detail-row">
-            <span class="detail-label">Tipo: </span>
-            <span class="detail-value">${typeLabel}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">${isSingleDay ? "Data" : "Periodo"}: </span>
-            <span class="detail-value">${dateRange}</span>
-          </div>
-          ${timeRange ? `
-          <div class="detail-row">
-            <span class="detail-label">Orario: </span>
-            <span class="detail-value">${timeRange}</span>
-          </div>` : ""}
-          ${adminNotes ? `
-          <div class="admin-notes">
-            💬 <strong>Nota dell'admin:</strong> ${adminNotes}
-          </div>` : ""}
-        </div>
+                <!-- CTA box -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
+                  <tr>
+                    <td style="background-color:#f8fafc; border:2px solid #e2e8f0; border-radius:12px; padding:28px; text-align:center;" bgcolor="#f8fafc">
+                      <p style="color:#334155; font-size:14px; margin:0 0 16px 0; font-family:Arial,Helvetica,sans-serif;">Puoi controllare le tue richieste dalla dashboard:</p>
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                        <tr>
+                          <td align="center" style="background-color:${config.color}; border-radius:10px;" bgcolor="${config.color}">
+                            <a href="${dashboardUrl}" style="display:inline-block; padding:14px 28px; color:#ffffff; text-decoration:none; font-weight:600; font-size:15px; font-family:Arial,Helvetica,sans-serif;">Vai alle mie richieste</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
 
-        <div class="cta-box">
-          <p class="cta-text">Puoi controllare le tue richieste dalla dashboard:</p>
-          <a href="${dashboardUrl}" class="button">Vai alle mie richieste</a>
-        </div>
-      </div>
-
-      <div class="footer">
-        <div class="footer-text">Email automatica — non rispondere a questo messaggio</div>
-        <div class="footer-brand">Presenze Ivicolors &copy; ${new Date().getFullYear()}</div>
-      </div>
-    </div>
+            <!-- Footer -->
+            <tr>
+              <td style="background-color:#f8fafc; padding:24px 30px; text-align:center; border-top:1px solid #e2e8f0;" bgcolor="#f8fafc">
+                <p style="color:#94a3b8; font-size:12px; margin:0 0 4px 0; font-family:Arial,Helvetica,sans-serif;">Email automatica &mdash; non rispondere a questo messaggio</p>
+                <p style="color:#334155; font-weight:600; font-size:13px; margin:8px 0 0 0; font-family:Arial,Helvetica,sans-serif;">Presenze Ivicolors &copy; ${new Date().getFullYear()}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>`;
 
