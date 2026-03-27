@@ -3,7 +3,6 @@ export const getBackupEmailTemplate = (
   filename?: string,
   errorMessage?: string
 ) => {
-  const statusColor = success ? "#10b981" : "#ef4444";
   const statusGradient = success
     ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
     : "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
