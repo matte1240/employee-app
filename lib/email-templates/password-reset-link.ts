@@ -15,7 +15,7 @@ export const getPasswordResetLinkEmailTemplate = (
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
               line-height: 1.6; 
               color: #1e293b;
-              background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #f3e8ff 100%);
+              background: #f1f5f9;
               padding: 20px;
             }
             .email-wrapper {
@@ -24,78 +24,60 @@ export const getPasswordResetLinkEmailTemplate = (
               background: white;
               border-radius: 16px;
               overflow: hidden;
-              box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+              box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
             }
             .header {
               background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-              padding: 40px 30px;
+              padding: 32px 30px;
               text-align: center;
-            }
-            .header-icon {
-              width: 64px;
-              height: 64px;
-              background: rgba(255, 255, 255, 0.2);
-              border-radius: 16px;
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              margin-bottom: 16px;
-              backdrop-filter: blur(10px);
             }
             .header h1 {
               color: white;
-              font-size: 28px;
+              font-size: 24px;
               font-weight: 700;
               margin: 0;
-              text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             }
             .content {
-              padding: 40px 30px;
+              padding: 36px 30px;
             }
             .greeting {
               font-size: 18px;
               font-weight: 600;
               color: #0f172a;
-              margin-bottom: 16px;
+              margin-bottom: 12px;
             }
             .message {
               color: #475569;
-              margin-bottom: 24px;
+              margin-bottom: 20px;
               font-size: 15px;
             }
             .cta-box {
-              background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+              background: #f8fafc;
               border: 2px solid #e2e8f0;
               border-radius: 12px;
-              padding: 32px;
+              padding: 28px;
               text-align: center;
-              margin: 32px 0;
+              margin: 28px 0;
             }
             .cta-text {
               color: #334155;
               font-size: 15px;
               font-weight: 600;
-              margin-bottom: 20px;
+              margin-bottom: 16px;
             }
             .button {
               display: inline-block;
               background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
               color: white !important;
               text-decoration: none;
-              padding: 16px 32px;
-              border-radius: 12px;
+              padding: 14px 28px;
+              border-radius: 10px;
               font-weight: 600;
-              font-size: 16px;
-              box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -2px rgba(37, 99, 235, 0.2);
-              transition: all 0.3s ease;
-            }
-            .button:hover {
-              box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4), 0 10px 10px -5px rgba(37, 99, 235, 0.3);
-              transform: translateY(-2px);
+              font-size: 15px;
             }
             .link-fallback {
-              margin-top: 20px;
-              padding-top: 20px;
+              margin-top: 16px;
+              padding-top: 16px;
               border-top: 1px solid #e2e8f0;
               font-size: 12px;
               color: #64748b;
@@ -106,16 +88,16 @@ export const getPasswordResetLinkEmailTemplate = (
               text-decoration: none;
             }
             .info-box {
-              background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+              background: #fffbeb;
               border-left: 4px solid #f59e0b;
               border-radius: 8px;
-              padding: 20px;
-              margin: 24px 0;
+              padding: 16px;
+              margin: 20px 0;
             }
             .info-box-title {
               font-weight: 600;
               color: #92400e;
-              margin-bottom: 12px;
+              margin-bottom: 8px;
               font-size: 14px;
             }
             .info-list {
@@ -125,19 +107,19 @@ export const getPasswordResetLinkEmailTemplate = (
               font-size: 14px;
             }
             .info-list li {
-              margin: 8px 0;
+              margin: 6px 0;
             }
             .security-note {
               background: #f1f5f9;
               border-radius: 8px;
               padding: 16px;
-              margin-top: 24px;
+              margin-top: 20px;
               border-left: 4px solid #64748b;
             }
             .security-note-title {
               font-weight: 600;
               color: #334155;
-              margin-bottom: 8px;
+              margin-bottom: 6px;
               font-size: 14px;
             }
             .security-note-text {
@@ -146,110 +128,95 @@ export const getPasswordResetLinkEmailTemplate = (
             }
             .footer {
               background: #f8fafc;
-              padding: 30px;
+              padding: 24px 30px;
               text-align: center;
               border-top: 1px solid #e2e8f0;
             }
             .footer-text {
-              color: #64748b;
-              font-size: 13px;
-              margin: 8px 0;
+              color: #94a3b8;
+              font-size: 12px;
+              margin: 4px 0;
             }
             .footer-brand {
               color: #334155;
               font-weight: 600;
-              font-size: 14px;
-              margin-top: 12px;
+              font-size: 13px;
+              margin-top: 8px;
             }
           </style>
         </head>
         <body>
           <div class="email-wrapper">
-            <!-- Header -->
             <div class="header">
-              <div class="header-icon">
-                <img src="cid:logo-white" alt="Ivicolors" width="48" height="48" style="display:block;" />
-              </div>
-              <h1>Reimposta Password</h1>
+              <img src="cid:logo-white" alt="Ivicolors" style="max-width:140px;height:auto;margin-bottom:12px;" />
+              <h1>Reset Password 🔐</h1>
             </div>
 
-            <!-- Content -->
             <div class="content">
               <div class="greeting">Ciao ${username}! 👋</div>
               
               <p class="message">
-                Abbiamo ricevuto una richiesta per reimpostare la password del tuo account Presenze Ivicolors. 
-                Nessun problema, succede a tutti!
+                Hai chiesto di reimpostare la password del tuo account Presenze Ivicolors. 
+                Tranquillo, capita a tutti! 😄
               </p>
 
-              <!-- CTA Box -->
               <div class="cta-box">
-                <div class="cta-text">Clicca sul pulsante qui sotto per creare una nuova password:</div>
+                <div class="cta-text">Clicca qui sotto per scegliere una nuova password:</div>
                 <a href="${resetUrl}" class="button">
                   Reimposta la mia password
                 </a>
                 <div class="link-fallback">
-                  Se il pulsante non funziona, copia e incolla questo link nel tuo browser:<br>
+                  Il pulsante non funziona? Copia questo link nel browser:<br>
                   <a href="${resetUrl}">${resetUrl}</a>
                 </div>
               </div>
 
-              <!-- Info Box -->
               <div class="info-box">
-                <div class="info-box-title">⏰ Informazioni importanti</div>
+                <div class="info-box-title">⏰ Info utili</div>
                 <ul class="info-list">
-                  <li>Questo link è <strong>valido per ${validityDuration}</strong></li>
-                  <li>Può essere utilizzato <strong>una sola volta</strong></li>
-                  <li>Dopo il reset, dovrai effettuare il login con la nuova password</li>
+                  <li>Il link è <strong>valido per ${validityDuration}</strong></li>
+                  <li>Puoi usarlo <strong>una sola volta</strong></li>
+                  <li>Dopo il reset dovrai fare il login con la nuova password</li>
                 </ul>
               </div>
 
-              <!-- Security Note -->
               <div class="security-note">
-                <div class="security-note-title">🛡️ Non hai richiesto questo reset?</div>
+                <div class="security-note-title">🛡️ Non sei stato tu?</div>
                 <div class="security-note-text">
-                  Se non sei stato tu a richiedere la reimpostazione della password, ignora questa email 
-                  e contatta immediatamente l'amministratore. Il tuo account rimane sicuro.
+                  Se non hai chiesto tu il reset, ignora pure questa email e 
+                  avvisa l'amministratore. Il tuo account resta al sicuro.
                 </div>
               </div>
             </div>
 
-            <!-- Footer -->
             <div class="footer">
-              <div class="footer-text">
-                Questa è un'email automatica, ti preghiamo di non rispondere.
-              </div>
-              <div class="footer-brand">
-                Presenze Ivicolors © ${new Date().getFullYear()}
-              </div>
+              <div class="footer-text">Email automatica — non rispondere a questo messaggio</div>
+              <div class="footer-brand">Presenze Ivicolors &copy; ${new Date().getFullYear()}</div>
             </div>
           </div>
         </body>
       </html>
     `;
 
-  const text = `
-Reset Password
+  const text = `Reset Password 🔐
 
-Ciao ${username},
+Ciao ${username}! 👋
 
-Hai richiesto di reimpostare la password del tuo account Presenze Ivicolors.
+Hai chiesto di reimpostare la password del tuo account Presenze Ivicolors. Tranquillo, capita a tutti!
 
-Clicca sul link qui sotto per reimpostare la password:
+Clicca il link qui sotto per scegliere una nuova password:
 ${resetUrl}
 
-⚠️ IMPORTANTE:
-- Questo link è valido per ${validityDuration}
-- Dopo aver reimpostato la password, il link non sarà più utilizzabile
-- Se non hai richiesto questo reset, ignora questa email
+⏰ INFO UTILI:
+- Il link è valido per ${validityDuration}
+- Puoi usarlo una sola volta
+- Dopo il reset dovrai fare il login con la nuova password
 
-🛡️ Sicurezza:
-Se non hai richiesto questo reset, contatta immediatamente l'amministratore.
+🛡️ Non sei stato tu? Ignora questa email e avvisa l'amministratore.
 
 ---
-Questo è un messaggio automatico, per favore non rispondere a questa email.
-© ${new Date().getFullYear()} Presenze Ivicolors. Tutti i diritti riservati.
-    `;
+Email automatica — non rispondere a questo messaggio
+Presenze Ivicolors © ${new Date().getFullYear()}`;
 
   return { html, text };
 };
