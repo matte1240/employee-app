@@ -118,7 +118,7 @@ export async function PATCH(
     // Notifica email all'utente
     sendLeaveRequestStatusEmail({
       employeeEmail: request.user.email,
-      employeeName: request.user.name,
+      employeeName: request.user.name ?? request.user.email,
       action: status as "APPROVED" | "REJECTED",
       leaveType: request.type,
       startDate: request.startDate.toISOString().split("T")[0],
@@ -184,7 +184,7 @@ export async function PUT(
     // Notifica email all'utente per modifica
     sendLeaveRequestStatusEmail({
       employeeEmail: updatedRequest.user.email,
-      employeeName: updatedRequest.user.name,
+      employeeName: updatedRequest.user.name ?? updatedRequest.user.email,
       action: "MODIFIED",
       leaveType: updatedRequest.type,
       startDate: updatedRequest.startDate.toISOString().split("T")[0],

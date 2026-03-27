@@ -17,7 +17,7 @@ type UserRow = User;
 
 export default async function AdminDashboardPage() {
   // Auth + admin role enforced by proxy.ts
-  const session = (await getAuthSession())!;
+  await getAuthSession();
 
   // Filter by current month only (to match calendar view)
   const now = new Date();
