@@ -13,12 +13,12 @@ const logoDir = path.join(process.cwd(), "public");
 export const emailLogoAttachments = [
   {
     filename: "logo.png",
-    path: path.join(logoDir, "email-logo.png"),
+    path: path.join(logoDir, "IVICOLORS_marchio.png"),
     cid: "logo",
   },
   {
     filename: "logo-white.png",
-    path: path.join(logoDir, "email-logo-white.png"),
+    path: path.join(logoDir, "IVI_white_marchio.png"),
     cid: "logo-white",
   },
 ];

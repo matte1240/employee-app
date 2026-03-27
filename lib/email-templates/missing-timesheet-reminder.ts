@@ -3,189 +3,107 @@ export const getMissingTimesheetReminderEmailTemplate = (
   missingDatesFormatted: string,
   dashboardUrl: string
 ) => {
-  const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
-              line-height: 1.6; 
-              color: #1e293b;
-              background: #f1f5f9;
-              padding: 20px;
-            }
-            .email-wrapper {
-              max-width: 600px;
-              margin: 0 auto;
-              background: white;
-              border-radius: 16px;
-              overflow: hidden;
-              box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-            }
-            .header {
-              background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-              padding: 32px 30px;
-              text-align: center;
-            }
-            .header h1 {
-              color: white;
-              font-size: 24px;
-              font-weight: 700;
-              margin: 0;
-            }
-            .content {
-              padding: 36px 30px;
-            }
-            .greeting {
-              font-size: 18px;
-              font-weight: 600;
-              color: #0f172a;
-              margin-bottom: 12px;
-            }
-            .message {
-              color: #475569;
-              margin-bottom: 20px;
-              font-size: 15px;
-            }
-            .warning-box {
-              background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-              border: 2px solid #fcd34d;
-              border-radius: 12px;
-              padding: 20px;
-              margin: 20px 0;
-            }
-            .warning-box-title {
-              color: #92400e;
-              font-size: 15px;
-              font-weight: 600;
-              margin-bottom: 10px;
-            }
-            .warning-box-dates {
-              color: #78350f;
-              font-size: 14px;
-              margin: 8px 0;
-            }
-            .cta-box {
-              background: #f8fafc;
-              border: 2px solid #e2e8f0;
-              border-radius: 12px;
-              padding: 28px;
-              text-align: center;
-              margin: 28px 0;
-            }
-            .cta-text {
-              color: #334155;
-              font-size: 15px;
-              font-weight: 600;
-              margin-bottom: 16px;
-            }
-            .button {
-              display: inline-block;
-              background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-              color: white !important;
-              text-decoration: none;
-              padding: 14px 28px;
-              border-radius: 10px;
-              font-weight: 600;
-              font-size: 15px;
-            }
-            .info-box {
-              background: #eff6ff;
-              border-left: 4px solid #3b82f6;
-              border-radius: 8px;
-              padding: 16px;
-              margin: 20px 0;
-            }
-            .info-box-title {
-              font-weight: 600;
-              color: #1e40af;
-              margin-bottom: 8px;
-              font-size: 14px;
-            }
-            .info-list {
-              margin: 0;
-              padding-left: 20px;
-              color: #1e3a8a;
-              font-size: 14px;
-            }
-            .info-list li {
-              margin: 6px 0;
-            }
-            .footer {
-              background: #f8fafc;
-              padding: 24px 30px;
-              text-align: center;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-text {
-              color: #94a3b8;
-              font-size: 12px;
-              margin: 4px 0;
-            }
-            .footer-brand {
-              color: #334155;
-              font-weight: 600;
-              font-size: 13px;
-              margin-top: 8px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <img src="cid:logo-white" alt="Ivicolors" style="max-width:140px;height:auto;margin-bottom:12px;" />
-              <h1>Ore mancanti ⚠️</h1>
-            </div>
+  const html = `<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Ore mancanti</title>
+    <!--[if mso]>
+    <noscript>
+      <xml>
+        <o:OfficeDocumentSettings>
+          <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+      </xml>
+    </noscript>
+    <![endif]-->
+  </head>
+  <body style="margin:0; padding:0; background-color:#f1f5f9; font-family:Arial,Helvetica,sans-serif; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;" bgcolor="#f1f5f9">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9;" bgcolor="#f1f5f9">
+      <tr>
+        <td align="center" style="padding:20px 10px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; width:100%; background-color:#ffffff;" bgcolor="#ffffff">
+            <!-- Header -->
+            <tr>
+              <td align="center" style="background-color:#d97706; padding:32px 30px;" bgcolor="#d97706">
+                <img src="cid:logo-white" alt="Ivicolors" width="180" style="display:block; max-width:180px; height:auto; margin:0 auto 12px auto;" />
+                <h1 style="color:#ffffff; font-size:24px; font-weight:700; margin:0; font-family:Arial,Helvetica,sans-serif; line-height:1.3;">Ore mancanti &#9888;&#65039;</h1>
+              </td>
+            </tr>
 
-            <div class="content">
-              <div class="greeting">Ciao ${username}! 👋</div>
+            <!-- Content -->
+            <tr>
+              <td style="padding:36px 30px; font-family:Arial,Helvetica,sans-serif;">
+                <p style="font-size:18px; font-weight:600; color:#0f172a; margin:0 0 12px 0; line-height:1.4;">Ciao ${username}! &#128075;</p>
+                <p style="color:#475569; margin:0 0 20px 0; font-size:15px; line-height:1.6;">
+                  Ti scriviamo perch&eacute; ci sono alcuni giorni senza ore registrate.
+                  Niente di grave, basta un attimo per sistemarli!
+                </p>
 
-              <p class="message">
-                Ti scriviamo perché ci sono alcuni giorni senza ore registrate. 
-                Niente di grave, basta un attimo per sistemarli!
-              </p>
+                <!-- Warning box -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;">
+                  <tr>
+                    <td style="background-color:#fef3c7; border:2px solid #fcd34d; border-radius:12px; padding:20px;" bgcolor="#fef3c7">
+                      <p style="color:#92400e; font-size:15px; font-weight:600; margin:0 0 10px 0; font-family:Arial,Helvetica,sans-serif;">&#128197; Giorni da completare:</p>
+                      <p style="color:#78350f; font-size:14px; margin:0; line-height:1.6; font-family:Arial,Helvetica,sans-serif;">
+                        ${missingDatesFormatted}
+                      </p>
+                    </td>
+                  </tr>
+                </table>
 
-              <div class="warning-box">
-                <div class="warning-box-title">📅 Giorni da completare:</div>
-                <div class="warning-box-dates">
-                  ${missingDatesFormatted}
-                </div>
-              </div>
+                <!-- CTA box -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0;">
+                  <tr>
+                    <td style="background-color:#f8fafc; border:2px solid #e2e8f0; border-radius:12px; padding:28px; text-align:center;" bgcolor="#f8fafc">
+                      <p style="color:#334155; font-size:15px; font-weight:600; margin:0 0 16px 0; font-family:Arial,Helvetica,sans-serif;">Vai al calendario e compila le ore mancanti:</p>
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                        <tr>
+                          <td align="center" style="background-color:#d97706; border-radius:10px;" bgcolor="#d97706">
+                            <a href="${dashboardUrl}" style="display:inline-block; padding:14px 28px; color:#ffffff; text-decoration:none; font-weight:600; font-size:15px; font-family:Arial,Helvetica,sans-serif;">Apri il calendario</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
 
-              <div class="cta-box">
-                <div class="cta-text">Vai al calendario e compila le ore mancanti:</div>
-                <a href="${dashboardUrl}" class="button">
-                  Apri il calendario
-                </a>
-              </div>
+                <!-- Info box -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;">
+                  <tr>
+                    <td style="background-color:#eff6ff; border-left:4px solid #3b82f6; border-radius:8px; padding:16px;" bgcolor="#eff6ff">
+                      <p style="font-weight:600; color:#1e40af; margin:0 0 8px 0; font-size:14px; font-family:Arial,Helvetica,sans-serif;">&#128203; Promemoria veloce</p>
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="color:#1e3a8a; font-size:14px; font-family:Arial,Helvetica,sans-serif;">
+                        <tr><td style="padding:3px 0; line-height:1.5;">&bull; Puoi modificare le ore del <strong>mese corrente</strong></td></tr>
+                        <tr><td style="padding:3px 0; line-height:1.5;">&bull; Ricordati di segnare anche straordinari e assenze</td></tr>
+                        <tr><td style="padding:3px 0; line-height:1.5;">&bull; Se eri in ferie o malattia, registra anche quelle</td></tr>
+                        <tr><td style="padding:3px 0; line-height:1.5;">&bull; Per qualsiasi problema, chiedi all'amministratore</td></tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
 
-              <div class="info-box">
-                <div class="info-box-title">📋 Promemoria veloce</div>
-                <ul class="info-list">
-                  <li>Puoi modificare le ore del <strong>mese corrente</strong></li>
-                  <li>Ricordati di segnare anche straordinari e assenze</li>
-                  <li>Se eri in ferie o malattia, registra anche quelle</li>
-                  <li>Per qualsiasi problema, chiedi all'amministratore</li>
-                </ul>
-              </div>
+                <p style="color:#475569; margin:0; font-size:15px; line-height:1.6;">
+                  Se hai gi&agrave; inserito tutto o quei giorni erano festivi, ignora pure questa email. &#128522;
+                </p>
+              </td>
+            </tr>
 
-              <p class="message">
-                Se hai già inserito tutto o quei giorni erano festivi, ignora pure questa email. 😊
-              </p>
-            </div>
-
-            <div class="footer">
-              <div class="footer-text">Email automatica — non rispondere a questo messaggio</div>
-              <div class="footer-brand">Presenze Ivicolors &copy; ${new Date().getFullYear()}</div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
+            <!-- Footer -->
+            <tr>
+              <td style="background-color:#f8fafc; padding:24px 30px; text-align:center; border-top:1px solid #e2e8f0;" bgcolor="#f8fafc">
+                <p style="color:#94a3b8; font-size:12px; margin:0 0 4px 0; font-family:Arial,Helvetica,sans-serif;">Email automatica &mdash; non rispondere a questo messaggio</p>
+                <p style="color:#334155; font-weight:600; font-size:13px; margin:8px 0 0 0; font-family:Arial,Helvetica,sans-serif;">Presenze Ivicolors &copy; ${new Date().getFullYear()}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
 
   const text = `Ore mancanti ⚠️
 
