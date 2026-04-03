@@ -369,7 +369,7 @@ export function useTimesheetData({
     return {
       morning: modalForm.isMorningPermesso ? morningScheduleHours : morningWorked,
       afternoon: modalForm.isAfternoonPermesso ? afternoonScheduleHours : afternoonWorked,
-      totalWorked: netWork, regular, overtime, permesso, permesso104, paternity: 0,
+      totalWorked: netWork, regular, overtime, permesso, sickness: 0, vacation: 0, permesso104, paternity: 0,
     };
   }, [
     modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd,
