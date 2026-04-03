@@ -27,6 +27,8 @@ type TimeEntryModalProps = {
     regular: number;
     overtime: number;
     permesso: number;
+    sickness: number;
+    vacation: number;
     permesso104: number;
     paternity: number;
   };
