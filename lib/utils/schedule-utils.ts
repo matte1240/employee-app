@@ -73,6 +73,54 @@ export function getBaseHoursFromScheduleMap(
 }
 
 /**
+ * Get morning hours from schedule map for a specific day
+ */
+export function getMorningHoursFromScheduleMap(
+  scheduleMap: Map<number, WorkingScheduleDTO>,
+  dayOfWeek: number
+): number {
+  if (dayOfWeek === 0) return 0;
+
+  const schedule = scheduleMap.get(dayOfWeek);
+
+  if (!schedule || !schedule.isWorkingDay) {
+    if (!schedule && DEFAULT_WORKING_DAYS.includes(dayOfWeek)) {
+      return calculateHours(DEFAULT_SCHEDULE.morningStart, DEFAULT_SCHEDULE.morningEnd);
+    }
+    return 0;
+  }
+
+  if (schedule.morningStart && schedule.morningEnd) {
+    return calculateHours(schedule.morningStart, schedule.morningEnd);
+  }
+  return 0;
+}
+
+/**
+ * Get afternoon hours from schedule map for a specific day
+ */
+export function getAfternoonHoursFromScheduleMap(
+  scheduleMap: Map<number, WorkingScheduleDTO>,
+  dayOfWeek: number
+): number {
+  if (dayOfWeek === 0) return 0;
+
+  const schedule = scheduleMap.get(dayOfWeek);
+
+  if (!schedule || !schedule.isWorkingDay) {
+    if (!schedule && DEFAULT_WORKING_DAYS.includes(dayOfWeek)) {
+      return calculateHours(DEFAULT_SCHEDULE.afternoonStart, DEFAULT_SCHEDULE.afternoonEnd);
+    }
+    return 0;
+  }
+
+  if (schedule.afternoonStart && schedule.afternoonEnd) {
+    return calculateHours(schedule.afternoonStart, schedule.afternoonEnd);
+  }
+  return 0;
+}
+
+/**
  * Check if day is working from schedule map (for client-side use)
  */
 export function isWorkingDayFromScheduleMap(

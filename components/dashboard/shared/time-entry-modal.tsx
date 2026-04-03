@@ -134,7 +134,7 @@ export default function TimeEntryModal({
                       <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5" />
                       <div className="text-xs text-yellow-800 dark:text-yellow-200">
                         <p className="font-semibold">Permesso Approvato ({activePerm.startTime} - {activePerm.endTime})</p>
-                        <p>Le ore di permesso verranno conteggiate automaticamente per coprire le ore mancanti al raggiungimento delle 8 ore lavorative.</p>
+                        <p>Le ore di permesso verranno conteggiate automaticamente per coprire le ore mancanti al raggiungimento delle ore lavorative ordinarie.</p>
                       </div>
                     </div>
                   </div>
