@@ -27,6 +27,8 @@ type TimeEntryModalProps = {
     regular: number;
     overtime: number;
     permesso: number;
+    sickness: number;
+    vacation: number;
     permesso104: number;
     paternity: number;
   };
@@ -134,7 +136,7 @@ export default function TimeEntryModal({
                       <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5" />
                       <div className="text-xs text-yellow-800 dark:text-yellow-200">
                         <p className="font-semibold">Permesso Approvato ({activePerm.startTime} - {activePerm.endTime})</p>
-                        <p>Le ore di permesso verranno conteggiate automaticamente per coprire le ore mancanti al raggiungimento delle 8 ore lavorative.</p>
+                        <p>Le ore di permesso verranno conteggiate automaticamente per coprire le ore mancanti al raggiungimento delle ore lavorative ordinarie.</p>
                       </div>
                     </div>
                   </div>
@@ -232,7 +234,7 @@ export default function TimeEntryModal({
                   <Sun className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                   <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Ferie</h3>
                 </div>
-                <p className="text-sm text-emerald-800 dark:text-emerald-200">Giornata di ferie completa - 8 ore di ferie.</p>
+                <p className="text-sm text-emerald-800 dark:text-emerald-200">Giornata di ferie completa - {calculatedHours.vacation} ore di ferie.</p>
               </div>
             )}
 
@@ -243,7 +245,7 @@ export default function TimeEntryModal({
                   <Stethoscope className="h-5 w-5 text-rose-600 dark:text-rose-400" />
                   <h3 className="text-sm font-bold text-rose-900 dark:text-rose-100">Malattia</h3>
                 </div>
-                <p className="text-sm text-rose-800 dark:text-rose-200">Giornata di malattia - 8 ore di malattia.</p>
+                <p className="text-sm text-rose-800 dark:text-rose-200">Giornata di malattia - {calculatedHours.sickness} ore di malattia.</p>
               </div>
             )}
 

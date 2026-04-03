@@ -24,6 +24,8 @@ import { isDateEditable as isDateEditableUtil } from "@/lib/utils/date-utils";
 import { isHoliday, getHolidayName } from "@/lib/utils/holiday-utils";
 import {
   getBaseHoursFromScheduleMap,
+  getMorningHoursFromScheduleMap,
+  getAfternoonHoursFromScheduleMap,
 } from "@/lib/utils/schedule-utils";
 
 export type ModalFormState = {
@@ -295,8 +297,17 @@ export function useTimesheetData({
   // ──── Calculated hours for modal ────
 
   const calculatedHours = useMemo(() => {
+    const dayOfWeekForCalc = selectedDate ? getDay(new Date(`${selectedDate}T12:00:00`)) : 1;
+    const baseHoursForDay = getBaseHoursFromScheduleMap(scheduleMap, dayOfWeekForCalc);
+
+    if (modalForm.dayType === "ferie") {
+      return { morning: 0, afternoon: 0, totalWorked: 0, regular: 0, overtime: 0, permesso: 0, sickness: 0, vacation: baseHoursForDay || 8, permesso104: 0, paternity: 0 };
+    }
+    if (modalForm.dayType === "malattia") {
+      return { morning: 0, afternoon: 0, totalWorked: 0, regular: 0, overtime: 0, permesso: 0, sickness: baseHoursForDay || 8, vacation: 0, permesso104: 0, paternity: 0 };
+    }
     if (modalForm.dayType === "paternity") {
-      return { morning: 0, afternoon: 0, totalWorked: 0, regular: 0, overtime: 0, permesso: 0, sickness: 0, vacation: 0, permesso104: 0, paternity: 8 };
+      return { morning: 0, afternoon: 0, totalWorked: 0, regular: 0, overtime: 0, permesso: 0, sickness: 0, vacation: 0, permesso104: 0, paternity: baseHoursForDay || 8 };
     }
 
     const morningWorked = modalForm.isMorningPermesso ? 0 : calculateHours(modalForm.morningStart, modalForm.morningEnd);
@@ -352,10 +363,13 @@ export function useTimesheetData({
       }
     }
 
+    const morningScheduleHours = getMorningHoursFromScheduleMap(scheduleMap, dayOfWeekForCalc);
+    const afternoonScheduleHours = getAfternoonHoursFromScheduleMap(scheduleMap, dayOfWeekForCalc);
+
     return {
-      morning: modalForm.isMorningPermesso ? 4 : morningWorked,
-      afternoon: modalForm.isAfternoonPermesso ? 4 : afternoonWorked,
-      totalWorked: netWork, regular, overtime, permesso, permesso104, paternity: 0,
+      morning: modalForm.isMorningPermesso ? morningScheduleHours : morningWorked,
+      afternoon: modalForm.isAfternoonPermesso ? afternoonScheduleHours : afternoonWorked,
+      totalWorked: netWork, regular, overtime, permesso, sickness: 0, vacation: 0, permesso104, paternity: 0,
     };
   }, [
     modalForm.morningStart, modalForm.morningEnd, modalForm.afternoonStart, modalForm.afternoonEnd,

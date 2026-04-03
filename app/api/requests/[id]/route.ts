@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { isHoliday } from "@/lib/utils/holiday-utils";
 import { addDays, isWeekend } from "date-fns";
 import { getRequiredSession } from "@/lib/api-middleware";
+import { getBaseHoursForDate } from "@/lib/utils/schedule-utils.server";
 import { auditAdmin } from "@/lib/audit-log";
 import {
   successResponse,
@@ -84,22 +85,24 @@ export async function PATCH(
         while (currentDate <= endDate) {
           // Skip weekends and holidays
           if (!isWeekend(currentDate) && !isHoliday(currentDate)) {
-            const entryData: TimeEntryData = {
-              userId: request.userId,
-              workDate: new Date(currentDate),
-              hoursWorked: 0, 
-            };
+            // Use employee's schedule-based hours for the day
+            const hours = await getBaseHoursForDate(request.userId, currentDate);
 
-            // Assuming 8 hours for a full day of leave
-            const hours = 8; 
+            if (hours > 0) {
+              const entryData: TimeEntryData = {
+                userId: request.userId,
+                workDate: new Date(currentDate),
+                hoursWorked: 0, 
+              };
 
-            if (request.type === "VACATION") {
-              entryData.vacationHours = hours;
-            } else if (request.type === "SICKNESS") {
-              entryData.sicknessHours = hours;
+              if (request.type === "VACATION") {
+                entryData.vacationHours = hours;
+              } else if (request.type === "SICKNESS") {
+                entryData.sicknessHours = hours;
+              }
+
+              entriesToCreate.push(entryData);
             }
-
-            entriesToCreate.push(entryData);
           }
           currentDate = addDays(currentDate, 1);
         }
