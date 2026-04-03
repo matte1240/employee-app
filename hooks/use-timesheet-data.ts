@@ -300,6 +300,12 @@ export function useTimesheetData({
     const dayOfWeekForCalc = selectedDate ? getDay(new Date(`${selectedDate}T12:00:00`)) : 1;
     const baseHoursForDay = getBaseHoursFromScheduleMap(scheduleMap, dayOfWeekForCalc);
 
+    if (modalForm.dayType === "ferie") {
+      return { morning: 0, afternoon: 0, totalWorked: 0, regular: 0, overtime: 0, permesso: 0, sickness: 0, vacation: baseHoursForDay || 8, permesso104: 0, paternity: 0 };
+    }
+    if (modalForm.dayType === "malattia") {
+      return { morning: 0, afternoon: 0, totalWorked: 0, regular: 0, overtime: 0, permesso: 0, sickness: baseHoursForDay || 8, vacation: 0, permesso104: 0, paternity: 0 };
+    }
     if (modalForm.dayType === "paternity") {
       return { morning: 0, afternoon: 0, totalWorked: 0, regular: 0, overtime: 0, permesso: 0, sickness: 0, vacation: 0, permesso104: 0, paternity: baseHoursForDay || 8 };
     }

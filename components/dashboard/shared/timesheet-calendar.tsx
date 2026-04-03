@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { addMonths, format, isSameMonth, startOfMonth } from "date-fns";
+import { addMonths, format, getDay, isSameMonth, startOfMonth } from "date-fns";
 import { it } from "date-fns/locale";
 import { Logo } from "@/components/ui/logo";
 import {
@@ -13,6 +13,7 @@ import {
   Briefcase,
   AlertCircle,
   Stethoscope,
+  RefreshCw,
 } from "lucide-react";
 import LogoutButton from "@/components/auth/logout-button";
 import StatsCard from "./stats-card";
@@ -23,6 +24,7 @@ import { useTimesheetData } from "@/hooks/use-timesheet-data";
 import type { ModalFormState } from "@/hooks/use-timesheet-data";
 import type { TimeEntryDTO } from "@/types/models";
 import { cn } from "@/lib/utils";
+import { getBaseHoursFromScheduleMap } from "@/lib/utils/schedule-utils";
 
 // Re-export for backward compatibility
 export type { TimeEntryDTO };
@@ -60,6 +62,7 @@ export default function TimesheetCalendar({
   });
 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
   // ──── Year/month picker constants ────
@@ -204,14 +207,14 @@ export default function TimesheetCalendar({
       payload = {
         workDate: data.selectedDate,
         hoursWorked: 0, overtimeHours: 0, permessoHours: 0, sicknessHours: 0,
-        vacationHours: 8, permesso104Hours: 0, paternityHours: 0,
+        vacationHours: data.calculatedHours.vacation, permesso104Hours: 0, paternityHours: 0,
         notes: data.modalForm.notes.trim() || null,
         ...(targetUserId && { userId: targetUserId }),
       };
     } else if (data.modalForm.dayType === "malattia") {
       payload = {
         workDate: data.selectedDate,
-        hoursWorked: 0, overtimeHours: 0, permessoHours: 0, sicknessHours: 8,
+        hoursWorked: 0, overtimeHours: 0, permessoHours: 0, sicknessHours: data.calculatedHours.sickness,
         vacationHours: 0, permesso104Hours: 0, paternityHours: 0,
         medicalCertificate: data.modalForm.medicalCertificate || null,
         notes: data.modalForm.notes.trim() || null,
@@ -221,7 +224,7 @@ export default function TimesheetCalendar({
       payload = {
         workDate: data.selectedDate,
         hoursWorked: 0, overtimeHours: 0, permessoHours: 0, sicknessHours: 0,
-        vacationHours: 0, permesso104Hours: 0, paternityHours: 8,
+        vacationHours: 0, permesso104Hours: 0, paternityHours: data.calculatedHours.paternity,
         notes: data.modalForm.notes.trim() || null,
         ...(targetUserId && { userId: targetUserId }),
       };
@@ -296,14 +299,44 @@ export default function TimesheetCalendar({
     });
   };
 
+  // ──── Recalculate hours for admin ────
+
+  const handleRecalculate = async () => {
+    if (!targetUserId) return;
+    if (!confirm("Ricalcolare tutte le ore del mese selezionato in base all'orario ordinario del dipendente?")) return;
+
+    setIsRecalculating(true);
+    data.setError(null);
+    try {
+      const month = format(data.currentMonth, "yyyy-MM");
+      const response = await fetch("/api/hours/recalculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: targetUserId, month }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        data.setError(result?.error ?? "Errore durante il ricalcolo.");
+        return;
+      }
+      data.setIsRefetching(true);
+    } catch {
+      data.setError("Errore imprevisto durante il ricalcolo.");
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
   // ──── Context menu quick actions ────
 
   const handleFerie = async (date: string) => {
     data.setContextMenu(null);
     data.setError(null);
+    const dayOfWeek = getDay(new Date(`${date}T12:00:00`));
+    const baseHours = getBaseHoursFromScheduleMap(data.scheduleMap, dayOfWeek) || 8;
     const payload = {
       workDate: date, hoursWorked: 0, overtimeHours: 0, permessoHours: 0,
-      sicknessHours: 0, vacationHours: 8,
+      sicknessHours: 0, vacationHours: baseHours,
       ...(targetUserId && { userId: targetUserId }),
     };
     try {
@@ -325,9 +358,11 @@ export default function TimesheetCalendar({
   const handleMalattia = async (date: string) => {
     data.setContextMenu(null);
     data.setError(null);
+    const dayOfWeekM = getDay(new Date(`${date}T12:00:00`));
+    const baseHoursM = getBaseHoursFromScheduleMap(data.scheduleMap, dayOfWeekM) || 8;
     const payload = {
       workDate: date, hoursWorked: 0, overtimeHours: 0, permessoHours: 0,
-      sicknessHours: 8, vacationHours: 0,
+      sicknessHours: baseHoursM, vacationHours: 0,
       ...(targetUserId && { userId: targetUserId }),
     };
     try {
@@ -459,6 +494,18 @@ export default function TimesheetCalendar({
                 )}
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                {isAdmin && targetUserId && (
+                  <button
+                    type="button"
+                    onClick={handleRecalculate}
+                    disabled={isRecalculating}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 h-9 px-3 sm:px-4 py-2 mr-1 shadow-sm"
+                    title="Ricalcola ore del mese in base all'orario ordinario"
+                  >
+                    <RefreshCw className={cn("h-4 w-4", isRecalculating && "animate-spin")} />
+                    <span className="hidden sm:inline">{isRecalculating ? "Ricalcolo..." : "Ricalcola Ore"}</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsRequestModalOpen(true)}
