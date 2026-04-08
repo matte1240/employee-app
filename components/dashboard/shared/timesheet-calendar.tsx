@@ -93,11 +93,7 @@ export default function TimesheetCalendar({
     }
 
     if (!data.isDateEditable(day)) {
-      const currentDay = new Date().getDate();
-      const errorMessage = currentDay <= 5
-        ? "È possibile inserire ore per il mese corrente fino ad oggi o per il mese precedente (fino al 5 del mese corrente)."
-        : "È possibile inserire ore solo per il mese corrente fino ad oggi.";
-      data.setError(errorMessage);
+      data.setError("È possibile inserire ore solo per oggi e i 2 giorni di calendario precedenti.");
       return;
     }
 

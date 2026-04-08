@@ -125,26 +125,16 @@ export async function POST(request: Request) {
   // Determine which userId to use: admin can specify, employee uses their own
   const targetUserId = isAdmin(session) && requestedUserId ? requestedUserId : session.user.id;
 
-  // Employees can only enter hours for dates up to today, and:
-  // - Current month always allowed
-  // - Previous month allowed only if today is on or before the 5th
+  // Employees can only enter hours for today and the 2 previous calendar days
   if (!isAdmin(session)) {
-    // entryDateLocal uses local TZ for business rule checks (today, day-of-week, month boundaries)
+    // entryDateLocal uses local TZ for business rule checks (today, day-of-week)
     const entryDateLocal = new Date(`${workDate}T00:00:00`);
     const today = new Date();
     today.setHours(0, 0, 0, 0); // local midnight
     
-    // Determine the earliest editable date (local calendar)
-    const currentDay = today.getDate();
-    let earliestEditableDate: Date;
-    
-    if (currentDay <= 5) {
-      // If before or on the 5th, allow editing previous month
-      earliestEditableDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    } else {
-      // Otherwise, only current month
-      earliestEditableDate = new Date(today.getFullYear(), today.getMonth(), 1);
-    }
+    // Employees can only edit today and the 2 previous calendar days
+    const earliestEditableDate = new Date(today);
+    earliestEditableDate.setDate(today.getDate() - 2);
 
     // Check Sunday restrictions (local day of week)
     const dayOfWeek = entryDateLocal.getDay();
@@ -197,10 +187,7 @@ export async function POST(request: Request) {
     }
 
     if (entryDateLocal < earliestEditableDate) {
-      const errorMessage = currentDay <= 5
-        ? "Can only enter hours for the current month or previous month (until the 5th of the current month)"
-        : "Can only enter hours for the current month";
-      return forbiddenResponse(errorMessage);
+      return forbiddenResponse("Puoi inserire ore solo per oggi e i 2 giorni precedenti.");
     }
   }
 
@@ -362,6 +349,19 @@ export async function DELETE(request: Request) {
   // Check permissions: employees can only delete their own entries, admins can delete any
   if (!isAdmin(session) && entry.userId !== session.user.id) {
     return forbiddenResponse("Forbidden");
+  }
+
+  // Employees can only delete entries within the last 2 calendar days
+  if (!isAdmin(session)) {
+    const entryDate = new Date(entry.workDate);
+    entryDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const earliestEditableDate = new Date(today);
+    earliestEditableDate.setDate(today.getDate() - 2);
+    if (entryDate < earliestEditableDate) {
+      return forbiddenResponse("Puoi eliminare inserimenti solo degli ultimi 2 giorni.");
+    }
   }
 
   // Delete the entry
