@@ -9,11 +9,28 @@
 import type { Session } from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { headers } from "next/headers";
-import type { GetServerSidePropsContext } from "next";
 import { getAuthSession } from "@/lib/auth";
 
 // Re-export isAdmin for convenience (used for data-filtering, not access control)
 export { isAdmin } from "@/lib/utils/user-utils";
+
+function parseCookieHeader(cookieHeader: string): Record<string, string> {
+  if (!cookieHeader) return {};
+
+  return cookieHeader
+    .split(";")
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .reduce<Record<string, string>>((acc, chunk) => {
+      const separatorIndex = chunk.indexOf("=");
+      if (separatorIndex <= 0) return acc;
+
+      const key = chunk.slice(0, separatorIndex);
+      const value = chunk.slice(separatorIndex + 1);
+      acc[key] = value;
+      return acc;
+    }, {});
+}
 
 /**
  * Get the current session, asserting it is non-null.
@@ -33,10 +50,12 @@ export async function getRequiredSession(): Promise<Session> {
   // may fail to read session state even when proxy.ts already validated JWT.
   const requestHeaders = await headers();
   const cookieHeader = requestHeaders.get("cookie") ?? "";
+  const parsedCookies = parseCookieHeader(cookieHeader);
+  type TokenRequest = NonNullable<Parameters<typeof getToken>[0]["req"]>;
   const tokenReq = {
     headers: { cookie: cookieHeader },
-    cookies: {},
-  } as GetServerSidePropsContext["req"];
+    cookies: parsedCookies,
+  } as TokenRequest;
 
   const token = await getToken({
     req: tokenReq,
