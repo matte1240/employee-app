@@ -9,7 +9,8 @@
 import type { Session } from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { headers } from "next/headers";
-import type { IncomingMessage } from "http";
+import { IncomingMessage } from "http";
+import { Socket } from "net";
 import { getAuthSession } from "@/lib/auth";
 
 // Re-export isAdmin for convenience (used for data-filtering, not access control)
@@ -33,10 +34,11 @@ export async function getRequiredSession(): Promise<Session> {
   // may fail to read session state even when proxy.ts already validated JWT.
   const requestHeaders = await headers();
   const cookieHeader = requestHeaders.get("cookie") ?? "";
-  const tokenReq = {
-    headers: { cookie: cookieHeader },
-    cookies: {},
-  } as IncomingMessage & { cookies: Partial<Record<string, string>> };
+  const tokenReq = new IncomingMessage(new Socket()) as IncomingMessage & {
+    cookies: Partial<Record<string, string>>;
+  };
+  tokenReq.headers = { cookie: cookieHeader };
+  tokenReq.cookies = {};
 
   const token = await getToken({
     req: tokenReq,
@@ -53,7 +55,7 @@ export async function getRequiredSession(): Promise<Session> {
       user: {
         id: token.id,
         email: token.email,
-        name: token.name,
+        name: typeof token.name === "string" ? token.name : undefined,
         image: token.picture ?? undefined,
         role: (token.role as string | undefined) ?? "EMPLOYEE",
         hasPermesso104: Boolean(token.hasPermesso104),
