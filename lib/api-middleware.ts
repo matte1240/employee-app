@@ -9,8 +9,7 @@
 import type { Session } from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { headers } from "next/headers";
-import { IncomingMessage } from "http";
-import { Socket } from "net";
+import type { GetServerSidePropsContext } from "next";
 import { getAuthSession } from "@/lib/auth";
 
 // Re-export isAdmin for convenience (used for data-filtering, not access control)
@@ -34,18 +33,21 @@ export async function getRequiredSession(): Promise<Session> {
   // may fail to read session state even when proxy.ts already validated JWT.
   const requestHeaders = await headers();
   const cookieHeader = requestHeaders.get("cookie") ?? "";
-  const tokenReq = new IncomingMessage(new Socket()) as IncomingMessage & {
-    cookies: Partial<Record<string, string>>;
-  };
-  tokenReq.headers = { cookie: cookieHeader };
-  tokenReq.cookies = {};
+  const tokenReq = {
+    headers: { cookie: cookieHeader },
+    cookies: {},
+  } as GetServerSidePropsContext["req"];
 
   const token = await getToken({
     req: tokenReq,
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  if (token?.id && token.email) {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const isExpired = typeof token?.exp === "number" && token.exp <= nowSeconds;
+
+  if (!isExpired && typeof token?.id === "string" && typeof token.email === "string") {
+    const role = token.role === "ADMIN" ? "ADMIN" : "EMPLOYEE";
     const expires =
       typeof token.exp === "number"
         ? new Date(token.exp * 1000).toISOString()
@@ -57,7 +59,7 @@ export async function getRequiredSession(): Promise<Session> {
         email: token.email,
         name: typeof token.name === "string" ? token.name : undefined,
         image: token.picture ?? undefined,
-        role: (token.role as string | undefined) ?? "EMPLOYEE",
+        role,
         hasPermesso104: Boolean(token.hasPermesso104),
         hasPaternityLeave: Boolean(token.hasPaternityLeave),
       },
