@@ -5,7 +5,47 @@ const nextConfig: NextConfig = {
   /* config options here */
   output: 'standalone', // Required for Docker deployment
   turbopack: {}, // Enable Turbopack explicitly
-  
+
+  outputFileTracingIncludes: {
+    '/**/*': [
+      './node_modules/@prisma/client/**/*',
+      './node_modules/@prisma/adapter-pg/**/*',
+      './node_modules/.prisma/**/*',
+      './node_modules/pg/**/*',
+      './node_modules/pg-pool/**/*',
+      './node_modules/pg-types/**/*',
+      './node_modules/sharp/**/*',
+      './node_modules/@img/**/*',
+      './lib/generated/prisma/**/*',
+    ],
+  },
+  outputFileTracingExcludes: {
+    '/**/*': [
+      '**/*.md',
+      '**/*.markdown',
+      '**/LICENSE*',
+      '**/CHANGELOG*',
+      '**/*.d.ts.map',
+      '**/*.js.map',
+      '**/*.mjs.map',
+      '**/test/**',
+      '**/tests/**',
+      '**/__tests__/**',
+      // Prisma CLI + engines are copied separately in the Dockerfile.
+      'node_modules/@prisma/engines/**',
+      'node_modules/prisma/**',
+      // We only use PostgreSQL via PrismaPg adapter — drop other DB wasm compilers.
+      'node_modules/@prisma/client/runtime/query_compiler_*_bg.cockroachdb.*',
+      'node_modules/@prisma/client/runtime/query_compiler_*_bg.mysql.*',
+      'node_modules/@prisma/client/runtime/query_compiler_*_bg.sqlite.*',
+      'node_modules/@prisma/client/runtime/query_compiler_*_bg.sqlserver.*',
+      // Build-time tooling that has no place at runtime.
+      'node_modules/@swc/core-*/**',
+      'node_modules/@esbuild/**',
+      'node_modules/typescript/**',
+    ],
+  },
+
   // Security headers
   async headers() {
     return [

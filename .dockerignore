@@ -43,6 +43,14 @@ logs
 # Docs and non-essential files
 docs/
 public/uploads/
+public/email-preview.html
+
+# Build artifacts and dev-only configs
+tsconfig.tsbuildinfo
+next-env.d.ts
+eslint.config.mjs
+postcss.config.mjs
+CHANGELOG.md
 
 # Database
 db_data
