@@ -2,7 +2,11 @@ import { sendMissingTimesheetReminderEmail } from "@/lib/email";
 import { findUserById } from "@/lib/utils/user-utils";
 import { getRequiredSession } from "@/lib/api-middleware";
 import { successResponse, notFoundResponse, handleError } from "@/lib/api-responses";
-import { getMissingDaysForUser, formatMissingDatesIT } from "@/lib/utils/timesheet-utils";
+import {
+  getMissingDaysForUser,
+  formatMissingDatesIT,
+  partitionMissingDates,
+} from "@/lib/utils/timesheet-utils";
 
 export async function POST(
   _request: Request,
@@ -18,29 +22,29 @@ export async function POST(
       return notFoundResponse("Utente non trovato");
     }
 
-    // Find missing working days in the last 5 days (any 2 missing triggers the check)
+    // Find missing working days in the last 5 days
     const missingDates = await getMissingDaysForUser(userId, 5);
 
-    let missingDatesFormatted: string;
+    let editableFormatted: string;
+    let adminRequiredFormatted: string;
     if (missingDates.length === 0) {
-      // Admin manually triggered: send the reminder even if no missing days detected
-      const today = new Date();
-      today.setDate(today.getDate() - 1);
-      const fallback = today.toLocaleDateString("it-IT", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-      missingDatesFormatted = fallback;
+      // Admin manually triggered: send the reminder even if no missing days detected.
+      // Use yesterday as a placeholder — falls in the editable window.
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      editableFormatted = formatMissingDatesIT([yesterday]);
+      adminRequiredFormatted = "";
     } else {
-      missingDatesFormatted = formatMissingDatesIT(missingDates);
+      const { editable, requiresAdmin } = partitionMissingDates(missingDates);
+      editableFormatted = formatMissingDatesIT(editable);
+      adminRequiredFormatted = formatMissingDatesIT(requiresAdmin);
     }
 
     const result = await sendMissingTimesheetReminderEmail(
       user.email,
       user.name ?? user.email,
-      missingDatesFormatted
+      editableFormatted,
+      adminRequiredFormatted
     );
 
     if (!result.success) {

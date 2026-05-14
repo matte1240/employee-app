@@ -38,17 +38,19 @@ export async function register() {
 
     console.log(`Backup scheduler initialized (${schedule})`);
 
-    // Schedule daily timesheet reminder check at 9:00 AM
-    // Sends reminder emails to employees who have 2+ missing days in the last 5 working days
-    const reminderSchedule = process.env.REMINDER_CRON_SCHEDULE || "0 9 * * 1-5";
+    // Schedule daily timesheet reminder check at 19:00, every day (weekends included)
+    // Sends reminder emails to employees who have 1+ missing days in the last 5 working days
+    const reminderSchedule = process.env.REMINDER_CRON_SCHEDULE || "0 19 * * *";
 
     cron.schedule(reminderSchedule, async () => {
       console.log("Running scheduled timesheet reminder check...");
 
       try {
-        const { getUsersWithMissingTimesheets, formatMissingDatesIT } = await import(
-          "@/lib/utils/timesheet-utils"
-        );
+        const {
+          getUsersWithMissingTimesheets,
+          formatMissingDatesIT,
+          partitionMissingDates,
+        } = await import("@/lib/utils/timesheet-utils");
         const { sendMissingTimesheetReminderEmail } = await import("@/lib/email");
 
         const usersWithMissing = await getUsersWithMissingTimesheets(5);
@@ -61,11 +63,14 @@ export async function register() {
         console.log(`📧 Invio promemoria a ${usersWithMissing.length} utente/i con ore mancanti...`);
 
         for (const { user, missingDates } of usersWithMissing) {
-          const missingDatesFormatted = formatMissingDatesIT(missingDates, false);
+          const { editable, requiresAdmin } = partitionMissingDates(missingDates);
+          const editableFmt = formatMissingDatesIT(editable, false);
+          const adminRequiredFmt = formatMissingDatesIT(requiresAdmin, false);
           const result = await sendMissingTimesheetReminderEmail(
             user.email,
             user.name ?? user.email,
-            missingDatesFormatted
+            editableFmt,
+            adminRequiredFmt
           );
           if (result.success) {
             console.log(`✅ Promemoria inviato a ${user.email}`);
