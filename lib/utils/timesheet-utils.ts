@@ -67,6 +67,38 @@ export async function getMissingDaysForUser(
 }
 
 /**
+ * Split missing dates into two groups based on the employee editable window
+ * (today and the 2 previous calendar days). Dates within the window can still be
+ * filled in by the employee; older dates require an admin to insert hours manually.
+ *
+ * The window logic mirrors `isDateEditable` in `date-utils.ts` (the source of
+ * truth for the 2-day rule) but skips holiday/Sunday checks: callers pass dates
+ * that already came from `getMissingDaysForUser`, which has filtered them.
+ */
+export function partitionMissingDates(dates: Date[]): {
+  editable: Date[];
+  requiresAdmin: Date[];
+} {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const earliest = new Date(today);
+  earliest.setDate(today.getDate() - 2);
+
+  const editable: Date[] = [];
+  const requiresAdmin: Date[] = [];
+  for (const d of dates) {
+    const c = new Date(d);
+    c.setHours(0, 0, 0, 0);
+    if (c >= earliest && c <= today) {
+      editable.push(d);
+    } else {
+      requiresAdmin.push(d);
+    }
+  }
+  return { editable, requiresAdmin };
+}
+
+/**
  * Format an array of Dates into a human-readable Italian string suitable for email bodies.
  * Example output for HTML: "<span class='date-tag'>Lunedì 27 Febbraio 2026</span>, ..."
  *
@@ -93,7 +125,7 @@ export function formatMissingDatesIT(dates: Date[], html = true): string {
 }
 
 /**
- * Check all EMPLOYEE users and return those who have 2 or more missing days
+ * Check all EMPLOYEE users and return those who have 1 or more missing days
  * in the last `lookbackDays` calendar days.
  * Used by the automated daily cron job.
  *
@@ -110,7 +142,7 @@ export async function getUsersWithMissingTimesheets(lookbackDays = 5) {
 
   for (const user of users) {
     const missingDates = await getMissingDaysForUser(user.id, lookbackDays);
-    if (missingDates.length >= 2) {
+    if (missingDates.length >= 1) {
       results.push({ user, missingDates });
     }
   }

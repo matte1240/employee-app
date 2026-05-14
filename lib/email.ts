@@ -277,12 +277,19 @@ export async function sendLeaveRequestStatusEmail(params: {
 export async function sendMissingTimesheetReminderEmail(
   to: string,
   username: string,
-  missingDatesFormatted: string
+  editableDatesFormatted: string,
+  adminRequiredDatesFormatted: string
 ) {
+  if (!editableDatesFormatted.trim() && !adminRequiredDatesFormatted.trim()) {
+    console.warn(`⚠️ Skip promemoria timesheet a ${to}: nessuna data da segnalare`);
+    return { success: false };
+  }
+
   const dashboardUrl = `${process.env.NEXTAUTH_URL ?? ""}/dashboard`;
   const { html, text } = getMissingTimesheetReminderEmailTemplate(
     username,
-    missingDatesFormatted,
+    editableDatesFormatted,
+    adminRequiredDatesFormatted,
     dashboardUrl
   );
 
